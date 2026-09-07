@@ -363,13 +363,13 @@ export default function LoginPage() {
               />
             )}
 
-            {/* Dark Studio Gradient Overlay for Readability on the Left */}
+            {/* Soft, minimal gradient strictly on the far-left - keeps the photo 100% crisp, vibrant and not faded */}
             <div
               className="position-absolute top-0 start-0 w-100 h-100"
               style={{
                 zIndex: 2,
                 pointerEvents: 'none',
-                background: 'linear-gradient(90deg, #090d16 0%, rgba(9, 13, 22, 0.96) 36%, rgba(9, 13, 22, 0.45) 68%, rgba(9, 13, 22, 0) 100%), linear-gradient(180deg, rgba(9, 13, 22, 0) 65%, rgba(9, 13, 22, 0.85) 100%)'
+                background: 'linear-gradient(90deg, rgba(9, 13, 22, 0.85) 0%, rgba(9, 13, 22, 0.4) 22%, rgba(9, 13, 22, 0) 45%)'
               }}
             ></div>
 
