@@ -79,6 +79,9 @@ app.get('/api/health', (req, res) => res.json({
 // ── Serve React Frontend in Production ────────────────────
 const distPath = path.join(__dirname, '../dist');
 app.use(express.static(distPath));
+// Fallback for nested asset requests
+app.use('/sheet/assets', express.static(path.join(distPath, 'assets')));
+app.use('/projects/assets', express.static(path.join(distPath, 'assets')));
 
 // Client-side SPA routing fallback
 app.use((req, res, next) => {

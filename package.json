@@ -15,10 +15,10 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "electron:dev": "concurrently -k \"cross-env BROWSER=none npm run dev\" \"wait-on tcp:5173 && cross-env ELECTRON_DEV_URL=http://localhost:5173 electron .\"",
-    "electron:build": "npm run build && electron-builder",
-    "electron:build:win": "npm run build && electron-builder --win",
-    "electron:build:mac": "npm run build && electron-builder --mac",
-    "electron:build:dir": "npm run build && electron-builder --dir"
+    "electron:build": "cross-env ELECTRON_BUILD=true npm run build && electron-builder",
+    "electron:build:win": "cross-env ELECTRON_BUILD=true npm run build && electron-builder --win",
+    "electron:build:mac": "cross-env ELECTRON_BUILD=true npm run build && electron-builder --mac",
+    "electron:build:dir": "cross-env ELECTRON_BUILD=true npm run build && electron-builder --dir"
   },
   "dependencies": {
     "@vitejs/plugin-react": "^6.1.0",
