@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { WORK_CATEGORIES, COMMON_ROOM_AREAS } from '../data/categories';
+import { WORK_CATEGORIES, CATEGORIZED_WORK_TYPES, COMMON_ROOM_AREAS } from '../data/categories';
 import LineItemRow from './LineItemRow';
 import { calculateAreaTotals, formatNumber, formatCurrency } from '../utils/calculations';
 import { createEmptyItem } from '../data/sampleData';
@@ -306,11 +306,24 @@ export default function AreaBlock({
               {area.parentCategory && !allCategories.includes(area.parentCategory) && (
                 <option value={area.parentCategory}>{area.parentCategory} (Custom)</option>
               )}
-              {allCategories.map((catKey) => (
-                <option key={catKey} value={catKey}>
-                  {catKey}
-                </option>
+              {Object.entries(CATEGORIZED_WORK_TYPES).map(([groupTitle, catList]) => (
+                <optgroup key={groupTitle} label={groupTitle}>
+                  {catList.map((catKey) => (
+                    <option key={catKey} value={catKey}>
+                      {catKey}
+                    </option>
+                  ))}
+                </optgroup>
               ))}
+              {customCategories.length > 0 && (
+                <optgroup label="User Custom Categories">
+                  {customCategories.map((catKey) => (
+                    <option key={catKey} value={catKey}>
+                      {catKey}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
               <option value="__ADD_NEW__" className="text-primary fw-bold">
                 + Add Custom Category...
               </option>

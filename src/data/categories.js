@@ -1,29 +1,94 @@
-// Work categories (Work Detail / Description section data)
+// Grouped work categories for organized display and easy selection
+export const CATEGORIZED_WORK_TYPES = {
+  'Flooring & Italian Marble': [
+    'Floor Tiles',
+    'Floor Italian Marble',
+    'Koba',
+    'Patta Tiles'
+  ],
+  'Wall & Dado Tiles': [
+    'Wall Tiles',
+    'Dado Italian Marble'
+  ],
+  'Sills & Skirting': [
+    'Spotted Marble Sill',
+    'Stone Sill',
+    'Single Shempered Edge Stone Sill',
+    'Double Shempered Edge Stone Sill',
+    'Skirting',
+    'Shempered Edge Skirting'
+  ],
+  'Edges & Chamfers': [
+    'Kani Edge Tiles',
+    'Kani Edge Stone',
+    'Sharp Edge Tiles',
+    'Sharp Edge Stone',
+    'Shempered Edge'
+  ],
+  'Kitchen Platforms & Counters': [
+    'Platform',
+    'Kitchen Platform Remove',
+    'Basin Counter',
+    'Basin Counter Remove'
+  ],
+  'Staircase (Treads & Risers)': [
+    'Tread',
+    'Riser',
+    'Landing Tiles'
+  ],
+  'Cutting, Openings & Holes': [
+    'Nahani Trap',
+    'Electric Board Cutting',
+    'Wash Basin Gala Cut',
+    'Core Cut',
+    'Plumbing Point Hole',
+    'Niche Create'
+  ],
+  'Civil, Plaster & Masonry': [
+    'Plaster',
+    'Plaster Remove',
+    'Tiles Remove',
+    'Block Work',
+    'Block Work Remove',
+    'Brick Bat',
+    'Brick Bat Remove',
+    'Brick Work Remove'
+  ],
+  'Finishing & Joint Treatments': [
+    'Epoxy Filling',
+    'Acid Wash'
+  ],
+  'Custom / Other': [
+    'Other'
+  ]
+};
+
+// Work categories flat list (Work Detail / Description section data)
 export const WORK_CATEGORIES = [
-  'Koba',
   'Floor Tiles',
   'Floor Italian Marble',
+  'Koba',
+  'Patta Tiles',
   'Wall Tiles',
   'Dado Italian Marble',
-  'Skirting',
-  'Shempered Edge Skirting',
   'Spotted Marble Sill',
   'Stone Sill',
   'Single Shempered Edge Stone Sill',
   'Double Shempered Edge Stone Sill',
+  'Skirting',
+  'Shempered Edge Skirting',
   'Kani Edge Tiles',
   'Kani Edge Stone',
   'Sharp Edge Tiles',
   'Sharp Edge Stone',
   'Shempered Edge',
-  'Patta Tiles',
   'Platform',
   'Kitchen Platform Remove',
+  'Basin Counter',
+  'Basin Counter Remove',
   'Tread',
   'Riser',
   'Landing Tiles',
-  'Basin Counter',
-  'Basin Counter Remove',
   'Nahani Trap',
   'Electric Board Cutting',
   'Wash Basin Gala Cut',

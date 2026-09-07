@@ -8,8 +8,7 @@ import PrintSheetView from '../components/PrintSheetView';
 import VerifyModal from '../components/VerifyModal';
 import QuickMeasureModal from '../components/QuickMeasureModal';
 import { getSession, logout } from '../utils/auth';
-import { getProject, saveProject } from '../utils/storage';
-import { calculateProjectGrandTotals, groupAreasIntoPages } from '../utils/calculations';
+import { calculateProjectGrandTotals, groupAreasIntoPages, calculateSheetPageTotals, formatNumber } from '../utils/calculations';
 import { exportToExcel } from '../utils/exportUtils';
 import { createEmptyArea } from '../data/sampleData';
 
@@ -30,6 +29,7 @@ export default function MeasurementSheet() {
   const [pageLoading, setPageLoading]   = useState(true);
   const [isSaving, setIsSaving]         = useState(false);
   const [lastSavedAt, setLastSavedAt]   = useState(null);
+  const [activeSheetPage, setActiveSheetPage] = useState('ALL');
 
   // Guard: must be logged in
   useEffect(() => {
@@ -151,16 +151,55 @@ export default function MeasurementSheet() {
     showToast(enable ? 'RA BILL MODE ENABLED' : 'MEASUREMENT SHEET MODE ACTIVE');
   };
 
-  const handleAddNewArea = () => {
+  const handleAddNewArea = (targetCategory = null, forceNewPage = false) => {
     const newArea = createEmptyArea();
     if (projectData.areas?.length > 0) {
       const last = projectData.areas[projectData.areas.length - 1];
-      newArea.floor = last.floor;
-      newArea.flat = last.flat;
+      newArea.floor = last.floor || '';
+      newArea.flat = last.flat || '';
       newArea.room = '';
+      if (targetCategory) {
+        newArea.parentCategory = targetCategory;
+      } else {
+        newArea.parentCategory = last.parentCategory || 'Floor Tiles';
+      }
+    }
+    if (forceNewPage) {
+      newArea.startNewPage = true;
     }
     setAndSave(prev => ({ ...prev, areas: [...(prev.areas || []), newArea] }));
-    showToast('NEW AREA ADDED');
+    showToast(forceNewPage ? 'NEW SHEET PAGE CREATED' : 'NEW AREA ADDED');
+  };
+
+  const handleAddNewSheetPage = () => {
+    handleAddNewArea(null, true);
+  };
+
+  const handleAddAreaToPage = (page) => {
+    const newArea = createEmptyArea();
+    newArea.floor = page.floor || '';
+    newArea.flat = page.flat || '';
+    newArea.parentCategory = page.category || 'Floor Tiles';
+    newArea.room = '';
+
+    const pageAreaIds = (page.areas || []).map(a => a.id);
+    let insertIndex = -1;
+    (projectData.areas || []).forEach((a, idx) => {
+      if (pageAreaIds.includes(a.id)) {
+        insertIndex = idx;
+      }
+    });
+
+    setAndSave(prev => {
+      const currentAreas = [...(prev.areas || [])];
+      if (insertIndex >= 0 && insertIndex < currentAreas.length - 1) {
+        currentAreas.splice(insertIndex + 1, 0, newArea);
+      } else {
+        currentAreas.push(newArea);
+      }
+      return { ...prev, areas: currentAreas };
+    });
+    showToast(`AREA ADDED TO SHEET PAGE #${page.pageNumber}`);
   };
 
   const handleUpdateArea = (areaId, updatedArea) =>
@@ -350,6 +389,7 @@ export default function MeasurementSheet() {
           />
 
           <div className="areas-container">
+            {/* Top Bar: Section Title & Cloud Actions */}
             <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
               <h5 className="fw-bolder text-dark mb-0 d-flex align-items-center gap-2 text-uppercase">
                 <i className="bi bi-grid-3x3-gap-fill text-primary"></i>
@@ -373,8 +413,17 @@ export default function MeasurementSheet() {
                     </button>
                     <button
                       type="button"
+                      className="btn btn-sm btn-outline-primary d-flex align-items-center gap-1 shadow-sm fw-bold text-uppercase"
+                      onClick={handleAddNewSheetPage}
+                      title="Start a new sheet page with a different work category"
+                    >
+                      <i className="bi bi-file-earmark-plus"></i>
+                      <span>+ NEW SHEET PAGE</span>
+                    </button>
+                    <button
+                      type="button"
                       className="btn btn-sm btn-primary d-flex align-items-center gap-1 shadow-sm fw-bold text-uppercase"
-                      onClick={handleAddNewArea}
+                      onClick={() => handleAddNewArea()}
                     >
                       <i className="bi bi-plus-circle-fill"></i>
                       <span>+ ADD AREA</span>
@@ -392,6 +441,7 @@ export default function MeasurementSheet() {
               </div>
             </div>
 
+            {/* Compute Sequential Sheet Pages (1-1-2-3-1 logic) */}
             {(() => {
               const pagesList = groupAreasIntoPages(projectData?.areas || []);
               const sheetPageMap = {};
@@ -401,45 +451,325 @@ export default function MeasurementSheet() {
                 });
               });
 
-              return (projectData?.areas || []).map((area, idx) => (
-                <AreaBlock
-                  key={area.id}
-                  area={area}
-                  index={idx}
-                  sheetPageNumber={sheetPageMap[area.id] || idx + 1}
-                  totalAreas={projectData?.areas?.length || 1}
-                  billingMode={projectData?.settings?.billingMode}
-                  currencySymbol={projectData?.settings?.currencySymbol}
-                  onChangeArea={readOnly ? () => {} : handleUpdateArea}
-                  onDeleteArea={readOnly ? () => {} : handleDeleteArea}
-                  onDuplicateArea={readOnly ? () => {} : handleDuplicateArea}
-                  onMoveArea={readOnly ? () => {} : handleMoveArea}
-                  readOnly={readOnly}
-                />
-              ));
-            })()}
+              const isSinglePageView = activeSheetPage !== 'ALL';
+              const currentPage = isSinglePageView
+                ? (pagesList.find(p => p.pageNumber === Number(activeSheetPage)) || pagesList[0])
+                : null;
+              const pageIdx = currentPage
+                ? pagesList.findIndex(p => p.pageNumber === currentPage.pageNumber)
+                : -1;
 
-            {!readOnly && (
-              <div className="text-center my-4 d-flex justify-content-center gap-2">
-                <button
-                  type="button"
-                  className="btn btn-outline-primary px-3 py-2 fw-bold shadow-sm text-uppercase"
-                  onClick={handleAddNewArea}
-                >
-                  <i className="bi bi-plus-circle-fill me-2"></i>
-                  + ADD ANOTHER AREA
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-success px-4 py-2 fw-bold shadow-sm text-uppercase"
-                  onClick={handleManualSave}
-                  disabled={isSaving}
-                >
-                  <i className="bi bi-cloud-arrow-up-fill me-2"></i>
-                  {isSaving ? 'SAVING...' : 'SAVE TO CLOUD'}
-                </button>
-              </div>
-            )}
+              return (
+                <>
+                  {/* Sheet Page Navigation Tabs Bar */}
+                  {pagesList.length > 0 && (
+                    <div className="sheet-page-nav-bar bg-white p-2 p-md-3 border rounded-3 mb-3 shadow-sm">
+                      <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2 pb-2 border-bottom">
+                        <div className="d-flex align-items-center flex-wrap gap-2">
+                          <span className="extra-small fw-bolder text-muted text-uppercase d-flex align-items-center">
+                            <i className="bi bi-file-earmark-spreadsheet-fill text-primary me-1 fs-6"></i>
+                            SHEET PAGES ({pagesList.length} TOTAL):
+                          </span>
+                          <span className="badge bg-primary-subtle text-primary border border-primary-subtle fw-bold extra-small text-uppercase">
+                            Sequential 1-1-2-3-1 Flow
+                          </span>
+                        </div>
+                        <div className="d-flex align-items-center gap-2">
+                          <span className="text-muted extra-small d-none d-lg-inline">
+                            Switch tabs to focus on one page without clutter, or select View All Pages
+                          </span>
+                          {!readOnly && (
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-outline-primary fw-bold extra-small text-uppercase py-1"
+                              onClick={handleAddNewSheetPage}
+                              title="Start a new separate sheet page"
+                            >
+                              <i className="bi bi-file-earmark-plus me-1"></i>+ New Sheet Page
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Scrollable Page Tabs */}
+                      <div className="d-flex align-items-center gap-2 overflow-auto pb-1" style={{ scrollbarWidth: 'thin' }}>
+                        <button
+                          type="button"
+                          className={`btn btn-sm ${activeSheetPage === 'ALL' ? 'btn-dark shadow-sm' : 'btn-light border text-secondary'} fw-bold text-uppercase extra-small text-nowrap py-1 px-3`}
+                          onClick={() => setActiveSheetPage('ALL')}
+                        >
+                          <i className="bi bi-collection me-1"></i> View All Pages ({pagesList.length})
+                        </button>
+
+                        {pagesList.map((pg) => {
+                          const isSelected = activeSheetPage === pg.pageNumber;
+                          return (
+                            <button
+                              key={pg.pageNumber}
+                              type="button"
+                              className={`btn btn-sm ${isSelected ? 'btn-primary shadow-sm' : 'btn-light border text-dark'} fw-bold extra-small text-nowrap py-1 px-3 d-flex align-items-center gap-1`}
+                              onClick={() => setActiveSheetPage(pg.pageNumber)}
+                            >
+                              <i className="bi bi-file-earmark-text"></i>
+                              <span>Page #{pg.pageNumber}:</span>
+                              <span className={isSelected ? 'text-white' : 'text-primary'}>{pg.category}</span>
+                              <span className={`badge ${isSelected ? 'bg-white text-primary' : 'bg-secondary-subtle text-secondary'} rounded-pill ms-1`}>
+                                {pg.areas.length}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Mode 1: Single Focused Sheet Page View */}
+                  {isSinglePageView && currentPage && (() => {
+                    const pageTotals = calculateSheetPageTotals(currentPage);
+                    return (
+                      <div className="single-sheet-page-view mb-4">
+                        {/* Focused Sheet Page Card Banner */}
+                        <div className="card border-primary-subtle shadow-sm mb-3" style={{ borderLeft: '5px solid #0d6efd' }}>
+                          <div className="card-body py-3 px-3 bg-light">
+                            <div className="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                              {/* Left details */}
+                              <div className="d-flex align-items-center flex-wrap gap-2">
+                                <span className="badge bg-primary px-3 py-2 rounded-pill fw-bold text-uppercase fs-6">
+                                  <i className="bi bi-file-earmark-text-fill me-1"></i>
+                                  SHEET PAGE #{currentPage.pageNumber} OF {pagesList.length}
+                                </span>
+                                <h5 className="mb-0 fw-bolder text-dark text-uppercase">{currentPage.category}</h5>
+                                <span className="text-secondary extra-small">
+                                  ({currentPage.areas.length} {currentPage.areas.length === 1 ? 'Location Area' : 'Location Areas'})
+                                </span>
+                              </div>
+
+                              {/* Right: Totals & Quick Add */}
+                              <div className="d-flex align-items-center flex-wrap gap-2">
+                                <span className="badge bg-white text-dark border px-3 py-2 fs-6 fw-bold shadow-sm">
+                                  PAGE TOTAL: {pageTotals.netQty} {pageTotals.dominantUnit}
+                                </span>
+                                {projectData?.settings?.billingMode && (
+                                  <span className="badge bg-success text-white px-3 py-2 fs-6 fw-bold shadow-sm">
+                                    ₹{formatNumber(pageTotals.netAmount)}
+                                  </span>
+                                )}
+                                {!readOnly && (
+                                  <button
+                                    type="button"
+                                    className="btn btn-sm btn-primary fw-bold text-uppercase d-flex align-items-center gap-1 shadow-sm px-3"
+                                    onClick={() => handleAddAreaToPage(currentPage)}
+                                    title="Add another area to this sheet page"
+                                  >
+                                    <i className="bi bi-plus-circle-fill"></i>
+                                    <span>+ Add Area to Page #{currentPage.pageNumber}</span>
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Page Navigation & Pagination Toolbar */}
+                            <div className="d-flex justify-content-between align-items-center mt-2 pt-2 border-top">
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-outline-secondary extra-small fw-bold text-uppercase"
+                                disabled={pageIdx === 0}
+                                onClick={() => setActiveSheetPage(pagesList[pageIdx - 1].pageNumber)}
+                              >
+                                <i className="bi bi-arrow-left me-1"></i> Prev Page
+                              </button>
+
+                              <div className="d-flex align-items-center gap-2">
+                                <span className="text-muted extra-small fw-bold text-uppercase">
+                                  Showing Page {currentPage.pageNumber} of {pagesList.length} &bull; Work Detail: {currentPage.category}
+                                </span>
+                                <button
+                                  type="button"
+                                  className="btn btn-link btn-sm extra-small fw-bold text-decoration-none text-primary p-0"
+                                  onClick={() => setActiveSheetPage('ALL')}
+                                >
+                                  (View All)
+                                </button>
+                              </div>
+
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-outline-secondary extra-small fw-bold text-uppercase"
+                                disabled={pageIdx === pagesList.length - 1}
+                                onClick={() => setActiveSheetPage(pagesList[pageIdx + 1].pageNumber)}
+                              >
+                                Next Page <i className="bi bi-arrow-right ms-1"></i>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Render ONLY areas belonging to this page */}
+                        {(currentPage.areas || []).map((area) => {
+                          const originalIndex = (projectData?.areas || []).findIndex(a => a.id === area.id);
+                          return (
+                            <AreaBlock
+                              key={area.id}
+                              area={area}
+                              index={originalIndex >= 0 ? originalIndex : 0}
+                              sheetPageNumber={currentPage.pageNumber}
+                              totalAreas={projectData?.areas?.length || 1}
+                              billingMode={projectData?.settings?.billingMode}
+                              currencySymbol={projectData?.settings?.currencySymbol}
+                              onChangeArea={readOnly ? () => {} : handleUpdateArea}
+                              onDeleteArea={readOnly ? () => {} : handleDeleteArea}
+                              onDuplicateArea={readOnly ? () => {} : handleDuplicateArea}
+                              onMoveArea={readOnly ? () => {} : handleMoveArea}
+                              readOnly={readOnly}
+                            />
+                          );
+                        })}
+
+                        {/* Bottom pagination & actions */}
+                        <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 my-3 p-3 bg-white border rounded shadow-sm">
+                          <button
+                            type="button"
+                            className="btn btn-outline-secondary fw-bold extra-small text-uppercase"
+                            disabled={pageIdx === 0}
+                            onClick={() => setActiveSheetPage(pagesList[pageIdx - 1].pageNumber)}
+                          >
+                            <i className="bi bi-chevron-left me-1"></i> Previous Sheet Page
+                          </button>
+
+                          <div className="d-flex gap-2">
+                            {!readOnly && (
+                              <>
+                                <button
+                                  type="button"
+                                  className="btn btn-outline-primary fw-bold extra-small text-uppercase"
+                                  onClick={() => handleAddAreaToPage(currentPage)}
+                                >
+                                  <i className="bi bi-plus-circle me-1"></i>+ Add Area to Page #{currentPage.pageNumber}
+                                </button>
+                                <button
+                                  type="button"
+                                  className="btn btn-primary fw-bold extra-small text-uppercase"
+                                  onClick={handleAddNewSheetPage}
+                                >
+                                  <i className="bi bi-file-earmark-plus me-1"></i>+ Start New Sheet Page
+                                </button>
+                              </>
+                            )}
+                          </div>
+
+                          <button
+                            type="button"
+                            className="btn btn-outline-secondary fw-bold extra-small text-uppercase"
+                            disabled={pageIdx === pagesList.length - 1}
+                            onClick={() => setActiveSheetPage(pagesList[pageIdx + 1].pageNumber)}
+                          >
+                            Next Sheet Page <i className="bi bi-chevron-right ms-1"></i>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Mode 2: All Pages View (Structured with distinct Sheet Page divider headers) */}
+                  {!isSinglePageView && (
+                    <div className="all-sheet-pages-view">
+                      {pagesList.map((pg) => {
+                        const pageTotals = calculateSheetPageTotals(pg);
+                        return (
+                          <div key={`page-section-${pg.pageNumber}`} className="sheet-page-section mb-4">
+                            {/* Page Header Divider */}
+                            <div className="bg-dark text-white p-2 p-md-3 rounded-top d-flex flex-wrap justify-content-between align-items-center gap-2 shadow-sm">
+                              <div className="d-flex align-items-center flex-wrap gap-2">
+                                <span className="badge bg-primary fs-6 px-3 py-1 rounded-pill fw-bold">
+                                  SHEET PAGE #{pg.pageNumber}
+                                </span>
+                                <span className="fs-6 fw-bold text-uppercase text-white">{pg.category}</span>
+                                <span className="badge bg-secondary rounded-pill extra-small">
+                                  {pg.areas.length} {pg.areas.length === 1 ? 'Area' : 'Areas'}
+                                </span>
+                              </div>
+
+                              <div className="d-flex align-items-center flex-wrap gap-2">
+                                <span className="badge bg-light text-dark px-3 py-1 fw-bold">
+                                  PAGE TOTAL: {pageTotals.netQty} {pageTotals.dominantUnit}
+                                </span>
+                                {projectData?.settings?.billingMode && (
+                                  <span className="badge bg-success text-white px-3 py-1 fw-bold">
+                                    ₹{formatNumber(pageTotals.netAmount)}
+                                  </span>
+                                )}
+                                <button
+                                  type="button"
+                                  className="btn btn-sm btn-outline-light extra-small fw-bold text-uppercase py-1 px-2"
+                                  onClick={() => setActiveSheetPage(pg.pageNumber)}
+                                  title="Focus on this sheet page only"
+                                >
+                                  <i className="bi bi-arrows-angle-expand me-1"></i> Focus Page #{pg.pageNumber}
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Areas in this Page */}
+                            <div className="border border-top-0 rounded-bottom p-2 p-md-3 bg-light-subtle">
+                              {(pg.areas || []).map((area) => {
+                                const originalIndex = (projectData?.areas || []).findIndex(a => a.id === area.id);
+                                return (
+                                  <AreaBlock
+                                    key={area.id}
+                                    area={area}
+                                    index={originalIndex >= 0 ? originalIndex : 0}
+                                    sheetPageNumber={pg.pageNumber}
+                                    totalAreas={projectData?.areas?.length || 1}
+                                    billingMode={projectData?.settings?.billingMode}
+                                    currencySymbol={projectData?.settings?.currencySymbol}
+                                    onChangeArea={readOnly ? () => {} : handleUpdateArea}
+                                    onDeleteArea={readOnly ? () => {} : handleDeleteArea}
+                                    onDuplicateArea={readOnly ? () => {} : handleDuplicateArea}
+                                    onMoveArea={readOnly ? () => {} : handleMoveArea}
+                                    readOnly={readOnly}
+                                  />
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                      {/* Global Add & Save buttons */}
+                      {!readOnly && (
+                        <div className="text-center my-4 d-flex justify-content-center flex-wrap gap-2">
+                          <button
+                            type="button"
+                            className="btn btn-outline-primary px-3 py-2 fw-bold shadow-sm text-uppercase"
+                            onClick={() => handleAddNewArea()}
+                          >
+                            <i className="bi bi-plus-circle-fill me-2"></i>
+                            + ADD ANOTHER AREA
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-primary px-3 py-2 fw-bold shadow-sm text-uppercase"
+                            onClick={handleAddNewSheetPage}
+                          >
+                            <i className="bi bi-file-earmark-plus me-2"></i>
+                            + START NEW SHEET PAGE
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-success px-4 py-2 fw-bold shadow-sm text-uppercase"
+                            onClick={handleManualSave}
+                            disabled={isSaving}
+                          >
+                            <i className="bi bi-cloud-arrow-up-fill me-2"></i>
+                            {isSaving ? 'SAVING...' : 'SAVE TO CLOUD'}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
 
           <SummaryDashboard
