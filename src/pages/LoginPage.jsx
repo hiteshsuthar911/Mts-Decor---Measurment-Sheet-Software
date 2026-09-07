@@ -339,21 +339,39 @@ export default function LoginPage() {
         {currentQuote ? (
           <div
             className="untitled-hero-card position-relative overflow-hidden d-flex flex-column justify-content-between"
-            style={{ minHeight: '100%' }}
+            style={{
+              minHeight: '100%',
+              backgroundColor: '#090d16',
+              border: '1px solid rgba(255, 255, 255, 0.08)'
+            }}
           >
-            {/* Active Founder Image Uploaded by Admin */}
+            {/* Active Founder Image Uploaded by Admin (Full portrait framed on the right) */}
             {currentQuote.imageUrl && (
               <img
                 key={currentQuote.imageUrl || testimonialIdx}
                 src={currentQuote.imageUrl}
                 alt={currentQuote.name || 'Founder'}
-                className="position-absolute top-0 start-0 w-100 h-100"
-                style={{ objectFit: 'cover', zIndex: 1, transition: 'opacity 0.5s ease' }}
+                className="position-absolute top-0 end-0 h-100"
+                style={{
+                  width: 'auto',
+                  maxWidth: '85%',
+                  objectFit: 'contain',
+                  objectPosition: 'right bottom',
+                  zIndex: 1,
+                  transition: 'opacity 0.5s ease',
+                }}
               />
             )}
 
-            {/* Dark Gradient Overlay for Readability */}
-            <div className="untitled-hero-overlay" style={{ zIndex: 2 }}></div>
+            {/* Dark Studio Gradient Overlay for Readability on the Left */}
+            <div
+              className="position-absolute top-0 start-0 w-100 h-100"
+              style={{
+                zIndex: 2,
+                pointerEvents: 'none',
+                background: 'linear-gradient(90deg, #090d16 0%, rgba(9, 13, 22, 0.96) 36%, rgba(9, 13, 22, 0.45) 68%, rgba(9, 13, 22, 0) 100%), linear-gradient(180deg, rgba(9, 13, 22, 0) 65%, rgba(9, 13, 22, 0.85) 100%)'
+              }}
+            ></div>
 
             {/* Top Logo (Clean Branding) */}
             <div className="position-relative" style={{ zIndex: 3 }}>
@@ -365,20 +383,17 @@ export default function LoginPage() {
               />
             </div>
 
-            {/* Quote & Author Content */}
-            <div className="untitled-hero-content d-flex justify-content-between align-items-end my-auto py-3" style={{ zIndex: 3 }}>
-              <div style={{ maxWidth: '620px' }}>
-                <p className="untitled-quote-text mb-3">
+            {/* Quote & Author Content (Anchored in the bottom-left corner) */}
+            <div className="untitled-hero-content d-flex justify-content-between align-items-end mt-auto mb-2" style={{ zIndex: 3 }}>
+              <div style={{ maxWidth: '420px' }}>
+                <p className="untitled-quote-text mb-3" style={{ fontSize: '1.25rem', lineHeight: 1.5, fontWeight: 500 }}>
                   "{currentQuote.quote}"
                 </p>
-                <div className="untitled-author-name">
+                <div className="untitled-author-name fs-6 fw-bold">
                   {currentQuote.name || 'MTS Decor Founder'}
                 </div>
-                <div className="untitled-author-role">
-                  {currentQuote.role || 'Founder'}
-                </div>
-                <div className="untitled-author-company">
-                  {currentQuote.company || 'MTS Decor & Interiors'}
+                <div className="untitled-author-role extra-small text-uppercase tracking-wider opacity-75">
+                  {currentQuote.role || 'Founder'} &bull; {currentQuote.company || 'MTS Decor'}
                 </div>
 
                 {/* Slide dots indicator */}
