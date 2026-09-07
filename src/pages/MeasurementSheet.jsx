@@ -9,7 +9,7 @@ import VerifyModal from '../components/VerifyModal';
 import QuickMeasureModal from '../components/QuickMeasureModal';
 import { getSession, logout } from '../utils/auth';
 import { getProject, saveProject } from '../utils/storage';
-import { calculateProjectGrandTotals } from '../utils/calculations';
+import { calculateProjectGrandTotals, groupAreasIntoPages } from '../utils/calculations';
 import { exportToExcel } from '../utils/exportUtils';
 import { createEmptyArea } from '../data/sampleData';
 
@@ -392,21 +392,32 @@ export default function MeasurementSheet() {
               </div>
             </div>
 
-            {(projectData?.areas || []).map((area, idx) => (
-              <AreaBlock
-                key={area.id}
-                area={area}
-                index={idx}
-                totalAreas={projectData?.areas?.length || 1}
-                billingMode={projectData?.settings?.billingMode}
-                currencySymbol={projectData?.settings?.currencySymbol}
-                onChangeArea={readOnly ? () => {} : handleUpdateArea}
-                onDeleteArea={readOnly ? () => {} : handleDeleteArea}
-                onDuplicateArea={readOnly ? () => {} : handleDuplicateArea}
-                onMoveArea={readOnly ? () => {} : handleMoveArea}
-                readOnly={readOnly}
-              />
-            ))}
+            {(() => {
+              const pagesList = groupAreasIntoPages(projectData?.areas || []);
+              const sheetPageMap = {};
+              pagesList.forEach(p => {
+                (p.areas || []).forEach(a => {
+                  sheetPageMap[a.id] = p.pageNumber;
+                });
+              });
+
+              return (projectData?.areas || []).map((area, idx) => (
+                <AreaBlock
+                  key={area.id}
+                  area={area}
+                  index={idx}
+                  sheetPageNumber={sheetPageMap[area.id] || idx + 1}
+                  totalAreas={projectData?.areas?.length || 1}
+                  billingMode={projectData?.settings?.billingMode}
+                  currencySymbol={projectData?.settings?.currencySymbol}
+                  onChangeArea={readOnly ? () => {} : handleUpdateArea}
+                  onDeleteArea={readOnly ? () => {} : handleDeleteArea}
+                  onDuplicateArea={readOnly ? () => {} : handleDuplicateArea}
+                  onMoveArea={readOnly ? () => {} : handleMoveArea}
+                  readOnly={readOnly}
+                />
+              ));
+            })()}
 
             {!readOnly && (
               <div className="text-center my-4 d-flex justify-content-center gap-2">

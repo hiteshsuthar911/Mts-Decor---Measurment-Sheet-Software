@@ -8,6 +8,7 @@ export default function AreaBlock({
   area = {},
   index = 0,
   totalAreas = 1,
+  sheetPageNumber,
   billingMode,
   currencySymbol = '₹',
   onChangeArea,
@@ -149,6 +150,11 @@ export default function AreaBlock({
             <span className="badge bg-dark rounded-pill px-3 py-2 fw-semibold">
               Area #{index + 1}
             </span>
+            {sheetPageNumber && (
+              <span className="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-1 extra-small fw-bold text-uppercase">
+                <i className="bi bi-file-earmark-text me-1"></i>Sheet Page #{sheetPageNumber}
+              </span>
+            )}
             <div className="d-flex align-items-center gap-2">
               <span className="fw-bold text-dark fs-6">
                 {area.floor || 'Floor'} &bull; {area.flat || 'Unit'} &bull; {area.room || 'Room'}
@@ -360,6 +366,30 @@ export default function AreaBlock({
                 }}
               />
             </div>
+          </div>
+
+          {/* Manual Page Break Toggle */}
+          <div className="col-12 mt-2 pt-2 border-top d-flex flex-wrap align-items-center justify-content-between gap-2">
+            <div className="form-check form-switch mb-0">
+              <input
+                className="form-check-input"
+                type="checkbox"
+                role="switch"
+                id={`startNewPage-${area.id}`}
+                checked={!!area.startNewPage}
+                disabled={readOnly}
+                onChange={(e) => handleFieldChange('startNewPage', e.target.checked)}
+              />
+              <label className="form-check-label extra-small fw-bold text-uppercase text-secondary" htmlFor={`startNewPage-${area.id}`}>
+                <i className="bi bi-file-earmark-plus me-1 text-primary"></i>
+                Start on New Sheet Page (Manual Page Break)
+              </label>
+            </div>
+            <span className="text-muted extra-small">
+              {area.startNewPage
+                ? '✓ Manual break active: Starts a separate sheet page for this area.'
+                : 'Auto: Auto-starts a new page whenever the work category changes (1-1-2-3-1).'}
+            </span>
           </div>
         </div>
       </div>

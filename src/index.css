@@ -282,6 +282,13 @@ body {
     padding: 0 !important;
     max-width: 100% !important;
     width: 100% !important;
+    page-break-after: always !important;
+    break-after: page !important;
+  }
+
+  .contractor-sheet-page:last-child {
+    page-break-after: auto !important;
+    break-after: auto !important;
   }
 
   .sheet-grid-table {
