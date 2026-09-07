@@ -302,29 +302,32 @@ export default function PrintSheetView({
 
         {/* Signatures and Endorsement Block */}
         <div className="mt-5 pt-4 border-top">
-          <div className="row text-center">
-            <div className="col-3">
+          <div className="row text-center justify-content-between g-3">
+            <div className="col-4">
               <div className="border-top border-dark pt-2 fw-semibold small">
-                {header.preparedBy || 'Prepared By'}
-                <div className="text-muted extra-small">Site Engineer / Surveyor</div>
+                {header.checkedBy ? (
+                  <>
+                    <div className="text-uppercase">{header.checkedBy}</div>
+                    <div className="text-muted extra-small">Checked and Approved By</div>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-uppercase">Checked and Approved By</div>
+                    <div className="text-muted extra-small">Signature</div>
+                  </>
+                )}
               </div>
             </div>
-            <div className="col-3">
+            <div className="col-4">
               <div className="border-top border-dark pt-2 fw-semibold small">
-                {header.checkedBy || 'Checked By'}
-                <div className="text-muted extra-small">Project Manager</div>
-              </div>
-            </div>
-            <div className="col-3">
-              <div className="border-top border-dark pt-2 fw-semibold small">
-                Contractor Signature
+                <div className="text-uppercase">Contractor Signature</div>
                 <div className="text-muted extra-small">{header.contractorName || 'MTS DECOR'}</div>
               </div>
             </div>
-            <div className="col-3">
+            <div className="col-4">
               <div className="border-top border-dark pt-2 fw-semibold small">
-                Client / PMC Representative
-                <div className="text-muted extra-small">{header.clientName || 'Skyline Infra'}</div>
+                <div className="text-uppercase">Client / PMC Representative</div>
+                <div className="text-muted extra-small">{header.clientName || 'Client / PMC'}</div>
               </div>
             </div>
           </div>

@@ -246,28 +246,15 @@ export default function Header({
             />
           </div>
 
-          {/* Prepared By & Checked By */}
-          <div className="col-6 col-md-3 col-lg-3">
+          {/* Checked and Approved By */}
+          <div className="col-12 col-md-4 col-lg-3">
             <label className="form-label text-secondary small fw-bold mb-1">
-              <i className="bi bi-person-badge me-1"></i> Prepared By
+              <i className="bi bi-shield-check me-1 text-success"></i> Checked & Approved By
             </label>
             <input
               type="text"
               className="form-control form-control-sm"
-              placeholder="Surveyor / Site Engineer"
-              value={headerData.preparedBy || ''}
-              onChange={(e) => handleChange('preparedBy', e.target.value)}
-            />
-          </div>
-
-          <div className="col-6 col-md-3 col-lg-3">
-            <label className="form-label text-secondary small fw-bold mb-1">
-              <i className="bi bi-shield-check me-1 text-success"></i> Checked / Approved By
-            </label>
-            <input
-              type="text"
-              className="form-control form-control-sm"
-              placeholder="Project Manager / Consultant"
+              placeholder="e.g. BALAN SIR"
               value={headerData.checkedBy || ''}
               onChange={(e) => handleChange('checkedBy', e.target.value)}
             />

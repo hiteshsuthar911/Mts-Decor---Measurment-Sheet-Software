@@ -27,7 +27,6 @@ export const BLANK_PROJECT = {
     projectName: '',
     sheetNo: '',
     date: '',
-    preparedBy: '',
     checkedBy: '',
     notes: ''
   },
@@ -46,8 +45,7 @@ export const SAMPLE_PROJECT = {
     projectName: 'PARK CREST',
     sheetNo: 'MS/PC-08/2025/001',
     date: '2025-07-25',
-    preparedBy: 'Hitesh Suthar (Site Engineer)',
-    checkedBy: 'M. Sharma (Project Manager)',
+    checkedBy: 'BALAN SIR (Project Manager)',
     notes: 'Measurements verified on site as per joint inspection with client PMC.'
   },
   settings: {

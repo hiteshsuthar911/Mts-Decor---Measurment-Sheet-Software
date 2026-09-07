@@ -16,7 +16,7 @@ export function exportToExcel(projectData, billingMode = false) {
     `Date: ${header.date || ''}`,
     `Sheet No: ${header.sheetNo || ''}`
   ]);
-  sheetRows.push([`Client: ${header.clientName || ''}`, `Prepared By: ${header.preparedBy || ''}`, `Checked By: ${header.checkedBy || ''}`]);
+  sheetRows.push([`Client: ${header.clientName || ''}`, `Checked & Approved By: ${header.checkedBy || ''}`]);
   sheetRows.push([]); // blank row
 
   // Table header
