@@ -2,9 +2,9 @@ import { api } from './api';
 
 const AUTH_KEY = 'MS_PRO_AUTH_V1';
 
-// Step 1: Validate credentials and initialize 2FA challenge
-export async function loginInit(username, password) {
-  const result = await api.post('/auth/login-init', { username, password });
+// Step 1: Validate credentials and initialize 2FA challenge (with Cloudflare Turnstile token)
+export async function loginInit(username, password, cfToken = null) {
+  const result = await api.post('/auth/login-init', { username, password, cfToken });
   return result; // { require2FA: true, challengeId, verificationCode, username, name }
 }
 

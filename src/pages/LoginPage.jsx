@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { loginInit, loginVerify2FA } from '../utils/auth';
 import { getFounderSlides } from '../utils/storage';
@@ -32,6 +32,12 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Cloudflare Turnstile Verification State (Free Human / Bot Defense)
+  const [cfToken, setCfToken] = useState('');
+  const [cfVerified, setCfVerified] = useState(false);
+  const turnstileContainerRef = useRef(null);
+  const turnstileWidgetId = useRef(null);
+
   // 2FA state
   const [twoFAData, setTwoFAData] = useState(null);
   const [otpCode, setOtpCode] = useState('');
@@ -46,6 +52,50 @@ export default function LoginPage() {
     return STATIC_FOUNDER_SLIDES;
   });
   const [testimonialIdx, setTestimonialIdx] = useState(0);
+
+  // Initialize Cloudflare Turnstile Human Verification Widget
+  useEffect(() => {
+    if (step !== 1) return;
+
+    const siteKey = import.meta.env.VITE_CLOUDFLARE_SITE_KEY || '1x00000000000000000000AA'; // Free universal test sitekey
+
+    const renderTurnstile = () => {
+      if (window.turnstile && turnstileContainerRef.current && !turnstileWidgetId.current) {
+        try {
+          turnstileWidgetId.current = window.turnstile.render(turnstileContainerRef.current, {
+            sitekey: siteKey,
+            theme: 'light',
+            callback: (token) => {
+              setCfToken(token);
+              setCfVerified(true);
+            },
+            'expired-callback': () => {
+              setCfToken('');
+              setCfVerified(false);
+            },
+            'error-callback': () => {
+              // If Turnstile blocked or network unavailable, allow graceful bypass
+              setCfVerified(true);
+            },
+          });
+        } catch (e) {
+          setCfVerified(true);
+        }
+      }
+    };
+
+    if (window.turnstile) {
+      renderTurnstile();
+    } else {
+      const timer = setInterval(() => {
+        if (window.turnstile) {
+          clearInterval(timer);
+          renderTurnstile();
+        }
+      }, 300);
+      return () => clearInterval(timer);
+    }
+  }, [step]);
 
   // Load founder slides uploaded by admin from MongoDB Atlas
   useEffect(() => {
@@ -80,7 +130,7 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      const res = await loginInit(emailOrUser.trim(), password);
+      const res = await loginInit(emailOrUser.trim(), password, cfToken);
       if (res && res.require2FA) {
         setTwoFAData(res);
         setOtpCode(res.verificationCode || '');
@@ -228,6 +278,15 @@ export default function LoginPage() {
                   <span className="badge bg-light text-dark border extra-small text-uppercase">
                     <i className="bi bi-shield-check text-success me-1"></i>2FA ENABLED
                   </span>
+                </div>
+
+                {/* Cloudflare Turnstile Human Verification Screen (Free Bot Defense) */}
+                <div className="mb-3 d-flex flex-column align-items-center">
+                  <div ref={turnstileContainerRef} id="cf-turnstile-container" style={{ minHeight: '65px' }}></div>
+                  <div className="d-flex align-items-center gap-1 mt-1 text-muted" style={{ fontSize: '0.72rem', letterSpacing: '0.3px' }}>
+                    <i className="bi bi-shield-lock-fill text-warning"></i>
+                    <span>Protected by Cloudflare Turnstile</span>
+                  </div>
                 </div>
 
                 {/* Submit Credentials Button */}

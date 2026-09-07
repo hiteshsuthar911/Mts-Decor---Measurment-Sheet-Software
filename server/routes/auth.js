@@ -17,16 +17,54 @@ setInterval(() => {
   }
 }, 60000);
 
+// Cloudflare Turnstile Bot Verification (Free Cloudflare Security Screen)
+async function verifyCloudflareTurnstile(token, ip) {
+  const secretKey = process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY || '1x0000000000000000000000000000000AA';
+  
+  if (!token) {
+    // If strict Cloudflare secret key is explicitly configured in production, reject missing token
+    if (process.env.NODE_ENV === 'production' && process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY) {
+      return false;
+    }
+    return true; // Graceful pass in local/desktop development if key not supplied
+  }
+
+  try {
+    const formData = new URLSearchParams();
+    formData.append('secret', secretKey);
+    formData.append('response', token);
+    if (ip) formData.append('remoteip', ip);
+
+    const verifyRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      body: formData,
+    });
+    const outcome = await verifyRes.json();
+    return outcome.success === true;
+  } catch (err) {
+    console.error('Cloudflare Turnstile verification error:', err.message);
+    return true; // Fail-open to prevent locking out legitimate users on network hiccups
+  }
+}
+
 // POST /api/auth/login-init (Step 1 of 2FA Login)
 router.post('/login-init', async (req, res, next) => {
   try {
-    const { username, password } = req.body;
+    const { username, password, cfToken } = req.body;
     if (!username || !password) {
       logger.logAuthFailure(username, 'MISSING_CREDENTIALS', req);
       return res.status(400).json({ message: 'USERNAME AND PASSWORD REQUIRED' });
     }
 
     const cleanUsername = username.trim().toLowerCase();
+
+    // ── Verify Cloudflare Turnstile Human Check ─────────────
+    const clientIp = req.headers['cf-connecting-ip'] || req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket?.remoteAddress;
+    const isHuman = await verifyCloudflareTurnstile(cfToken, clientIp);
+    if (!isHuman) {
+      logger.logSuspiciousTraffic('BOT_DETECTED', `Cloudflare Turnstile check failed for user "${cleanUsername}"`, req);
+      return res.status(403).json({ message: 'Cloudflare security check failed. Automated bots are blocked.' });
+    }
     const user = await User.findOne({ username: cleanUsername });
     if (!user) {
       logger.logAuthFailure(cleanUsername, 'USER_NOT_FOUND', req);
