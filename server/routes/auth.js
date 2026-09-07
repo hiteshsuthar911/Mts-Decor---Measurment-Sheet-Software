@@ -19,7 +19,7 @@ setInterval(() => {
 
 // Cloudflare Turnstile Bot Verification (Free Cloudflare Security Screen)
 async function verifyCloudflareTurnstile(token, ip) {
-  const secretKey = process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY || '1x0000000000000000000000000000000AA';
+  const secretKey = process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY || '0x4AAAAAAErkNqY24DFjseSMClCnKCyU7t4';
   
   if (!token) {
     // If strict Cloudflare secret key is explicitly configured in production, reject missing token

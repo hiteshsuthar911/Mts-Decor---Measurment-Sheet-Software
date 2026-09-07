@@ -57,7 +57,7 @@ export default function LoginPage() {
   useEffect(() => {
     if (step !== 1) return;
 
-    const siteKey = import.meta.env.VITE_CLOUDFLARE_SITE_KEY || '1x00000000000000000000AA'; // Free universal test sitekey
+    const siteKey = import.meta.env.VITE_CLOUDFLARE_SITE_KEY || '0x4AAAAAAErkNoW--wJDYO0C';
 
     const renderTurnstile = () => {
       if (window.turnstile && turnstileContainerRef.current && !turnstileWidgetId.current) {
