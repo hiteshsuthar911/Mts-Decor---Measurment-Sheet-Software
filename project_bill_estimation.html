@@ -3,22 +3,26 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Software Project Bill & Cost Estimation — MTS Decor MS PRO</title>
+  <title>Tax Invoice / Project Bill — MTS Decor MS PRO</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --primary: #0f172a;
-      --accent: #2563eb;
-      --accent-light: #eff6ff;
-      --success: #16a34a;
-      --warning: #d97706;
-      --border: #e2e8f0;
-      --text-main: #1e293b;
-      --text-muted: #64748b;
-      --bg-page: #f8fafc;
-      --card-bg: #ffffff;
+      --primary-dark: #0f172a;
+      --primary-blue: #1e40af;
+      --accent-blue: #3b82f6;
+      --slate-50: #f8fafc;
+      --slate-100: #f1f5f9;
+      --slate-200: #e2e8f0;
+      --slate-300: #cbd5e1;
+      --slate-500: #64748b;
+      --slate-700: #334155;
+      --slate-800: #1e293b;
+      --slate-900: #0f172a;
+      --emerald-600: #059669;
+      --emerald-50: #ecfdf5;
+      --border-color: #e2e8f0;
     }
 
     * {
@@ -28,648 +32,766 @@
     }
 
     body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background-color: var(--bg-page);
-      color: var(--text-main);
-      padding: 40px 20px;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #f1f5f9;
+      color: var(--slate-800);
+      padding: 40px 16px;
       line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
     }
 
-    .bill-container {
-      max-width: 900px;
+    .invoice-wrapper {
+      max-width: 880px;
       margin: 0 auto;
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      box-shadow: 0 4px 25px -4px rgba(15, 23, 42, 0.08);
       overflow: hidden;
     }
 
-    /* Header Bar */
-    .bill-header {
-      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-      color: white;
-      padding: 36px 40px;
-      position: relative;
-    }
-
-    .top-actions {
+    /* Top Action Bar (Web Only) */
+    .top-action-bar {
+      background: var(--slate-900);
+      color: #ffffff;
+      padding: 12px 32px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 24px;
+      font-size: 13px;
     }
 
-    .brand-title {
-      font-size: 24px;
+    .status-pill {
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      padding: 3px 10px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .action-btn {
+      background: #ffffff;
+      color: var(--slate-900);
+      border: none;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.15s ease;
+    }
+
+    .action-btn:hover {
+      background: #e2e8f0;
+    }
+
+    /* Invoice Content */
+    .invoice-content {
+      padding: 40px 48px;
+    }
+
+    /* Header Section */
+    .invoice-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 2px solid var(--slate-100);
+      padding-bottom: 28px;
+      margin-bottom: 28px;
+    }
+
+    .company-brand h1 {
+      font-size: 26px;
       font-weight: 800;
+      color: var(--slate-900);
       letter-spacing: -0.5px;
       display: flex;
       align-items: center;
-      gap: 12px;
-    }
-
-    .brand-badge {
-      background: var(--success);
-      color: white;
-      font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      padding: 4px 10px;
-      border-radius: 9999px;
-      letter-spacing: 0.5px;
-    }
-
-    .print-btn {
-      background: white;
-      color: var(--primary);
-      border: none;
-      padding: 8px 18px;
-      border-radius: 8px;
-      font-size: 13px;
-      font-weight: 700;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
       gap: 8px;
-      transition: all 0.2s ease;
     }
 
-    .print-btn:hover {
-      background: #f1f5f9;
-      transform: translateY(-1px);
+    .company-brand p {
+      font-size: 13px;
+      color: var(--slate-500);
+      margin-top: 4px;
+      font-weight: 500;
     }
 
-    .header-details {
+    .invoice-title-block {
+      text-align: right;
+    }
+
+    .invoice-title-block h2 {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--primary-blue);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .invoice-number {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--slate-700);
+      margin-top: 4px;
+    }
+
+    /* Billing Info Grid */
+    .parties-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 20px;
-      border-top: 1px solid rgba(255, 255, 255, 0.15);
-      padding-top: 20px;
+      gap: 32px;
+      margin-bottom: 28px;
     }
 
-    .header-col h4 {
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: #94a3b8;
-      margin-bottom: 6px;
+    .party-card {
+      background: var(--slate-50);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 18px 20px;
     }
 
-    .header-col p {
-      font-size: 14px;
-      font-weight: 600;
-    }
-
-    .header-col .muted-desc {
-      font-size: 12px;
-      color: #cbd5e1;
-      font-weight: 400;
-    }
-
-    /* Meta Cards */
-    .meta-bar {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      border-bottom: 1px solid var(--border);
-      background: #f8fafc;
-    }
-
-    .meta-item {
-      padding: 18px 24px;
-      border-right: 1px solid var(--border);
-    }
-
-    .meta-item:last-child {
-      border-right: none;
-    }
-
-    .meta-item .meta-label {
+    .party-label {
       font-size: 11px;
       font-weight: 700;
       text-transform: uppercase;
-      color: var(--text-muted);
-      letter-spacing: 0.5px;
+      letter-spacing: 0.8px;
+      color: var(--slate-500);
+      margin-bottom: 8px;
     }
 
-    .meta-item .meta-value {
+    .party-name {
       font-size: 15px;
       font-weight: 700;
-      color: var(--primary);
+      color: var(--slate-900);
+      margin-bottom: 4px;
+    }
+
+    .party-meta {
+      font-size: 12px;
+      color: var(--slate-500);
+      line-height: 1.5;
+    }
+
+    /* Meta Timeline Row */
+    .timeline-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px 18px;
+      margin-bottom: 28px;
+    }
+
+    .timeline-cell {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .timeline-cell span.label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--slate-500);
+    }
+
+    .timeline-cell span.value {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--slate-800);
+      margin-top: 2px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Project Summary Banner */
+    .project-banner {
+      background: linear-gradient(to right, #eff6ff, #f8fafc);
+      border-left: 4px solid var(--accent-blue);
+      border-radius: 6px;
+      padding: 12px 16px;
+      margin-bottom: 24px;
+    }
+
+    .project-banner h3 {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--primary-blue);
+      text-transform: uppercase;
+    }
+
+    .project-banner p {
+      font-size: 12px;
+      color: var(--slate-700);
       margin-top: 2px;
     }
 
-    /* Section Body */
-    .bill-body {
-      padding: 36px 40px;
-    }
-
-    .section-title {
-      font-size: 16px;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 16px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .section-title::before {
-      content: "";
-      width: 4px;
-      height: 18px;
-      background: var(--accent);
-      border-radius: 2px;
-    }
-
-    /* Tables */
-    .table-container {
-      border: 1px solid var(--border);
-      border-radius: 12px;
+    /* Line Items Table */
+    .table-card {
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
       overflow: hidden;
-      margin-bottom: 32px;
+      margin-bottom: 28px;
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
       text-align: left;
-      font-size: 13px;
     }
 
     thead {
-      background: #f1f5f9;
+      background: var(--slate-100);
+      border-bottom: 1px solid var(--border-color);
     }
 
     th {
       padding: 12px 16px;
+      font-size: 11px;
       font-weight: 700;
       text-transform: uppercase;
-      font-size: 11px;
-      color: var(--text-muted);
-      letter-spacing: 0.5px;
-      border-bottom: 1px solid var(--border);
+      letter-spacing: 0.6px;
+      color: var(--slate-700);
     }
 
     td {
       padding: 14px 16px;
-      border-bottom: 1px solid var(--border);
-      vertical-align: middle;
+      font-size: 13px;
+      border-bottom: 1px solid var(--border-color);
+      vertical-align: top;
     }
 
-    tr:last-child td {
+    tbody tr:last-child td {
       border-bottom: none;
     }
 
-    tbody tr:hover {
-      background-color: #f8fafc;
+    tbody tr:nth-child(even) {
+      background: #fafbfc;
     }
 
-    .module-num {
-      font-family: 'JetBrains Mono', monospace;
-      font-weight: 700;
-      color: var(--text-muted);
+    .col-sr {
       width: 40px;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      color: var(--slate-500);
     }
 
-    .module-title {
+    .item-title {
       font-weight: 700;
-      color: var(--primary);
-      font-size: 14px;
-      margin-bottom: 2px;
+      color: var(--slate-900);
+      font-size: 13px;
     }
 
-    .module-desc {
+    .item-desc {
       font-size: 12px;
-      color: var(--text-muted);
+      color: var(--slate-500);
+      margin-top: 2px;
       line-height: 1.4;
     }
 
-    .tag {
+    .tech-pill {
       display: inline-block;
-      font-size: 10px;
+      font-size: 9px;
       font-weight: 700;
       text-transform: uppercase;
+      letter-spacing: 0.4px;
       padding: 2px 6px;
-      border-radius: 4px;
+      border-radius: 3px;
+      background: #e0f2fe;
+      color: #0369a1;
       margin-top: 4px;
-      background: var(--accent-light);
-      color: var(--accent);
     }
 
-    .amount-col {
+    .col-center {
+      text-align: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--slate-700);
+    }
+
+    .col-amount {
       text-align: right;
       font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
       font-weight: 700;
-      font-size: 14px;
+      color: var(--slate-900);
       white-space: nowrap;
     }
 
-    /* Financial Summary */
-    .financial-summary {
+    /* Summary & Bank Grid */
+    .summary-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 24px;
-      background: #f8fafc;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 24px;
-      margin-bottom: 32px;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 28px;
+      margin-bottom: 28px;
     }
 
-    .terms-box h5 {
-      font-size: 12px;
+    .bank-box {
+      border: 1px solid var(--border-color);
+      background: var(--slate-50);
+      border-radius: 8px;
+      padding: 16px 20px;
+    }
+
+    .bank-box h4 {
+      font-size: 11px;
       font-weight: 700;
       text-transform: uppercase;
-      color: var(--text-muted);
-      margin-bottom: 8px;
+      letter-spacing: 0.6px;
+      color: var(--slate-700);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
 
-    .terms-box ul {
-      list-style-type: disc;
-      padding-left: 18px;
+    .bank-row {
+      display: flex;
+      justify-content: space-between;
       font-size: 12px;
-      color: var(--text-muted);
+      padding: 3px 0;
+    }
+
+    .bank-row span.label {
+      color: var(--slate-500);
+      font-weight: 500;
+    }
+
+    .bank-row span.value {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      color: var(--slate-900);
+    }
+
+    .calculation-box {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+    }
+
+    .calc-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      font-size: 13px;
+      color: var(--slate-700);
+    }
+
+    .calc-row.discount {
+      color: #b91c1c;
+      font-weight: 600;
+    }
+
+    .calc-row.highlight {
+      border-top: 2px solid var(--slate-900);
+      border-bottom: 2px solid var(--slate-900);
+      padding: 10px 0;
+      margin-top: 6px;
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--slate-900);
+    }
+
+    .calc-row.highlight .amount {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 20px;
+      color: var(--primary-blue);
+    }
+
+    .amount-words {
+      font-size: 11px;
+      font-style: italic;
+      color: var(--slate-500);
+      text-align: right;
+      margin-top: 4px;
+    }
+
+    /* Terms Section */
+    .terms-section {
+      border-top: 1px solid var(--border-color);
+      padding-top: 18px;
+      margin-bottom: 28px;
+    }
+
+    .terms-section h4 {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--slate-700);
+      margin-bottom: 6px;
+    }
+
+    .terms-section ol {
+      padding-left: 18px;
+      font-size: 11px;
+      color: var(--slate-500);
       line-height: 1.6;
     }
 
-    .totals-box {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .total-row {
+    /* Signatures */
+    .signatures-row {
       display: flex;
       justify-content: space-between;
-      font-size: 13px;
-      padding: 4px 0;
-      color: var(--text-muted);
+      padding-top: 20px;
+      border-top: 1px dashed var(--border-color);
     }
 
-    .total-row.highlight {
-      border-top: 2px solid var(--border);
-      padding-top: 10px;
-      font-size: 16px;
-      font-weight: 800;
-      color: var(--primary);
-    }
-
-    .total-row.highlight .amount {
-      color: var(--success);
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 22px;
-    }
-
-    .discount-badge {
-      color: #b91c1c;
-      font-weight: 700;
-      font-family: 'JetBrains Mono', monospace;
-    }
-
-    /* Signatures */
-    .signature-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 40px;
-      margin-top: 40px;
-      padding-top: 24px;
-      border-top: 1px dashed var(--border);
-    }
-
-    .signature-box {
+    .sig-col {
+      width: 220px;
       text-align: center;
     }
 
-    .signature-line {
-      height: 60px;
-      border-bottom: 1px solid var(--border);
+    .sig-space {
+      height: 50px;
+      border-bottom: 1px solid var(--slate-300);
       margin-bottom: 8px;
       display: flex;
       align-items: flex-end;
       justify-content: center;
       font-family: 'Brush Script MT', cursive, sans-serif;
-      font-size: 22px;
-      color: var(--accent);
+      font-size: 24px;
+      color: var(--primary-blue);
     }
 
-    .signature-box p {
+    .sig-title {
       font-size: 12px;
       font-weight: 700;
+      color: var(--slate-900);
       text-transform: uppercase;
-      color: var(--text-main);
     }
 
-    .signature-box span {
+    .sig-sub {
       font-size: 11px;
-      color: var(--text-muted);
-      text-transform: uppercase;
+      color: var(--slate-500);
     }
 
-    /* Print Styles */
+    /* Print Formatting */
+    @page {
+      size: A4;
+      margin: 10mm;
+    }
+
     @media print {
       body {
-        background: white;
+        background: #ffffff;
         padding: 0;
       }
 
-      .bill-container {
+      .invoice-wrapper {
         border: none;
         box-shadow: none;
         max-width: 100%;
       }
 
-      .print-btn {
+      .top-action-bar {
         display: none;
       }
-    }
 
-    @media (max-width: 768px) {
-      .header-details, .meta-bar, .financial-summary, .signature-grid {
-        grid-template-columns: 1fr;
-      }
-      .meta-item {
-        border-right: none;
-        border-bottom: 1px solid var(--border);
-      }
-      .bill-body {
-        padding: 20px;
-      }
-      .bill-header {
-        padding: 24px 20px;
+      .invoice-content {
+        padding: 10px 16px;
       }
     }
   </style>
 </head>
 <body>
 
-  <div class="bill-container">
+  <div class="invoice-wrapper">
     
-    <!-- ── HEADER ── -->
-    <header class="bill-header">
-      <div class="top-actions">
-        <div class="brand-title">
-          <span>📐 MTS DECOR</span>
-          <span class="brand-badge">SPECIAL CONTRACTOR ESTIMATE</span>
-        </div>
-        <button class="print-btn" onclick="window.print()">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="6 9 6 2 18 2 18 9"></polyline>
-            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
-            <rect x="6" y="14" width="12" height="8"></rect>
-          </svg>
-          PRINT / SAVE PDF
-        </button>
+    <!-- ── WEB ACTIONS RIBBON ── -->
+    <div class="top-action-bar">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-weight: 700; letter-spacing: 0.5px;">MS PRO CONTRACTOR SUITE</span>
+        <span class="status-pill">✓ COMPLETED &amp; DELIVERED</span>
       </div>
-
-      <div class="header-details">
-        <div class="header-col">
-          <h4>CLIENT DETAILS</h4>
-          <p>MTS DECOR</p>
-          <div class="muted-desc">Shri Madanlal Suthar &amp; Shri Jagdish Suthar</div>
-          <div class="muted-desc">Civil &amp; Interior Contractors &bull; Measurement Specialists</div>
-        </div>
-        <div class="header-col" style="text-align: right;">
-          <h4>SOFTWARE DEVELOPER</h4>
-          <p>HITESH SUTHAR</p>
-          <div class="muted-desc">Lead Full-Stack Software Engineer</div>
-          <div class="muted-desc">Specialized Contractor Systems Development</div>
-        </div>
-      </div>
-    </header>
-
-    <!-- ── METADATA BAR ── -->
-    <div class="meta-bar">
-      <div class="meta-item">
-        <div class="meta-label">INVOICE / BILL NO.</div>
-        <div class="meta-value">INV-MTS-2026-001</div>
-      </div>
-      <div class="meta-item">
-        <div class="meta-label">DATE OF ISSUANCE</div>
-        <div class="meta-value">07 SEPT 2026</div>
-      </div>
-      <div class="meta-item">
-        <div class="meta-label">RATE TIER</div>
-        <div class="meta-value" style="color: var(--accent);">IN-HOUSE BUDGET</div>
-      </div>
-      <div class="meta-item">
-        <div class="meta-label">DEPLOYMENT STATUS</div>
-        <div class="meta-value" style="color: var(--success);">LIVE ON CLOUD</div>
-      </div>
+      <button class="action-btn" onclick="window.print()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 6 2 18 2 18 9"></polyline>
+          <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+          <rect x="6" y="14" width="12" height="8"></rect>
+        </svg>
+        PRINT / SAVE AS PDF
+      </button>
     </div>
 
-    <!-- ── BODY CONTENT ── -->
-    <div class="bill-body">
+    <div class="invoice-content">
 
-      <!-- PROJECT SCOPE SUMMARY -->
-      <h3 class="section-title">1. Software Development &amp; Feature Modules</h3>
-      
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th style="width: 50px;">#</th>
-              <th>MODULE &amp; DELIVERABLE SPECIFICATION</th>
-              <th style="width: 110px; text-align: center;">STATUS</th>
-              <th style="width: 130px; text-align: right;">COST (INR)</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td class="module-num">01</td>
-              <td>
-                <div class="module-title">Core Measurement Workbook &amp; Formula Engine</div>
-                <div class="module-desc">Dynamic multi-area measurement blocks, real-time formula calculations (SFT, RFT, NOS, SQM), subtraction/deduction engine (- LESS), and executive summary roll-up dashboard.</div>
-                <span class="tag">REACT 19 + VITE</span>
-              </td>
-              <td style="text-align: center; font-weight: 600; color: var(--success);">Delivered</td>
-              <td class="amount-col">₹ 2,200</td>
-            </tr>
-
-            <tr>
-              <td class="module-num">02</td>
-              <td>
-                <div class="module-title">Mobile "Quick-Measure" Field Mode with Large Keypad</div>
-                <div class="module-desc">One-handed on-site touch interface with oversized numeric keypad, tape fraction shortcuts (+¼", +½", +¾"), haptic vibration, voice dictation, room presets, and categorized civil/interior work items.</div>
-                <span class="tag">MOBILE UI / HAPTIC</span>
-              </td>
-              <td style="text-align: center; font-weight: 600; color: var(--success);">Delivered</td>
-              <td class="amount-col">₹ 1,800</td>
-            </tr>
-
-            <tr>
-              <td class="module-num">03</td>
-              <td>
-                <div class="module-title">Interim Payment Certificate (RA Bill) &amp; Rates Module</div>
-                <div class="module-desc">Dual-mode toggle between pure Measurement Sheet and Billing Mode. Unit rate assignment, line calculations, GST/tax computation, and contractor bill summary generation.</div>
-                <span class="tag">BILLING &amp; GST</span>
-              </td>
-              <td style="text-align: center; font-weight: 600; color: var(--success);">Delivered</td>
-              <td class="amount-col">₹ 1,400</td>
-            </tr>
-
-            <tr>
-              <td class="module-num">04</td>
-              <td>
-                <div class="module-title">Cloud Database Backend &amp; 1-Second Auto-Save</div>
-                <div class="module-desc">Node.js Express REST API connected to MongoDB Atlas Cloud. Non-blocking 1-second auto-save debounce ensuring zero data loss during site measurement sessions.</div>
-                <span class="tag">NODE.JS + MONGODB</span>
-              </td>
-              <td style="text-align: center; font-weight: 600; color: var(--success);">Delivered</td>
-              <td class="amount-col">₹ 1,600</td>
-            </tr>
-
-            <tr>
-              <td class="module-num">05</td>
-              <td>
-                <div class="module-title">Enterprise Security, 2-Factor PIN &amp; Cloudflare Bot Defense</div>
-                <div class="module-desc">Multi-user RBAC (Admin, Madanlal, Jagdish), 6-digit identity PIN verification, Cloudflare Turnstile bot defense, Bcrypt encryption, and JWT token protection.</div>
-                <span class="tag">SECURITY &amp; 2FA</span>
-              </td>
-              <td style="text-align: center; font-weight: 600; color: var(--success);">Delivered</td>
-              <td class="amount-col">₹ 1,200</td>
-            </tr>
-
-            <tr>
-              <td class="module-num">06</td>
-              <td>
-                <div class="module-title">Automated Google Drive Backup &amp; JSON Snapshot System</div>
-                <div class="module-desc">Background Google Drive API v3 sync on every save (debounced 25s), 12-hour cron backup scheduler, Admin Drive health panel, and 1-click database JSON download.</div>
-                <span class="tag">GOOGLE DRIVE API</span>
-              </td>
-              <td style="text-align: center; font-weight: 600; color: var(--success);">Delivered</td>
-              <td class="amount-col">₹ 1,200</td>
-            </tr>
-
-            <tr>
-              <td class="module-num">07</td>
-              <td>
-                <div class="module-title">Client-Ready Multi-Sheet Excel &amp; Printable PDF Engines</div>
-                <div class="module-desc">Official branded multi-sheet Excel (.xlsx) export with automatic formatting, formulas, and contractor headers. Print-optimized PDF view with company signatures.</div>
-                <span class="tag">EXCEL &amp; PDF</span>
-              </td>
-              <td style="text-align: center; font-weight: 600; color: var(--success);">Delivered</td>
-              <td class="amount-col">₹ 1,000</td>
-            </tr>
-
-            <tr>
-              <td class="module-num">08</td>
-              <td>
-                <div class="module-title">Desktop App Packaging &amp; Automated CI/CD Workflows</div>
-                <div class="module-desc">Electron configuration for Windows (.exe installer &amp; portable) and macOS (.dmg). GitHub Actions workflow automated compilation on every repository push.</div>
-                <span class="tag">ELECTRON + GITHUB ACTIONS</span>
-              </td>
-              <td style="text-align: center; font-weight: 600; color: var(--success);">Delivered</td>
-              <td class="amount-col">₹ 1,500</td>
-            </tr>
-
-            <tr>
-              <td class="module-num">09</td>
-              <td>
-                <div class="module-title">Admin Control Panel &amp; Rotating Founder Carousel</div>
-                <div class="module-desc">Dedicated admin panel for password resets, new user creation, dynamic quote &amp; photo carousel on login, project audits, and system diagnostics.</div>
-                <span class="tag">ADMIN PORTAL</span>
-              </td>
-              <td style="text-align: center; font-weight: 600; color: var(--success);">Delivered</td>
-              <td class="amount-col">₹ 900</td>
-            </tr>
-          </tbody>
-        </table>
+      <!-- ── INVOICE HEADER ── -->
+      <div class="invoice-header">
+        <div class="company-brand">
+          <h1>📐 MTS DECOR</h1>
+          <p>Civil &amp; Interior Contractors &bull; Architectural Woodwork Specialists</p>
+          <p style="font-size: 11px; color: var(--slate-500); margin-top: 2px;">
+            Software Development &amp; Technical Engineering Division
+          </p>
+        </div>
+        <div class="invoice-title-block">
+          <h2>TAX INVOICE</h2>
+          <div class="invoice-number">BILL NO: <strong>INV-MTS-2026-001</strong></div>
+          <div style="font-size: 11px; color: var(--slate-500); margin-top: 2px;">
+            ORIGINAL FOR RECIPIENT
+          </div>
+        </div>
       </div>
 
-      <!-- INFRASTRUCTURE & MAINTENANCE -->
-      <h3 class="section-title">2. Cloud Infrastructure &amp; Licensing</h3>
-
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th style="width: 50px;">#</th>
-              <th>SERVICE / RESOURCE</th>
-              <th style="width: 140px;">TYPE</th>
-              <th style="width: 140px; text-align: right;">ANNUAL RECURRING</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td class="module-num">A</td>
-              <td>
-                <div class="module-title">MongoDB Atlas Cloud Database</div>
-                <div class="module-desc">M0 Free Tier Cluster with SSL encryption, daily backups, and 99.99% availability.</div>
-              </td>
-              <td>Cloud Database</td>
-              <td class="amount-col" style="color: var(--success);">₹ 0 (Free)</td>
-            </tr>
-            <tr>
-              <td class="module-num">B</td>
-              <td>
-                <div class="module-title">Render Cloud Hosting &amp; SSL Certificates</div>
-                <div class="module-desc">Global CDN, automated continuous deployment from GitHub, custom domain support.</div>
-              </td>
-              <td>Web Service</td>
-              <td class="amount-col" style="color: var(--success);">₹ 0 (Free)</td>
-            </tr>
-            <tr>
-              <td class="module-num">C</td>
-              <td>
-                <div class="module-title">Cloudflare Turnstile Bot Defense</div>
-                <div class="module-desc">Enterprise-grade visitor verification and brute-force protection with zero user friction.</div>
-              </td>
-              <td>Security Gateway</td>
-              <td class="amount-col" style="color: var(--success);">₹ 0 (Free)</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- FINANCIAL SUMMARY & TERMS -->
-      <div class="financial-summary">
-        <div class="terms-box">
-          <h5>SPECIAL TERMS &amp; INCLUSIONS</h5>
-          <ul>
-            <li><strong>Full IP &amp; Source Code Ownership</strong>: 100% lifetime ownership transferred to MTS Decor.</li>
-            <li><strong>Zero Monthly / Yearly Software Subscription</strong>: Built on permanent free-tier cloud architectures (saving ₹20,000+ per year in recurring SaaS bills).</li>
-            <li><strong>Multi-Device Access</strong>: Usable on unlimited phones, tablets, laptops, and desktop computers.</li>
-            <li><strong>Free Ongoing Updates</strong>: Minor tweaks, unit adjustments, and maintenance included.</li>
-          </ul>
+      <!-- ── PARTIES GRID ── -->
+      <div class="parties-grid">
+        <div class="party-card">
+          <div class="party-label">BILLED TO (CLIENT)</div>
+          <div class="party-name">MTS DECOR</div>
+          <div class="party-meta">
+            <strong>Attn:</strong> Shri Madanlal Suthar &amp; Shri Jagdish Suthar<br>
+            <strong>Nature:</strong> Civil &amp; Interior Contracting Firm<br>
+            <strong>Location:</strong> Mumbai, Maharashtra, India
+          </div>
         </div>
 
-        <div class="totals-box">
-          <div class="total-row">
-            <span>Subtotal (All 9 Modules):</span>
-            <span style="font-family: 'JetBrains Mono', monospace; font-weight: 600;">₹ 12,800</span>
+        <div class="party-card">
+          <div class="party-label">SERVICE PROVIDER / DEVELOPER</div>
+          <div class="party-name">HITESH SUTHAR</div>
+          <div class="party-meta">
+            <strong>Role:</strong> Lead Full-Stack Software Engineer &amp; Architect<br>
+            <strong>Specialization:</strong> Custom Contractor &amp; Engineering Software<br>
+            <strong>Contact:</strong> hiteshsuthar911@gmail.com
           </div>
-          <div class="total-row">
-            <span>Special In-House / Family Concession:</span>
-            <span class="discount-badge">- ₹ 2,801</span>
+        </div>
+      </div>
+
+      <!-- ── TIMELINE BAR ── -->
+      <div class="timeline-row">
+        <div class="timeline-cell">
+          <span class="label">Invoice Date</span>
+          <span class="value">07-SEP-2026</span>
+        </div>
+        <div class="timeline-cell">
+          <span class="label">System Version</span>
+          <span class="value">MS PRO v2.3.0</span>
+        </div>
+        <div class="timeline-cell">
+          <span class="label">Delivery Mode</span>
+          <span class="value">CLOUD + DESKTOP</span>
+        </div>
+        <div class="timeline-cell">
+          <span class="label">Payment Status</span>
+          <span class="value" style="color: var(--emerald-600);">SETTLED / PAID</span>
+        </div>
+      </div>
+
+      <!-- ── PROJECT TITLE BANNER ── -->
+      <div class="project-banner">
+        <h3>PROJECT: MTS DECOR — MS PRO CONTRACTOR MEASUREMENT &amp; RA BILLING SYSTEM</h3>
+        <p>Complete proprietary software application including web portal, mobile field mode, cloud database, automated backups, and desktop executables.</p>
+      </div>
+
+      <!-- ── SCOPE OF DELIVERABLES TABLE ── -->
+      <div class="table-card">
+        <table>
+          <thead>
+            <tr>
+              <th class="col-sr">#</th>
+              <th>SCOPE OF DELIVERABLES / MODULE SPECIFICATION</th>
+              <th class="col-center" style="width: 70px;">QTY</th>
+              <th class="col-center" style="width: 100px;">RATE (₹)</th>
+              <th class="col-amount" style="width: 110px;">AMOUNT (₹)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="col-sr">01</td>
+              <td>
+                <div class="item-title">Core Measurement Workbook &amp; Formula Engine</div>
+                <div class="item-desc">Multi-area grouping, real-time formula computation (SFT, RFT, NOS, SQM), subtraction/deduction engine (- LESS), and executive summary roll-ups.</div>
+                <span class="tech-pill">REACT 19 &bull; FRONTEND</span>
+              </td>
+              <td class="col-center">1 Module</td>
+              <td class="col-center">2,200.00</td>
+              <td class="col-amount">2,200.00</td>
+            </tr>
+
+            <tr>
+              <td class="col-sr">02</td>
+              <td>
+                <div class="item-title">Mobile "Quick-Measure" Field Mode with Keypad</div>
+                <div class="item-desc">One-handed on-site interface with oversized numeric keypad, tape fraction shortcuts (+¼", +½", +¾"), voice dictation, room presets, and work item catalog.</div>
+                <span class="tech-pill">MOBILE UI &bull; HAPTIC</span>
+              </td>
+              <td class="col-center">1 Module</td>
+              <td class="col-center">1,800.00</td>
+              <td class="col-amount">1,800.00</td>
+            </tr>
+
+            <tr>
+              <td class="col-sr">03</td>
+              <td>
+                <div class="item-title">Interim Payment Certificate (RA Bill) &amp; Rates Engine</div>
+                <div class="item-desc">Dual-mode toggle between pure Measurement Sheet and Billing Mode. Unit rates, line calculations, GST/tax computation, and contractor bill summary generation.</div>
+                <span class="tech-pill">BILLING &bull; TAX</span>
+              </td>
+              <td class="col-center">1 Module</td>
+              <td class="col-center">1,400.00</td>
+              <td class="col-amount">1,400.00</td>
+            </tr>
+
+            <tr>
+              <td class="col-sr">04</td>
+              <td>
+                <div class="item-title">Cloud Database Backend &amp; 1-Second Auto-Save</div>
+                <div class="item-desc">Node.js Express REST API connected to MongoDB Atlas Cloud. Non-blocking 1-second debounced auto-save ensuring zero data loss on site.</div>
+                <span class="tech-pill">NODE.JS &bull; MONGODB</span>
+              </td>
+              <td class="col-center">1 Module</td>
+              <td class="col-center">1,600.00</td>
+              <td class="col-amount">1,600.00</td>
+            </tr>
+
+            <tr>
+              <td class="col-sr">05</td>
+              <td>
+                <div class="item-title">Enterprise Security, 2-Factor PIN &amp; Cloudflare Defense</div>
+                <div class="item-desc">Multi-user RBAC (Admin, Madanlal, Jagdish), 6-digit identity PIN verification, Cloudflare Turnstile bot defense, Bcrypt encryption, and JWT token protection.</div>
+                <span class="tech-pill">SECURITY &bull; 2FA</span>
+              </td>
+              <td class="col-center">1 Module</td>
+              <td class="col-center">1,200.00</td>
+              <td class="col-amount">1,200.00</td>
+            </tr>
+
+            <tr>
+              <td class="col-sr">06</td>
+              <td>
+                <div class="item-title">Automated Google Drive Backup &amp; JSON Snapshot System</div>
+                <div class="item-desc">Background Google Drive API v3 sync on every save (debounced 25s), 12-hour cron scheduler, Admin Drive health panel, and 1-click database JSON download.</div>
+                <span class="tech-pill">GOOGLE DRIVE API</span>
+              </td>
+              <td class="col-center">1 Module</td>
+              <td class="col-center">1,200.00</td>
+              <td class="col-amount">1,200.00</td>
+            </tr>
+
+            <tr>
+              <td class="col-sr">07</td>
+              <td>
+                <div class="item-title">Client-Ready Multi-Sheet Excel &amp; Printable PDF Engines</div>
+                <div class="item-desc">Official branded multi-sheet Excel (.xlsx) export with automatic formatting, formulas, and contractor headers. Print-optimized PDF view with company signatures.</div>
+                <span class="tech-pill">EXCEL &bull; PDF</span>
+              </td>
+              <td class="col-center">1 Module</td>
+              <td class="col-center">1,000.00</td>
+              <td class="col-amount">1,000.00</td>
+            </tr>
+
+            <tr>
+              <td class="col-sr">08</td>
+              <td>
+                <div class="item-title">Desktop App Packaging &amp; Automated CI/CD Workflows</div>
+                <div class="item-desc">Electron configuration for Windows (.exe installer &amp; portable) and macOS (.dmg). GitHub Actions workflow automated compilation on every repository push.</div>
+                <span class="tech-pill">ELECTRON &bull; CI/CD</span>
+              </td>
+              <td class="col-center">1 Module</td>
+              <td class="col-center">1,500.00</td>
+              <td class="col-amount">1,500.00</td>
+            </tr>
+
+            <tr>
+              <td class="col-sr">09</td>
+              <td>
+                <div class="item-title">Admin Control Panel &amp; Rotating Founder Carousel</div>
+                <div class="item-desc">Dedicated admin panel for password resets, new user creation, dynamic quote &amp; photo carousel on login, project audits, and system diagnostics.</div>
+                <span class="tech-pill">ADMIN PORTAL</span>
+              </td>
+              <td class="col-center">1 Module</td>
+              <td class="col-center">900.00</td>
+              <td class="col-amount">900.00</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ── SUMMARY & BANKING SECTION ── -->
+      <div class="summary-grid">
+        <div class="bank-box">
+          <h4>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="1" y="4" width="22" height="16" radius="2"></rect>
+              <line x1="1" y1="10" x2="23" y2="10"></line>
+            </svg>
+            SETTLEMENT &amp; REMITTANCE PARTICULARS
+          </h4>
+          <div class="bank-row">
+            <span class="label">Beneficiary Name:</span>
+            <span class="value">Hitesh Jagdish Suthar</span>
           </div>
-          <div class="total-row">
-            <span>Cloud Hosting &amp; Server Setup:</span>
-            <span style="font-family: 'JetBrains Mono', monospace; font-weight: 600; color: var(--success);">FREE</span>
+          <div class="bank-row">
+            <span class="label">Settlement Mode:</span>
+            <span class="value">Direct UPI / Bank Transfer</span>
           </div>
-          <div class="total-row highlight">
+          <div class="bank-row">
+            <span class="label">Cloud Recurring Fee:</span>
+            <span class="value" style="color: var(--emerald-600);">₹ 0.00 (Free Tier)</span>
+          </div>
+          <div class="bank-row">
+            <span class="label">Annual Savings:</span>
+            <span class="value" style="color: var(--emerald-600);">₹ 25,000+ / Year</span>
+          </div>
+        </div>
+
+        <div class="calculation-box">
+          <div class="calc-row">
+            <span>Gross Subtotal:</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-weight: 600;">₹ 12,800.00</span>
+          </div>
+          <div class="calc-row discount">
+            <span>Special In-House / Partner Concession:</span>
+            <span style="font-family: 'JetBrains Mono', monospace;">- ₹ 2,801.00</span>
+          </div>
+          <div class="calc-row">
+            <span>Cloud Infrastructure &amp; SSL Deployment:</span>
+            <span style="font-family: 'JetBrains Mono', monospace; color: var(--emerald-600); font-weight: 700;">INCLUDED (FREE)</span>
+          </div>
+          <div class="calc-row highlight">
             <span>NET PAYABLE TOTAL:</span>
-            <span class="amount">₹ 9,999</span>
+            <span class="amount">₹ 9,999.00</span>
           </div>
-          <div style="font-size: 11px; color: var(--text-muted); text-align: right; text-transform: uppercase;">
-            (Nine Thousand Nine Hundred Ninety-Nine Rupees Only)
+          <div class="amount-words">
+            INR Nine Thousand Nine Hundred Ninety-Nine Only
           </div>
         </div>
       </div>
 
-      <!-- SIGNATURE SECTION -->
-      <div class="signature-grid">
-        <div class="signature-box">
-          <div class="signature-line">Hitesh Suthar</div>
-          <p>Hitesh Suthar</p>
-          <span>Software Developer &amp; Architect</span>
+      <!-- ── TERMS & CONDITIONS ── -->
+      <div class="terms-section">
+        <h4>TERMS OF ENGAGEMENT &amp; INTELLECTUAL PROPERTY</h4>
+        <ol>
+          <li><strong>100% Intellectual Property Transfer:</strong> All source code, repositories, database schemas, and assets are fully owned by MTS Decor.</li>
+          <li><strong>Zero Recurring SaaS Subscriptions:</strong> Built entirely on persistent enterprise free-tier cloud architectures (MongoDB Atlas + Render + Cloudflare), avoiding monthly recurring vendor licenses.</li>
+          <li><strong>Multi-Platform Guarantee:</strong> Verified cross-platform compatibility across Mobile (Android/iOS browser), Tablets, Web, and Desktop (Windows/macOS).</li>
+          <li><strong>Defect Liability &amp; Warranty:</strong> Lifetime minor adjustments, unit additions, and cloud synchronization support included.</li>
+        </ol>
+      </div>
+
+      <!-- ── SIGNATURES ── -->
+      <div class="signatures-row">
+        <div class="sig-col">
+          <div class="sig-space">Hitesh Suthar</div>
+          <div class="sig-title">Hitesh Suthar</div>
+          <div class="sig-sub">Software Architect &amp; Developer</div>
         </div>
 
-        <div class="signature-box">
-          <div class="signature-line">MTS Decor</div>
-          <p>Madanlal / Jagdish Suthar</p>
-          <span>For MTS Decor (Authorized Signatory)</span>
+        <div class="sig-col">
+          <div class="sig-space">MTS Decor</div>
+          <div class="sig-title">Madanlal / Jagdish Suthar</div>
+          <div class="sig-sub">Authorized Signatory &bull; MTS DECOR</div>
         </div>
       </div>
 
