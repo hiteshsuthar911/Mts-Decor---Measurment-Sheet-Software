@@ -38,6 +38,8 @@ export const WORK_CATEGORIES = [
   'Brick Bat',
   'Brick Bat Remove',
   'Brick Work Remove',
+  'Epoxy Filling',
+  'Acid Wash',
   'Other'
 ];
 

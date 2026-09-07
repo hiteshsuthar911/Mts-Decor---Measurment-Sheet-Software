@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { WORK_CATEGORIES, COMMON_ROOM_AREAS } from '../data/categories';
 import LineItemRow from './LineItemRow';
 import { calculateAreaTotals, formatNumber, formatCurrency } from '../utils/calculations';
@@ -16,6 +16,41 @@ export default function AreaBlock({
   onMoveArea
 }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [customCategories, setCustomCategories] = useState(() => {
+    try {
+      const saved = localStorage.getItem('mts_custom_work_categories');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const allCategories = useMemo(() => {
+    const list = [...WORK_CATEGORIES];
+    customCategories.forEach((cat) => {
+      if (!list.includes(cat)) list.push(cat);
+    });
+    return list;
+  }, [customCategories]);
+
+  const handleAddCustomCategory = (categoryName) => {
+    if (!categoryName || !categoryName.trim()) return;
+    const trimmed = categoryName.trim();
+    if (!allCategories.includes(trimmed)) {
+      const updated = [...customCategories, trimmed];
+      setCustomCategories(updated);
+      try {
+        localStorage.setItem('mts_custom_work_categories', JSON.stringify(updated));
+      } catch {}
+    }
+    handleFieldChange('parentCategory', trimmed);
+  };
+
+  const handlePromptAddCategory = () => {
+    const entered = window.prompt('Enter new Work Category / Detail name:');
+    if (entered) handleAddCustomCategory(entered);
+  };
+
   const totals = calculateAreaTotals(area);
 
   const handleFieldChange = (field, value) => {
@@ -178,18 +213,40 @@ export default function AreaBlock({
 
           {/* Work Category (Work Detail) */}
           <div className="col-12 col-md-4">
-            <label className="form-label extra-small text-muted fw-bold mb-1">Work Category (Work Detail)</label>
-            <select
-              className="form-select form-select-sm fw-semibold"
-              value={area.parentCategory || 'Floor Tiles'}
-              onChange={(e) => handleFieldChange('parentCategory', e.target.value)}
-            >
-              {WORK_CATEGORIES.map((catKey) => (
-                <option key={catKey} value={catKey}>
-                  {catKey}
-                </option>
+            <div className="d-flex justify-content-between align-items-center mb-1">
+              <label className="form-label extra-small text-muted fw-bold mb-0">Work Category (Work Detail)</label>
+              <button
+                type="button"
+                className="btn btn-link p-0 text-primary extra-small text-decoration-none fw-semibold"
+                onClick={handlePromptAddCategory}
+                title="Add a custom category option"
+              >
+                <i className="bi bi-plus-circle me-1"></i>+ Add Option
+              </button>
+            </div>
+            <div className="input-group input-group-sm">
+              <input
+                type="text"
+                list={`work-suggestions-${area.id}`}
+                className="form-control form-control-sm fw-semibold"
+                placeholder="e.g. Epoxy Filling, Acid Wash"
+                value={area.parentCategory || ''}
+                onChange={(e) => handleFieldChange('parentCategory', e.target.value)}
+              />
+              <button
+                type="button"
+                className="btn btn-outline-primary"
+                onClick={handlePromptAddCategory}
+                title="Add new custom category to list"
+              >
+                <i className="bi bi-plus-lg"></i>
+              </button>
+            </div>
+            <datalist id={`work-suggestions-${area.id}`}>
+              {allCategories.map((catKey) => (
+                <option key={catKey} value={catKey} />
               ))}
-            </select>
+            </datalist>
           </div>
 
           {/* Conditional "Other" inputs */}
