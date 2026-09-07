@@ -1,5 +1,7 @@
 // Central axios-like fetch wrapper for the MS PRO API
-const BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:5001/api');
+const isElectron = typeof window !== 'undefined' && (window.isElectron || window.location.protocol === 'file:');
+const DEFAULT_PROD_URL = isElectron ? 'https://mts-decor-measurment-sheet-software.onrender.com/api' : '/api';
+const BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? DEFAULT_PROD_URL : (isElectron ? 'https://mts-decor-measurment-sheet-software.onrender.com/api' : 'http://localhost:5001/api'));
 
 function getToken() {
   try {

@@ -1,15 +1,24 @@
 {
-  "name": "ms",
+  "name": "mts-decor-software",
+  "productName": "MTS Decor",
+  "description": "Civil & Interior Measurement Sheet & RA Billing Software",
+  "author": "Hitesh Jagdish Suthar <hiteshsuthar911@gmail.com>",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
+  "main": "electron/main.js",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "start": "node server/index.js",
     "postinstall": "cd server && npm install",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "electron:dev": "concurrently -k \"cross-env BROWSER=none npm run dev\" \"wait-on tcp:5173 && cross-env ELECTRON_DEV_URL=http://localhost:5173 electron .\"",
+    "electron:build": "npm run build && electron-builder",
+    "electron:build:win": "npm run build && electron-builder --win",
+    "electron:build:mac": "npm run build && electron-builder --mac",
+    "electron:build:dir": "npm run build && electron-builder --dir"
   },
   "dependencies": {
     "@vitejs/plugin-react": "^6.1.0",
@@ -24,6 +33,52 @@
   "devDependencies": {
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
-    "oxlint": "^1.79.0"
+    "concurrently": "^10.0.5",
+    "cross-env": "^10.1.0",
+    "electron": "^44.2.0",
+    "electron-builder": "^26.15.3",
+    "oxlint": "^1.79.0",
+    "wait-on": "^9.1.0"
+  },
+  "build": {
+    "appId": "com.mtsdecor.measurementsheet",
+    "productName": "MTS Decor",
+    "copyright": "Copyright © 2026 MTS Decor. Built by Hitesh Jagdish Suthar",
+    "directories": {
+      "output": "dist-electron"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "public/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.business",
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "icon": "build/icon.png"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "zip",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "MTS Decor"
+    }
   }
 }

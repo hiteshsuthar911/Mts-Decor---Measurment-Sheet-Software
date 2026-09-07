@@ -1,11 +1,14 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import AdminPanel from './pages/AdminPanel';
 import ProjectsPage from './pages/ProjectsPage';
 import MeasurementSheet from './pages/MeasurementSheet';
 import ProfilePage from './pages/ProfilePage';
 import { getSession, isLoggedIn } from './utils/auth';
+
+const isFileProtocol = typeof window !== 'undefined' && (window.location.protocol === 'file:' || window.isElectron);
+const Router = isFileProtocol ? HashRouter : BrowserRouter;
 
 function AuthRoute({ children }) {
   const session = getSession();
@@ -31,7 +34,7 @@ function DefaultRedirect() {
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <Router>
       <Routes>
         {/* Public */}
         <Route path="/login" element={<LoginPage />} />
@@ -79,6 +82,6 @@ export default function App() {
         {/* Default: redirect based on role */}
         <Route path="*" element={<DefaultRedirect />} />
       </Routes>
-    </BrowserRouter>
+    </Router>
   );
 }
