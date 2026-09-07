@@ -3,23 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { loginInit, loginVerify2FA } from '../utils/auth';
 import { getFounderSlides } from '../utils/storage';
 
-const DEFAULT_SLIDES = [
-  {
-    name: 'Jagdish Suthar',
-    role: 'Founder & Managing Director',
-    company: 'MTS Decor & Interiors',
-    quote: '“Precision in civil and interior measurements is the foundation of flawless execution. MS Pro ensures every site calculation is 100% accurate.”',
-    imageUrl: '/login_hero.jpg'
-  },
-  {
-    name: 'Madanlal Suthar',
-    role: 'Co-Founder & Technical Lead',
-    company: 'MTS Decor & Interiors',
-    quote: '“Our goal with MTS Decor has always been trust and perfection. Real-time cloud synchronization empowers our team to deliver on time, every time.”',
-    imageUrl: '/login_hero.jpg'
-  }
-];
-
 export default function LoginPage() {
   const navigate = useNavigate();
 
@@ -36,22 +19,22 @@ export default function LoginPage() {
   const [twoFAData, setTwoFAData] = useState(null);
   const [otpCode, setOtpCode] = useState('');
 
-  // Founder Slides
-  const [slides, setSlides] = useState(DEFAULT_SLIDES);
+  // Founder Slides (Dynamic from MongoDB Admin Uploads)
+  const [slides, setSlides] = useState([]);
   const [testimonialIdx, setTestimonialIdx] = useState(0);
 
-  // Load founder slides from MongoDB Atlas
+  // Load founder slides uploaded by admin from MongoDB Atlas
   useEffect(() => {
     getFounderSlides()
       .then(data => {
-        if (Array.isArray(data) && data.length > 0) {
+        if (Array.isArray(data)) {
           setSlides(data);
         }
       })
       .catch(() => {});
   }, []);
 
-  // Automatic sliding every 6 seconds
+  // Automatic sliding every 6 seconds if multiple slides exist
   useEffect(() => {
     if (slides.length <= 1) return;
     const interval = setInterval(() => {
@@ -105,14 +88,18 @@ export default function LoginPage() {
   };
 
   const nextTestimonial = () => {
-    setTestimonialIdx((prev) => (prev + 1) % slides.length);
+    if (slides.length > 0) {
+      setTestimonialIdx((prev) => (prev + 1) % slides.length);
+    }
   };
 
   const prevTestimonial = () => {
-    setTestimonialIdx((prev) => (prev - 1 + slides.length) % slides.length);
+    if (slides.length > 0) {
+      setTestimonialIdx((prev) => (prev - 1 + slides.length) % slides.length);
+    }
   };
 
-  const currentQuote = slides[testimonialIdx] || slides[0] || DEFAULT_SLIDES[0];
+  const currentQuote = slides.length > 0 ? (slides[testimonialIdx] || slides[0]) : null;
 
   return (
     <div className="untitled-login-wrapper">
@@ -319,81 +306,138 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* ── RIGHT IMAGE & QUOTE CARD SIDE (FOUNDER SLIDES) ── */}
+      {/* ── RIGHT HERO CARD SIDE ── */}
       <div className="untitled-image-side">
-        <div className="untitled-hero-card position-relative overflow-hidden">
-          {/* Active Founder Image */}
-          <img
-            key={currentQuote.imageUrl || testimonialIdx}
-            src={currentQuote.imageUrl || '/login_hero.jpg'}
-            alt={currentQuote.name || 'Founder'}
-            className="position-absolute top-0 start-0 w-100 h-100"
-            style={{ objectFit: 'cover', zIndex: 1, transition: 'opacity 0.5s ease' }}
-            onError={(e) => { e.target.onerror = null; e.target.src = '/login_hero.jpg'; }}
-          />
+        {/* CASE A: Admin Uploaded Founder Slides Exist */}
+        {currentQuote ? (
+          <div className="untitled-hero-card position-relative overflow-hidden">
+            {/* Active Founder Image Uploaded by Admin */}
+            {currentQuote.imageUrl && (
+              <img
+                key={currentQuote.imageUrl || testimonialIdx}
+                src={currentQuote.imageUrl}
+                alt={currentQuote.name || 'Founder'}
+                className="position-absolute top-0 start-0 w-100 h-100"
+                style={{ objectFit: 'cover', zIndex: 1, transition: 'opacity 0.5s ease' }}
+              />
+            )}
 
-          {/* Dark Gradient Overlay for Readability */}
-          <div className="untitled-hero-overlay" style={{ zIndex: 2 }}></div>
+            {/* Dark Gradient Overlay for Readability */}
+            <div className="untitled-hero-overlay" style={{ zIndex: 2 }}></div>
 
-          {/* Quote & Author Content */}
-          <div className="untitled-hero-content d-flex justify-content-between align-items-end" style={{ zIndex: 3 }}>
-            <div>
-              <p className="untitled-quote-text">
-                {currentQuote.quote}
-              </p>
-              <div className="untitled-author-name">
-                {currentQuote.name || 'MTS Decor Founder'}
-              </div>
-              <div className="untitled-author-role">
-                {currentQuote.role || 'Founder'}
-              </div>
-              <div className="untitled-author-company">
-                {currentQuote.company || 'MTS Decor & Interiors'}
+            {/* Quote & Author Content */}
+            <div className="untitled-hero-content d-flex justify-content-between align-items-end" style={{ zIndex: 3 }}>
+              <div>
+                <p className="untitled-quote-text">
+                  {currentQuote.quote}
+                </p>
+                <div className="untitled-author-name">
+                  {currentQuote.name || 'MTS Decor Founder'}
+                </div>
+                <div className="untitled-author-role">
+                  {currentQuote.role || 'Founder'}
+                </div>
+                <div className="untitled-author-company">
+                  {currentQuote.company || 'MTS Decor & Interiors'}
+                </div>
+
+                {/* Slide dots indicator */}
+                {slides.length > 1 && (
+                  <div className="d-flex gap-1 mt-3">
+                    {slides.map((_, i) => (
+                      <span
+                        key={i}
+                        onClick={() => setTestimonialIdx(i)}
+                        style={{
+                          width: testimonialIdx === i ? '24px' : '8px',
+                          height: '8px',
+                          borderRadius: '4px',
+                          backgroundColor: testimonialIdx === i ? '#ffffff' : 'rgba(255, 255, 255, 0.4)',
+                          transition: 'all 0.3s ease',
+                          cursor: 'pointer'
+                        }}
+                        title={`Slide ${i + 1}`}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
 
-              {/* Slide dots indicator */}
+              {/* Slider Next/Previous Controls */}
               {slides.length > 1 && (
-                <div className="d-flex gap-1 mt-3">
-                  {slides.map((_, i) => (
-                    <span
-                      key={i}
-                      onClick={() => setTestimonialIdx(i)}
-                      style={{
-                        width: testimonialIdx === i ? '24px' : '8px',
-                        height: '8px',
-                        borderRadius: '4px',
-                        backgroundColor: testimonialIdx === i ? '#ffffff' : 'rgba(255, 255, 255, 0.4)',
-                        transition: 'all 0.3s ease',
-                        cursor: 'pointer'
-                      }}
-                      title={`Slide ${i + 1}`}
-                    />
-                  ))}
+                <div className="d-flex gap-2 ms-3 flex-shrink-0">
+                  <button
+                    type="button"
+                    className="untitled-carousel-btn"
+                    onClick={prevTestimonial}
+                    aria-label="Previous slide"
+                  >
+                    <i className="bi bi-arrow-left"></i>
+                  </button>
+                  <button
+                    type="button"
+                    className="untitled-carousel-btn"
+                    onClick={nextTestimonial}
+                    aria-label="Next slide"
+                  >
+                    <i className="bi bi-arrow-right"></i>
+                  </button>
                 </div>
               )}
             </div>
+          </div>
+        ) : (
+          /* CASE B: No Slides Uploaded Yet -> Sleek MTS Decor Branded Showcase Card */
+          <div
+            className="untitled-hero-card position-relative overflow-hidden d-flex flex-column justify-content-between"
+            style={{
+              background: 'linear-gradient(145deg, #0d131f 0%, #151e2e 50%, #1e293b 100%)',
+              border: '1px solid rgba(255, 255, 255, 0.1)'
+            }}
+          >
+            {/* Top Logo & Title */}
+            <div className="position-relative" style={{ zIndex: 2 }}>
+              <img
+                src="/mtsdecor.png"
+                alt="MTS Decor"
+                style={{ height: '56px', maxWidth: '180px', objectFit: 'contain' }}
+                onError={(e) => { e.target.onerror = null; e.target.src = '/logo.png'; }}
+              />
+              <div className="text-secondary extra-small fw-bold text-uppercase mt-2 tracking-wider">
+                CIVIL &bull; INTERIOR &bull; MEASUREMENT BOOK SYSTEM
+              </div>
+            </div>
 
-            {/* Testimonial Slider Controls */}
-            <div className="d-flex gap-2 ms-3 flex-shrink-0">
-              <button
-                type="button"
-                className="untitled-carousel-btn"
-                onClick={prevTestimonial}
-                aria-label="Previous slide"
-              >
-                <i className="bi bi-arrow-left"></i>
-              </button>
-              <button
-                type="button"
-                className="untitled-carousel-btn"
-                onClick={nextTestimonial}
-                aria-label="Next slide"
-              >
-                <i className="bi bi-arrow-right"></i>
-              </button>
+            {/* Middle Value Proposition */}
+            <div className="position-relative my-auto py-4" style={{ zIndex: 2 }}>
+              <h2 className="text-white fw-bold display-6 mb-3">
+                Precision In Every Measurement
+              </h2>
+              <p className="text-light opacity-75 fs-6 mb-4" style={{ maxWidth: '460px', lineHeight: 1.6 }}>
+                Streamlined multi-user site calculations, formula-driven progress tracking, and instant Excel / PDF reporting.
+              </p>
+
+              <div className="d-flex flex-wrap gap-2">
+                <span className="badge bg-dark bg-opacity-75 border border-secondary text-light px-3 py-2 extra-small">
+                  <i className="bi bi-shield-check text-success me-1"></i> TWO-STEP VERIFICATION
+                </span>
+                <span className="badge bg-dark bg-opacity-75 border border-secondary text-light px-3 py-2 extra-small">
+                  <i className="bi bi-cloud-check text-info me-1"></i> 1-SECOND CLOUD SYNC
+                </span>
+                <span className="badge bg-dark bg-opacity-75 border border-secondary text-light px-3 py-2 extra-small">
+                  <i className="bi bi-calculator-fill text-warning me-1"></i> AUTOMATED RA BILLING
+                </span>
+              </div>
+            </div>
+
+            {/* Bottom Footer Note */}
+            <div className="position-relative pt-3 border-top border-secondary border-opacity-25" style={{ zIndex: 2 }}>
+              <div className="text-light opacity-50 extra-small text-uppercase">
+                MTS DECOR &bull; SUPER ADMIN CAN UPLOAD FOUNDER SLIDES &amp; THOUGHTS FROM ADMIN PANEL
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
