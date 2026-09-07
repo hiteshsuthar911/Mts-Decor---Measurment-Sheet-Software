@@ -301,8 +301,13 @@ export default function LoginPage() {
         </div>
 
         {/* Bottom Copyright */}
-        <div className="untitled-footer-text mt-4">
-          &copy; MTS Decor {new Date().getFullYear()} &bull; All Rights Reserved
+        <div className="untitled-footer-text mt-4 text-center">
+          <div className="text-secondary extra-small text-uppercase fw-semibold">
+            &copy; {new Date().getFullYear()} MTS Decor &bull; All Rights Reserved
+          </div>
+          <div className="extra-small text-muted text-uppercase mt-1 fw-bold">
+            Built by <span className="text-dark fw-bolder">Hitesh Jagdish Suthar</span>
+          </div>
         </div>
       </div>
 
@@ -432,8 +437,9 @@ export default function LoginPage() {
 
             {/* Bottom Footer Note */}
             <div className="position-relative pt-3 border-top border-secondary border-opacity-25" style={{ zIndex: 2 }}>
-              <div className="text-light opacity-50 extra-small text-uppercase">
-                MTS DECOR &bull; SUPER ADMIN CAN UPLOAD FOUNDER SLIDES &amp; THOUGHTS FROM ADMIN PANEL
+              <div className="text-light opacity-50 extra-small text-uppercase d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <span>MTS DECOR &bull; CIVIL &amp; INTERIOR MEASUREMENT SYSTEM</span>
+                <span className="fw-bold text-light opacity-75">BUILT BY HITESH JAGDISH SUTHAR</span>
               </div>
             </div>
           </div>
