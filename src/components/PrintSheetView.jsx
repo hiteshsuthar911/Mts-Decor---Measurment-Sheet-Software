@@ -114,7 +114,8 @@ export default function PrintSheetView({
                 const additions = (area.items || []).filter(i => !i.isLess);
                 const deductions = (area.items || []).filter(i => i.isLess);
 
-                const mainLocation = area.room?.toUpperCase() || area.location?.toUpperCase() || area.descriptionHeader?.toUpperCase() || 'LIVING ROOM';
+                const roomVal = (area.room === 'Other' && area.customRoom) ? area.customRoom : area.room;
+                const mainLocation = roomVal?.toUpperCase() || area.location?.toUpperCase() || area.descriptionHeader?.toUpperCase() || 'LIVING ROOM';
 
                 return (
                   <React.Fragment key={area.id}>

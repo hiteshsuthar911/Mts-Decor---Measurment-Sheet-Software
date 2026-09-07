@@ -51,6 +51,44 @@ export default function AreaBlock({
     if (entered) handleAddCustomCategory(entered);
   };
 
+  const [customRooms, setCustomRooms] = useState(() => {
+    try {
+      const saved = localStorage.getItem('mts_custom_rooms');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const allRooms = useMemo(() => {
+    const list = [...COMMON_ROOM_AREAS];
+    customRooms.forEach((r) => {
+      if (!list.includes(r)) {
+        const otherIdx = list.indexOf('Other');
+        if (otherIdx !== -1) {
+          list.splice(otherIdx, 0, r);
+        } else {
+          list.push(r);
+        }
+      }
+    });
+    return list;
+  }, [customRooms]);
+
+  const handlePromptAddRoom = () => {
+    const entered = window.prompt('Enter new Room / Location Area name (e.g. Pooja Room, Study Area):');
+    if (!entered || !entered.trim()) return;
+    const trimmed = entered.trim();
+    if (!allRooms.includes(trimmed)) {
+      const updated = [...customRooms, trimmed];
+      setCustomRooms(updated);
+      try {
+        localStorage.setItem('mts_custom_rooms', JSON.stringify(updated));
+      } catch {}
+    }
+    handleFieldChange('room', trimmed);
+  };
+
   const totals = calculateAreaTotals(area);
 
   const handleFieldChange = (field, value) => {
@@ -193,25 +231,46 @@ export default function AreaBlock({
             />
           </div>
 
-          {/* Room / Area */}
+          {/* Room / Location Area Dropdown */}
           <div className="col-12 col-md-4">
-            <label className="form-label extra-small text-muted fw-bold mb-1">Room / Location Area</label>
-            <input
-              type="text"
-              list={`room-suggestions-${area.id}`}
-              className="form-control form-control-sm"
-              placeholder="e.g. Master Toilet, Living Room"
+            <div className="d-flex justify-content-between align-items-center mb-1">
+              <label className="form-label extra-small text-muted fw-bold mb-0">Room / Location Area</label>
+              <button
+                type="button"
+                className="btn btn-link p-0 text-primary extra-small text-decoration-none fw-semibold"
+                onClick={handlePromptAddRoom}
+                title="Add a custom room option"
+              >
+                <i className="bi bi-plus-circle me-1"></i>+ Add Room
+              </button>
+            </div>
+            <select
+              className="form-select form-select-sm fw-semibold"
               value={area.room || ''}
-              onChange={(e) => handleFieldChange('room', e.target.value)}
-            />
-            <datalist id={`room-suggestions-${area.id}`}>
-              {COMMON_ROOM_AREAS.map((r, i) => (
-                <option key={i} value={r} />
+              onChange={(e) => {
+                if (e.target.value === '__ADD_NEW__') {
+                  handlePromptAddRoom();
+                } else {
+                  handleFieldChange('room', e.target.value);
+                }
+              }}
+            >
+              <option value="" disabled>Select Room / Location Area</option>
+              {area.room && !allRooms.includes(area.room) && (
+                <option value={area.room}>{area.room} (Custom)</option>
+              )}
+              {allRooms.map((r) => (
+                <option key={r} value={r}>
+                  {r}
+                </option>
               ))}
-            </datalist>
+              <option value="__ADD_NEW__" className="text-primary fw-bold">
+                + Add Custom Room...
+              </option>
+            </select>
           </div>
 
-          {/* Work Category (Work Detail) */}
+          {/* Work Category (Work Detail) Dropdown */}
           <div className="col-12 col-md-4">
             <div className="d-flex justify-content-between align-items-center mb-1">
               <label className="form-label extra-small text-muted fw-bold mb-0">Work Category (Work Detail)</label>
@@ -224,30 +283,48 @@ export default function AreaBlock({
                 <i className="bi bi-plus-circle me-1"></i>+ Add Option
               </button>
             </div>
-            <div className="input-group input-group-sm">
-              <input
-                type="text"
-                list={`work-suggestions-${area.id}`}
-                className="form-control form-control-sm fw-semibold"
-                placeholder="e.g. Epoxy Filling, Acid Wash"
-                value={area.parentCategory || ''}
-                onChange={(e) => handleFieldChange('parentCategory', e.target.value)}
-              />
-              <button
-                type="button"
-                className="btn btn-outline-primary"
-                onClick={handlePromptAddCategory}
-                title="Add new custom category to list"
-              >
-                <i className="bi bi-plus-lg"></i>
-              </button>
-            </div>
-            <datalist id={`work-suggestions-${area.id}`}>
+            <select
+              className="form-select form-select-sm fw-semibold"
+              value={area.parentCategory || 'Floor Tiles'}
+              onChange={(e) => {
+                if (e.target.value === '__ADD_NEW__') {
+                  handlePromptAddCategory();
+                } else {
+                  handleFieldChange('parentCategory', e.target.value);
+                }
+              }}
+            >
+              <option value="" disabled>Select Work Category</option>
+              {area.parentCategory && !allCategories.includes(area.parentCategory) && (
+                <option value={area.parentCategory}>{area.parentCategory} (Custom)</option>
+              )}
               {allCategories.map((catKey) => (
-                <option key={catKey} value={catKey} />
+                <option key={catKey} value={catKey}>
+                  {catKey}
+                </option>
               ))}
-            </datalist>
+              <option value="__ADD_NEW__" className="text-primary fw-bold">
+                + Add Custom Category...
+              </option>
+            </select>
           </div>
+
+          {/* Conditional "Other" Room input */}
+          {area.room === 'Other' && (
+            <div className="col-12 mt-1">
+              <div className="input-group input-group-sm">
+                <span className="input-group-text bg-info-subtle text-dark fw-bold">Custom Room / Area:</span>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Enter custom room name (e.g. Study Area, Pooja Room)"
+                  value={area.customRoom || ''}
+                  onChange={(e) => handleFieldChange('customRoom', e.target.value)}
+                  autoFocus
+                />
+              </div>
+            </div>
+          )}
 
           {/* Conditional "Other" inputs */}
           {area.parentCategory === 'Other' && (
