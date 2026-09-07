@@ -130,7 +130,7 @@ export default function LoginPage() {
     }
   };
 
-  const currentQuote = (slides.length > 0 ? (slides[testimonialIdx] || slides[0]) : null) || STATIC_FOUNDER_SLIDE;
+  const currentQuote = (slides.length > 0 ? (slides[testimonialIdx] || slides[0]) : null) || STATIC_FOUNDER_SLIDES[0];
 
   return (
     <div className="untitled-login-wrapper">
@@ -354,22 +354,34 @@ export default function LoginPage() {
               border: '1px solid rgba(255, 255, 255, 0.08)'
             }}
           >
-            {/* Active Founder Image Uploaded by Admin (Full portrait framed on the right) */}
+            {/* Active Founder Image (Framed responsively on the right half with padding to prevent clipping) */}
             {currentQuote.imageUrl && (
-              <img
-                key={currentQuote.imageUrl || testimonialIdx}
-                src={currentQuote.imageUrl}
-                alt={currentQuote.name || 'Founder'}
-                className="position-absolute top-0 end-0 h-100"
+              <div
+                className="position-absolute top-0 end-0 h-100 w-100 d-flex justify-content-end align-items-center"
                 style={{
-                  width: 'auto',
-                  maxWidth: '85%',
-                  objectFit: 'contain',
-                  objectPosition: 'right bottom',
                   zIndex: 1,
-                  transition: 'opacity 0.5s ease',
+                  pointerEvents: 'none',
+                  paddingRight: 'clamp(16px, 3vw, 48px)',
+                  paddingTop: '20px',
+                  paddingBottom: '56px',
                 }}
-              />
+              >
+                <img
+                  key={currentQuote.imageUrl || testimonialIdx}
+                  src={currentQuote.imageUrl}
+                  alt={currentQuote.name || 'Founder'}
+                  style={{
+                    maxHeight: '92%',
+                    maxWidth: 'min(560px, 62%)',
+                    width: 'auto',
+                    height: 'auto',
+                    objectFit: 'contain',
+                    objectPosition: 'center center',
+                    filter: 'drop-shadow(0 15px 35px rgba(0, 0, 0, 0.65))',
+                    transition: 'opacity 0.4s ease-in-out',
+                  }}
+                />
+              </div>
             )}
 
             {/* Soft, minimal gradient strictly on the far-left - keeps the photo 100% crisp, vibrant and not faded */}
@@ -378,7 +390,7 @@ export default function LoginPage() {
               style={{
                 zIndex: 2,
                 pointerEvents: 'none',
-                background: 'linear-gradient(90deg, rgba(9, 13, 22, 0.85) 0%, rgba(9, 13, 22, 0.4) 22%, rgba(9, 13, 22, 0) 45%)'
+                background: 'linear-gradient(90deg, rgba(9, 13, 22, 0.92) 0%, rgba(9, 13, 22, 0.5) 28%, rgba(9, 13, 22, 0) 54%)'
               }}
             ></div>
 
@@ -387,15 +399,15 @@ export default function LoginPage() {
               <img
                 src="/mtsdecor.png"
                 alt="MTS Decor"
-                style={{ height: '56px', maxWidth: '180px', objectFit: 'contain' }}
+                style={{ height: '52px', maxWidth: '180px', objectFit: 'contain' }}
                 onError={(e) => { e.target.onerror = null; e.target.src = '/logo.png'; }}
               />
             </div>
 
             {/* Quote & Author Content (Anchored in the bottom-left corner) */}
             <div className="untitled-hero-content d-flex justify-content-between align-items-end mt-auto mb-2" style={{ zIndex: 3 }}>
-              <div style={{ maxWidth: '420px' }}>
-                <p className="untitled-quote-text mb-3" style={{ fontSize: '1.25rem', lineHeight: 1.5, fontWeight: 500 }}>
+              <div style={{ maxWidth: 'clamp(300px, 38vw, 420px)' }}>
+                <p className="untitled-quote-text mb-3" style={{ fontSize: 'clamp(1.05rem, 1.35vw, 1.25rem)', lineHeight: 1.5, fontWeight: 500 }}>
                   "{currentQuote.quote}"
                 </p>
                 <div className="untitled-author-name fs-6 fw-bold">
