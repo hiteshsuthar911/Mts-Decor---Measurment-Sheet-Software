@@ -2,27 +2,29 @@ const router = require('express').Router();
 const bcrypt = require('bcryptjs');
 const auth = require('../middleware/authMiddleware');
 const User = require('../models/User');
+const logger = require('../utils/logger');
 
 // Middleware: Admin only check
 const requireAdmin = (req, res, next) => {
   if (req.user?.role !== 'ADMIN') {
+    logger.logSuspiciousTraffic('UNAUTHORIZED_ADMIN_ACCESS_ATTEMPT', `User: "${req.user?.username || 'UNKNOWN'}" tried accessing admin endpoint`, req);
     return res.status(403).json({ message: 'FORBIDDEN: ADMIN ACCESS REQUIRED' });
   }
   next();
 };
 
 // GET /api/users (List all users)
-router.get('/', auth, requireAdmin, async (req, res) => {
+router.get('/', auth, requireAdmin, async (req, res, next) => {
   try {
     const users = await User.find({}, 'username name role createdAt updatedAt').sort({ createdAt: -1 });
     res.json(users);
   } catch (err) {
-    res.status(500).json({ message: 'FAILED TO FETCH USERS: ' + err.message });
+    next(err);
   }
 });
 
 // POST /api/users (Create new user)
-router.post('/', auth, requireAdmin, async (req, res) => {
+router.post('/', auth, requireAdmin, async (req, res, next) => {
   try {
     const { username, name, password, role } = req.body;
     if (!username || !password || !name) {
@@ -43,6 +45,8 @@ router.post('/', auth, requireAdmin, async (req, res) => {
       role: role === 'ADMIN' ? 'ADMIN' : 'USER',
     });
 
+    logger.logAdminAction(req.user.username, 'CREATE_USER', `Created user: "${newUser.username}" (${newUser.role})`, req);
+
     res.status(201).json({
       _id: newUser._id,
       username: newUser.username,
@@ -51,12 +55,12 @@ router.post('/', auth, requireAdmin, async (req, res) => {
       createdAt: newUser.createdAt,
     });
   } catch (err) {
-    res.status(500).json({ message: 'FAILED TO CREATE USER: ' + err.message });
+    next(err);
   }
 });
 
 // PUT /api/users/:id/password (Update / Reset password)
-router.put('/:id/password', auth, requireAdmin, async (req, res) => {
+router.put('/:id/password', auth, requireAdmin, async (req, res, next) => {
   try {
     const { password } = req.body;
     if (!password || password.trim().length < 4) {
@@ -74,14 +78,16 @@ router.put('/:id/password', auth, requireAdmin, async (req, res) => {
       return res.status(404).json({ message: 'USER NOT FOUND' });
     }
 
+    logger.logAdminAction(req.user.username, 'RESET_PASSWORD', `Updated password for: "${user.username}"`, req);
+
     res.json({ message: 'PASSWORD UPDATED SUCCESSFULLY', username: user.username });
   } catch (err) {
-    res.status(500).json({ message: 'FAILED TO UPDATE PASSWORD: ' + err.message });
+    next(err);
   }
 });
 
 // DELETE /api/users/:id (Delete a user)
-router.delete('/:id', auth, requireAdmin, async (req, res) => {
+router.delete('/:id', auth, requireAdmin, async (req, res, next) => {
   try {
     if (req.params.id === req.user.id) {
       return res.status(400).json({ message: 'CANNOT DELETE CURRENTLY LOGGED IN ADMIN ACCOUNT' });
@@ -92,9 +98,11 @@ router.delete('/:id', auth, requireAdmin, async (req, res) => {
       return res.status(404).json({ message: 'USER NOT FOUND' });
     }
 
+    logger.logAdminAction(req.user.username, 'DELETE_USER', `Deleted user: "${user.username}" (ID: ${user._id})`, req);
+
     res.json({ message: 'USER DELETED SUCCESSFULLY' });
   } catch (err) {
-    res.status(500).json({ message: 'FAILED TO DELETE USER: ' + err.message });
+    next(err);
   }
 });
 

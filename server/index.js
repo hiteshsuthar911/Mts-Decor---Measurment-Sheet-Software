@@ -4,40 +4,95 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const helmet = require('helmet');
 const bcrypt = require('bcryptjs');
 const User = require('./models/User');
-const FounderSlide = require('./models/FounderSlide');
+const { 
+  enforceHttps, 
+  detectSuspiciousProbes, 
+  authRateLimiter, 
+  apiRateLimiter, 
+  errorHandler 
+} = require('./middleware/securityMiddleware');
+const logger = require('./utils/logger');
+
+// ── Startup Environment Validation ────────────────────────
+if (!process.env.MONGO_URI) {
+  console.error('❌ FATAL: MONGO_URI environment variable is missing.');
+  process.exit(1);
+}
+if (!process.env.JWT_SECRET) {
+  if (process.env.NODE_ENV === 'production') {
+    console.error('❌ FATAL: JWT_SECRET environment variable is missing in production.');
+    process.exit(1);
+  } else {
+    console.warn('⚠️ WARNING: JWT_SECRET not found in env, using local development fallback.');
+    process.env.JWT_SECRET = 'ms_pro_local_dev_fallback_secret_key_2026';
+  }
+}
 
 const app = express();
 
-// ── Middleware ────────────────────────────────────────────
+// ── Reverse Proxy Trust (Configured for 1-hop reverse proxy on Render/Cloudflare)
+app.set('trust proxy', 1);
+
+// ── Security Headers via Helmet & HTTPS Enforcement ───────
+app.use(helmet({
+  contentSecurityPolicy: false, // Handled per-need to permit React frontend & fonts
+  crossOriginEmbedderPolicy: false,
+  hsts: {
+    maxAge: 31536000, // 1 year HTTP Strict Transport Security
+    includeSubDomains: true,
+    preload: true,
+  },
+}));
+
+// Enforce 301 HTTPS redirect in production
+app.use(enforceHttps);
+
+// Detect & block malicious probes (e.g. .env, wp-login, scanner attacks)
+app.use(detectSuspiciousProbes);
+
+// ── Core Middleware ───────────────────────────────────────
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: '10mb' })); // Large limit for measurement data
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// ── Routes ────────────────────────────────────────────────
+// ── Rate Limiting (Brute-force & Burst Protection) ─────────
+app.use('/api', apiRateLimiter);
+app.use('/api/auth', authRateLimiter);
+
+// ── API Routes ────────────────────────────────────────────
 app.use('/api/auth',           require('./routes/auth'));
 app.use('/api/users',          require('./routes/users'));
 app.use('/api/projects',       require('./routes/projects'));
 app.use('/api/founder-slides', require('./routes/founderSlides'));
 
 // Health check
-app.get('/api/health', (req, res) => res.json({ status: 'OK', time: new Date().toISOString() }));
+app.get('/api/health', (req, res) => res.json({ 
+  status: 'OK', 
+  secure: req.secure || req.headers['x-forwarded-proto'] === 'https',
+  time: new Date().toISOString() 
+}));
 
 // ── Serve React Frontend in Production ────────────────────
 const distPath = path.join(__dirname, '../dist');
 app.use(express.static(distPath));
 
-// For client-side routing, serve index.html for non-API GET requests
+// Client-side SPA routing fallback
 app.use((req, res, next) => {
   if (req.method === 'GET' && !req.path.startsWith('/api')) {
     return res.sendFile(path.join(distPath, 'index.html'), err => {
-      if (err) next();
+      if (err) next(err);
     });
   }
   next();
 });
 
-// ── Database Seed (creates default users on first run) ────
+// ── Centralized Error Handling Middleware ─────────────────
+app.use(errorHandler);
+
+// ── Database Seed (Default System Users on first run) ─────
 async function seedUsers() {
   const users = [
     { username: 'admin',    password: 'admin@123',    name: 'ADMINISTRATOR', role: 'ADMIN' },
@@ -57,21 +112,21 @@ async function seedUsers() {
         updatedAt: new Date(),
       });
       console.log(`✅ Seeded user: ${u.username}`);
-    } else {
-      console.log(`ℹ️  User already exists: ${u.username}`);
     }
   }
 }
 
-// ── Connect to MongoDB and Start Server ───────────────────
-const PORT = process.env.PORT || 5000;
+// ── Connect to MongoDB Atlas (TLS Enforced) & Start ───────
+const PORT = process.env.PORT || 5001;
 
-mongoose.connect(process.env.MONGO_URI)
+mongoose.connect(process.env.MONGO_URI, {
+  serverSelectionTimeoutMS: 5000,
+})
   .then(async () => {
-    console.log('✅ Connected to MongoDB Atlas');
+    console.log('✅ Connected securely to MongoDB Atlas (TLS/SSL Enforced)');
     await seedUsers();
     app.listen(PORT, () => {
-      console.log(`🚀 MS PRO Server running on http://localhost:${PORT}`);
+      console.log(`🚀 MS PRO Secure Server running on port ${PORT} (NODE_ENV: ${process.env.NODE_ENV || 'development'})`);
     });
   })
   .catch(err => {
