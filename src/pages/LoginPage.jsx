@@ -311,8 +311,8 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* ── RIGHT HERO CARD SIDE ── */}
-      <div className="untitled-image-side">
+      {/* ── RIGHT HERO CARD SIDE (Desktop Only) ── */}
+      <div className="untitled-image-side d-none d-lg-flex">
         {/* CASE A: Admin Uploaded Founder Slides Exist */}
         {currentQuote ? (
           <div className="untitled-hero-card position-relative overflow-hidden">
