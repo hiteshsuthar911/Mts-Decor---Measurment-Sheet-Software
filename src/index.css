@@ -178,6 +178,12 @@ body {
   text-align: center;
 }
 
+.project-grand-total-row td {
+  border-top: 2px solid #000000 !important;
+  border-bottom: 2px solid #000000 !important;
+  background-color: #f8fafc !important;
+}
+
 /* Print View Styles */
 @media print {
   body {

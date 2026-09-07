@@ -67,30 +67,25 @@ export default function PrintSheetView({
           )}
         </div>
 
-        {/* Top Header Box (Matches PARK CREST - 8TH FLOOR | 25/07/25) */}
-        <div className="table-responsive mb-0">
-          <table className="table table-bordered border-dark sheet-grid-table mb-0">
-            <tbody>
-              <tr>
-                <td colSpan={billingMode ? 5 : 4} className="fw-bold text-uppercase py-2 px-3 bg-light-subtle">
-                  {header.projectName || 'PROJECT NAME'}{areas[0]?.floor ? ` - ${areas[0].floor.toUpperCase()}` : ''}
-                  {header.sheetNo ? ` (${header.sheetNo})` : ''}
-                </td>
-                <td colSpan={billingMode ? 3 : 2} className="fw-bold text-uppercase py-2 px-3 bg-light-subtle text-center">
-                  {header.workDescription?.toUpperCase() || header.description?.toUpperCase() || (areas[0]?.parentCategory === 'Other' ? areas[0]?.customParentCategory?.toUpperCase() : areas[0]?.parentCategory?.toUpperCase()) || areas[0]?.descriptionHeader?.toUpperCase() || 'FLOOR TILES'}
-                </td>
-                <td colSpan={billingMode ? 2 : 2} className="text-center fw-bold py-2 bg-light-subtle" style={{ width: '150px' }}>
-                  {formatDateDisplay(header.date) || 'DATE'}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        {/* Main Measurement Table */}
+        {/* Unified Measurement Table with Top Header Row */}
         <div className="table-responsive">
           <table className="table table-bordered border-dark sheet-grid-table align-middle mb-0">
             <thead className="text-center text-uppercase fw-bold">
+              {/* Top Header Box (Matches PARK CREST - 8TH FLOOR | 25/07/25) */}
+              <tr className="bg-light-subtle align-middle">
+                <th colSpan={billingMode ? 5 : 4} className="fw-bold text-uppercase py-2 px-3 text-start fs-6 align-middle">
+                  {header.projectName || 'PROJECT NAME'}{areas[0]?.floor ? ` - ${areas[0].floor.toUpperCase()}` : ''}
+                  {header.sheetNo ? ` (${header.sheetNo})` : ''}
+                </th>
+                <th colSpan={billingMode ? 3 : 3} className="fw-bold text-uppercase py-2 px-3 text-center fs-6 align-middle">
+                  {header.workDescription?.toUpperCase() || header.description?.toUpperCase() || (areas[0]?.parentCategory === 'Other' ? areas[0]?.customParentCategory?.toUpperCase() : areas[0]?.parentCategory?.toUpperCase()) || areas[0]?.descriptionHeader?.toUpperCase() || 'FLOOR TILES'}
+                </th>
+                <th colSpan={billingMode ? 3 : 2} className="text-center fw-bold py-2 fs-6 align-middle">
+                  {formatDateDisplay(header.date) || 'DATE'}
+                </th>
+              </tr>
+
+              {/* Column Headings */}
               <tr className="bg-light-subtle">
                 <th style={{ width: '45px' }}>SR.</th>
                 <th style={{ minWidth: '180px', width: '25%' }}>LOCATION</th>
@@ -164,15 +159,36 @@ export default function PrintSheetView({
                     })}
 
                     {/* Subtotal of Additions */}
-                    <tr className="fw-bold">
-                      <td colSpan={billingMode ? 7 : 5} className="text-end pe-3 text-uppercase">
-                        TOTAL
-                      </td>
-                      <td className="text-end border-top border-bottom border-dark">
-                        {formatNumber(areaTotals.grossQty)}
-                      </td>
-                      <td className="text-end"></td>
-                    </tr>
+                    {additions.length > 0 && (
+                      <tr className="fw-bold">
+                        <td colSpan={6} className="text-end pe-3 text-uppercase">
+                          TOTAL
+                        </td>
+                        <td className="text-end border-top border-bottom border-dark">
+                          {formatNumber(areaTotals.grossQty)}
+                        </td>
+                        {billingMode && (
+                          <>
+                            <td></td>
+                            <td className="text-end border-top border-bottom border-dark">
+                              {formatNumber(areaTotals.grossAmount)}
+                            </td>
+                          </>
+                        )}
+                        <td className="text-end"></td>
+                      </tr>
+                    )}
+
+                    {/* Fallback for empty area */}
+                    {additions.length === 0 && deductions.length === 0 && (
+                      <tr>
+                        <td className="text-center fw-bold">{areaIdx + 1}</td>
+                        <td className="fw-bold text-uppercase px-2">{mainLocation}</td>
+                        <td colSpan={billingMode ? 9 : 7} className="text-center text-muted py-2">
+                          -
+                        </td>
+                      </tr>
+                    )}
 
                     {/* LESS (Deductions) Section */}
                     {deductions.length > 0 && (
@@ -217,7 +233,7 @@ export default function PrintSheetView({
                         {/* TOTAL LESS Row */}
                         <tr className="fw-bold">
                           <td></td>
-                          <td colSpan={billingMode ? 6 : 6} className="text-end pe-3 text-uppercase">
+                          <td colSpan={6} className="text-end pe-3 text-uppercase">
                             TOTAL LESS
                           </td>
                           <td className="text-end border-top border-bottom border-dark">
@@ -235,7 +251,7 @@ export default function PrintSheetView({
                         {/* TOTAL AFTER LESS Row */}
                         <tr className="fw-bold bg-light-subtle">
                           <td></td>
-                          <td colSpan={billingMode ? 6 : 6} className="text-end pe-3 text-uppercase">
+                          <td colSpan={6} className="text-end pe-3 text-uppercase">
                             TOTAL AFTER LESS
                           </td>
                           <td className="text-end border-top border-bottom border-dark">
@@ -256,10 +272,10 @@ export default function PrintSheetView({
                     )}
 
                     {/* When no deductions, show total in Grand Total column */}
-                    {deductions.length === 0 && (
+                    {deductions.length === 0 && additions.length > 0 && (
                       <tr className="fw-bold bg-light-subtle">
                         <td></td>
-                        <td colSpan={billingMode ? 6 : 6} className="text-end pe-3 text-uppercase">
+                        <td colSpan={6} className="text-end pe-3 text-uppercase">
                           NET TOTAL
                         </td>
                         <td className="text-end">
@@ -281,8 +297,8 @@ export default function PrintSheetView({
               })}
 
               {/* Final Sheet Grand Total */}
-              <tr className="fw-bolder bg-light border-top border-dark border-3 fs-6">
-                <td colSpan={billingMode ? 7 : 7} className="text-end pe-3 text-uppercase">
+              <tr className="fw-bolder bg-light fs-6 project-grand-total-row">
+                <td colSpan={7} className="text-end pe-3 text-uppercase">
                   PROJECT GRAND TOTAL:
                 </td>
                 <td className="text-end">
