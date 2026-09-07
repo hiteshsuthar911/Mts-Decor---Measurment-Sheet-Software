@@ -19,8 +19,15 @@ export default function LoginPage() {
   const [twoFAData, setTwoFAData] = useState(null);
   const [otpCode, setOtpCode] = useState('');
 
-  // Founder Slides (Dynamic from MongoDB Admin Uploads)
-  const [slides, setSlides] = useState([]);
+  // Founder Slides (Dynamic from MongoDB Admin Uploads + Synchronous Local Cache)
+  const [slides, setSlides] = useState(() => {
+    try {
+      const cached = localStorage.getItem('MTS_FOUNDER_SLIDES_CACHE');
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
   const [testimonialIdx, setTestimonialIdx] = useState(0);
 
   // Load founder slides uploaded by admin from MongoDB Atlas
@@ -29,6 +36,9 @@ export default function LoginPage() {
       .then(data => {
         if (Array.isArray(data)) {
           setSlides(data);
+          try {
+            localStorage.setItem('MTS_FOUNDER_SLIDES_CACHE', JSON.stringify(data));
+          } catch {}
         }
       })
       .catch(() => {});
@@ -315,7 +325,10 @@ export default function LoginPage() {
       <div className="untitled-image-side d-none d-lg-flex">
         {/* CASE A: Admin Uploaded Founder Slides Exist */}
         {currentQuote ? (
-          <div className="untitled-hero-card position-relative overflow-hidden">
+          <div
+            className="untitled-hero-card position-relative overflow-hidden d-flex flex-column justify-content-between"
+            style={{ minHeight: '100%' }}
+          >
             {/* Active Founder Image Uploaded by Admin */}
             {currentQuote.imageUrl && (
               <img
@@ -330,11 +343,24 @@ export default function LoginPage() {
             {/* Dark Gradient Overlay for Readability */}
             <div className="untitled-hero-overlay" style={{ zIndex: 2 }}></div>
 
+            {/* Top Logo & Title (Uniform across all states) */}
+            <div className="position-relative" style={{ zIndex: 3 }}>
+              <img
+                src="/mtsdecor.png"
+                alt="MTS Decor"
+                style={{ height: '56px', maxWidth: '180px', objectFit: 'contain' }}
+                onError={(e) => { e.target.onerror = null; e.target.src = '/logo.png'; }}
+              />
+              <div className="text-light opacity-75 extra-small fw-bold text-uppercase mt-2 tracking-wider">
+                CIVIL &bull; INTERIOR &bull; MEASUREMENT BOOK SYSTEM
+              </div>
+            </div>
+
             {/* Quote & Author Content */}
-            <div className="untitled-hero-content d-flex justify-content-between align-items-end" style={{ zIndex: 3 }}>
-              <div>
-                <p className="untitled-quote-text">
-                  {currentQuote.quote}
+            <div className="untitled-hero-content d-flex justify-content-between align-items-end my-auto py-3" style={{ zIndex: 3 }}>
+              <div style={{ maxWidth: '620px' }}>
+                <p className="untitled-quote-text mb-3">
+                  "{currentQuote.quote}"
                 </p>
                 <div className="untitled-author-name">
                   {currentQuote.name || 'MTS Decor Founder'}
@@ -389,6 +415,14 @@ export default function LoginPage() {
                   </button>
                 </div>
               )}
+            </div>
+
+            {/* Bottom Footer Note (Uniform across all states) */}
+            <div className="position-relative pt-3 border-top border-light border-opacity-25" style={{ zIndex: 3 }}>
+              <div className="text-light opacity-75 extra-small text-uppercase d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <span>MTS DECOR &bull; CIVIL &amp; INTERIOR MEASUREMENT SYSTEM</span>
+                <span className="fw-bold text-white">BUILT BY HITESH JAGDISH SUTHAR</span>
+              </div>
             </div>
           </div>
         ) : (

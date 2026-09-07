@@ -189,13 +189,38 @@ export default function AdminPanel() {
   const handleImageFileChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 8 * 1024 * 1024) {
-      alert('IMAGE SIZE MUST BE UNDER 8MB');
-      return;
-    }
+
     const reader = new FileReader();
-    reader.onload = () => {
-      setSlideForm(prev => ({ ...prev, imageUrl: reader.result }));
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_DIM = 1440;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_DIM) {
+            height = Math.round((height * MAX_DIM) / width);
+            width = MAX_DIM;
+          }
+        } else {
+          if (height > MAX_DIM) {
+            width = Math.round((width * MAX_DIM) / height);
+            height = MAX_DIM;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Compress to high-quality JPEG (~200KB)
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        setSlideForm(prev => ({ ...prev, imageUrl: compressedDataUrl }));
+      };
+      img.src = event.target.result;
     };
     reader.readAsDataURL(file);
   };
