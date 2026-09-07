@@ -350,20 +350,19 @@ export default function LoginPage() {
             className="untitled-hero-card position-relative overflow-hidden d-flex flex-column justify-content-between"
             style={{
               minHeight: '100%',
-              backgroundColor: '#090d16',
+              backgroundColor: '#0a0a0c',
               border: '1px solid rgba(255, 255, 255, 0.08)'
             }}
           >
-            {/* Active Founder Image (Framed responsively on the right half with padding to prevent clipping) */}
+            {/* Active Founder Image (Full height, grounded at bottom, stretched properly to box size without clipping) */}
             {currentQuote.imageUrl && (
               <div
-                className="position-absolute top-0 end-0 h-100 w-100 d-flex justify-content-end align-items-center"
+                className="position-absolute top-0 end-0 h-100 w-100 d-flex justify-content-end align-items-end"
                 style={{
                   zIndex: 1,
                   pointerEvents: 'none',
-                  paddingRight: 'clamp(16px, 3vw, 48px)',
-                  paddingTop: '20px',
-                  paddingBottom: '56px',
+                  overflow: 'hidden',
+                  paddingRight: 'clamp(8px, 1.8vw, 28px)',
                 }}
               >
                 <img
@@ -371,26 +370,26 @@ export default function LoginPage() {
                   src={currentQuote.imageUrl}
                   alt={currentQuote.name || 'Founder'}
                   style={{
-                    maxHeight: '92%',
-                    maxWidth: 'min(560px, 62%)',
+                    height: '100%',
                     width: 'auto',
-                    height: 'auto',
+                    maxWidth: '82%',
                     objectFit: 'contain',
-                    objectPosition: 'center center',
-                    filter: 'drop-shadow(0 15px 35px rgba(0, 0, 0, 0.65))',
+                    objectPosition: 'right bottom',
+                    maskImage: 'linear-gradient(to right, transparent 0%, black 14%, black 100%)',
+                    WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 14%, black 100%)',
                     transition: 'opacity 0.4s ease-in-out',
                   }}
                 />
               </div>
             )}
 
-            {/* Soft, minimal gradient strictly on the far-left - keeps the photo 100% crisp, vibrant and not faded */}
+            {/* Soft, minimal gradient strictly on the far-left - keeps the photo 100% crisp, vibrant and seamless */}
             <div
               className="position-absolute top-0 start-0 w-100 h-100"
               style={{
                 zIndex: 2,
                 pointerEvents: 'none',
-                background: 'linear-gradient(90deg, rgba(9, 13, 22, 0.92) 0%, rgba(9, 13, 22, 0.5) 28%, rgba(9, 13, 22, 0) 54%)'
+                background: 'linear-gradient(90deg, #0a0a0c 0%, rgba(10, 10, 12, 0.85) 26%, rgba(10, 10, 12, 0.3) 48%, rgba(10, 10, 12, 0) 66%)'
               }}
             ></div>
 
