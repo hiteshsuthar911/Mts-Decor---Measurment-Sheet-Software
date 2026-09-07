@@ -65,6 +65,20 @@ export function getSession() {
   }
 }
 
+export function updateSession(updates) {
+  try {
+    const session = getSession();
+    if (session) {
+      const merged = { ...session, ...updates };
+      localStorage.setItem(AUTH_KEY, JSON.stringify(merged));
+      return merged;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export function isLoggedIn() { return !!getSession(); }
 export function isAdmin()    { return getSession()?.role === 'ADMIN'; }
 export function isUser()     { return getSession()?.role === 'USER';  }

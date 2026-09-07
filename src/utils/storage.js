@@ -64,3 +64,15 @@ export async function deleteUser(id) {
   return api.delete(`/users/${id}`);
 }
 
+// ── USER PROFILE & SELF ACCOUNT MANAGEMENT ──
+export async function getUserProfile() {
+  return api.get('/users/profile');
+}
+
+export async function updateUserProfile(data) {
+  return api.put('/users/profile', data);
+}
+
+export async function changeUserPassword(data) {
+  return api.put('/users/change-password', data);
+}

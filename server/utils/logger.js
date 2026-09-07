@@ -1,5 +1,6 @@
 // Centralized Security & Audit Logger for MS PRO
 const getClientIp = (req) => {
+  if (!req || !req.headers) return req?.ip || 'UNKNOWN_IP';
   return (
     req.headers['x-forwarded-for']?.split(',')[0].trim() ||
     req.headers['x-real-ip'] ||
@@ -15,7 +16,7 @@ const logger = {
   // ── Authentication Audit Logs ────────────────────────────
   logAuthSuccess: (username, req, method = 'PASSWORD+2FA') => {
     const ip = getClientIp(req);
-    const ua = req.headers['user-agent'] || 'UNKNOWN_UA';
+    const ua = req?.headers?.['user-agent'] || 'UNKNOWN_UA';
     console.log(`✅ [AUTH SUCCESS] [${formatTimestamp()}] User: "${username}" | IP: ${ip} | Method: ${method} | UA: "${ua}"`);
   },
 

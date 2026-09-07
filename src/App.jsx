@@ -4,7 +4,14 @@ import LoginPage from './pages/LoginPage';
 import AdminPanel from './pages/AdminPanel';
 import ProjectsPage from './pages/ProjectsPage';
 import MeasurementSheet from './pages/MeasurementSheet';
+import ProfilePage from './pages/ProfilePage';
 import { getSession, isLoggedIn } from './utils/auth';
+
+function AuthRoute({ children }) {
+  const session = getSession();
+  if (!session) return <Navigate to="/login" replace />;
+  return children;
+}
 
 function RoleRoute({ children, allowedRole }) {
   const session = getSession();
@@ -56,6 +63,16 @@ export default function App() {
             <RoleRoute allowedRole="USER">
               <MeasurementSheet />
             </RoleRoute>
+          }
+        />
+
+        {/* Profile page for all authenticated users */}
+        <Route
+          path="/profile"
+          element={
+            <AuthRoute>
+              <ProfilePage />
+            </AuthRoute>
           }
         />
 

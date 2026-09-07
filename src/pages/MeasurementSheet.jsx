@@ -260,6 +260,9 @@ export default function MeasurementSheet() {
           </span>
         </div>
         <div className="d-flex gap-2 align-items-center">
+          <Link to="/profile" className="btn btn-sm btn-outline-light text-uppercase fw-bold px-2 py-0" style={{ fontSize: '10px' }}>
+            <i className="bi bi-person-circle me-1"></i>PROFILE
+          </Link>
           <Link to="/projects" className="btn btn-sm btn-outline-light text-uppercase fw-bold px-2 py-0" style={{ fontSize: '10px' }}>
             <i className="bi bi-grid-3x3-gap-fill me-1"></i>ALL PROJECTS
           </Link>

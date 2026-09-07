@@ -135,9 +135,14 @@ export default function ProjectsPage() {
           <span className="text-secondary d-none d-md-inline extra-small text-uppercase">MEASUREMENT SHEET SYSTEM</span>
         </div>
         <div className="d-flex align-items-center gap-2">
-          <div className="text-white extra-small text-uppercase me-2 d-none d-md-block">
-            <i className="bi bi-person-fill me-1"></i>{session.name}
-          </div>
+          <Link
+            to="/profile"
+            className="btn btn-outline-light btn-sm extra-small fw-bold text-uppercase d-flex align-items-center gap-1"
+            title="View & Edit Profile"
+          >
+            <i className="bi bi-person-circle text-warning"></i>
+            <span className="d-none d-sm-inline">{session.name}</span>
+          </Link>
           <button className="btn btn-warning btn-sm fw-bold text-uppercase" onClick={handleNewProject}>
             <i className="bi bi-plus-circle-fill me-1"></i> NEW PROJECT
           </button>

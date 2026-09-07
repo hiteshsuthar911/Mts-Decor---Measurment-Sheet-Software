@@ -2,6 +2,7 @@ const router = require('express').Router();
 const bcrypt = require('bcryptjs');
 const auth = require('../middleware/authMiddleware');
 const User = require('../models/User');
+const Project = require('../models/Project');
 const logger = require('../utils/logger');
 
 // Middleware: Admin only check
@@ -12,6 +13,118 @@ const requireAdmin = (req, res, next) => {
   }
   next();
 };
+
+// ── USER PROFILE ENDPOINTS (Accessible by any authenticated user) ──
+
+// GET /api/users/profile (Current user profile & stats)
+router.get('/profile', auth, async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.id, 'username name role createdAt updatedAt');
+    if (!user) {
+      return res.status(404).json({ message: 'USER NOT FOUND' });
+    }
+
+    // Fetch projects summary created/owned by this user
+    const projects = await Project.find({ ownerUsername: user.username })
+      .select('name createdAt updatedAt lastEditedAt lastEditedBy')
+      .sort({ updatedAt: -1 });
+
+    res.json({
+      user: {
+        _id: user._id,
+        username: user.username,
+        name: user.name,
+        role: user.role,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+      },
+      stats: {
+        totalProjects: projects.length,
+        recentProjects: projects.slice(0, 8),
+      }
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PUT /api/users/profile (Update current user's profile details)
+router.put('/profile', auth, async (req, res, next) => {
+  try {
+    const { name } = req.body;
+    if (!name || name.trim().length < 2) {
+      return res.status(400).json({ message: 'NAME MUST BE AT LEAST 2 CHARACTERS' });
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user.id,
+      { name: name.trim().toUpperCase() },
+      { returnDocument: 'after' }
+    ).select('username name role createdAt updatedAt');
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: 'USER NOT FOUND' });
+    }
+
+    // Sync ownerName on user's projects
+    await Project.updateMany(
+      { ownerUsername: updatedUser.username },
+      { $set: { ownerName: updatedUser.name } }
+    );
+
+    logger.logAdminAction(req.user.username, 'UPDATE_PROFILE', `User updated full name to "${updatedUser.name}"`, req);
+
+    res.json({
+      message: 'PROFILE UPDATED SUCCESSFULLY',
+      user: {
+        _id: updatedUser._id,
+        username: updatedUser.username,
+        name: updatedUser.name,
+        role: updatedUser.role,
+        createdAt: updatedUser.createdAt,
+        updatedAt: updatedUser.updatedAt,
+      }
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PUT /api/users/change-password (Self password change for authenticated user)
+router.put('/change-password', auth, async (req, res, next) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword) {
+      return res.status(400).json({ message: 'CURRENT PASSWORD IS REQUIRED' });
+    }
+    if (!newPassword || newPassword.trim().length < 4) {
+      return res.status(400).json({ message: 'NEW PASSWORD MUST BE AT LEAST 4 CHARACTERS' });
+    }
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'USER NOT FOUND' });
+    }
+
+    const isMatch = await user.comparePassword(currentPassword.trim());
+    if (!isMatch) {
+      logger.logAuthFailure(user.username, 'INCORRECT_CURRENT_PASSWORD', req);
+      return res.status(400).json({ message: 'CURRENT PASSWORD IS INCORRECT' });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword.trim(), 10);
+    user.password = hashedPassword;
+    await user.save();
+
+    logger.logAuthSuccess(user.username, req, 'PASSWORD_CHANGED_BY_USER');
+
+    res.json({ message: 'PASSWORD CHANGED SUCCESSFULLY' });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ── ADMIN ONLY ENDPOINTS ──
 
 // GET /api/users (List all users)
 router.get('/', auth, requireAdmin, async (req, res, next) => {
