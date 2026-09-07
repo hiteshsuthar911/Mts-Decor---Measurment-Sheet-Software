@@ -70,7 +70,7 @@
     }
 
     .brand-badge {
-      background: var(--accent);
+      background: var(--success);
       color: white;
       font-size: 11px;
       font-weight: 700;
@@ -296,7 +296,7 @@
 
     .totals-box {
       display: flex;
-      flex-column: column;
+      flex-direction: column;
       gap: 8px;
     }
 
@@ -319,12 +319,13 @@
     .total-row.highlight .amount {
       color: var(--success);
       font-family: 'JetBrains Mono', monospace;
-      font-size: 20px;
+      font-size: 22px;
     }
 
     .discount-badge {
       color: #b91c1c;
       font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
     }
 
     /* Signatures */
@@ -410,7 +411,7 @@
       <div class="top-actions">
         <div class="brand-title">
           <span>📐 MTS DECOR</span>
-          <span class="brand-badge">MS PRO SOFTWARE</span>
+          <span class="brand-badge">SPECIAL CONTRACTOR ESTIMATE</span>
         </div>
         <button class="print-btn" onclick="window.print()">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -427,12 +428,12 @@
           <h4>CLIENT DETAILS</h4>
           <p>MTS DECOR</p>
           <div class="muted-desc">Shri Madanlal Suthar &amp; Shri Jagdish Suthar</div>
-          <div class="muted-desc">Civil, Interior Contractors &amp; Measurement Specialists</div>
+          <div class="muted-desc">Civil &amp; Interior Contractors &bull; Measurement Specialists</div>
         </div>
         <div class="header-col" style="text-align: right;">
           <h4>SOFTWARE DEVELOPER</h4>
           <p>HITESH SUTHAR</p>
-          <div class="muted-desc">Lead Full-Stack Software Engineer &amp; Architect</div>
+          <div class="muted-desc">Lead Full-Stack Software Engineer</div>
           <div class="muted-desc">Specialized Contractor Systems Development</div>
         </div>
       </div>
@@ -449,8 +450,8 @@
         <div class="meta-value">07 SEPT 2026</div>
       </div>
       <div class="meta-item">
-        <div class="meta-label">SYSTEM VERSION</div>
-        <div class="meta-value">MS PRO v2.3.0</div>
+        <div class="meta-label">RATE TIER</div>
+        <div class="meta-value" style="color: var(--accent);">IN-HOUSE BUDGET</div>
       </div>
       <div class="meta-item">
         <div class="meta-label">DEPLOYMENT STATUS</div>
@@ -462,7 +463,7 @@
     <div class="bill-body">
 
       <!-- PROJECT SCOPE SUMMARY -->
-      <h3 class="section-title">1. Custom Software Engineering Deliverables</h3>
+      <h3 class="section-title">1. Software Development &amp; Feature Modules</h3>
       
       <div class="table-container">
         <table>
@@ -470,20 +471,20 @@
             <tr>
               <th style="width: 50px;">#</th>
               <th>MODULE &amp; DELIVERABLE SPECIFICATION</th>
-              <th style="width: 110px; text-align: center;">TIMELINE</th>
-              <th style="width: 140px; text-align: right;">COST (INR)</th>
+              <th style="width: 110px; text-align: center;">STATUS</th>
+              <th style="width: 130px; text-align: right;">COST (INR)</th>
             </tr>
           </thead>
           <tbody>
             <tr>
               <td class="module-num">01</td>
               <td>
-                <div class="module-title">Architecture &amp; Core Measurement Workbook Engine</div>
+                <div class="module-title">Core Measurement Workbook &amp; Formula Engine</div>
                 <div class="module-desc">Dynamic multi-area measurement blocks, real-time formula calculations (SFT, RFT, NOS, SQM), subtraction/deduction engine (- LESS), and executive summary roll-up dashboard.</div>
                 <span class="tag">REACT 19 + VITE</span>
               </td>
-              <td style="text-align: center; font-weight: 600;">Completed</td>
-              <td class="amount-col">₹ 24,000</td>
+              <td style="text-align: center; font-weight: 600; color: var(--success);">Delivered</td>
+              <td class="amount-col">₹ 2,200</td>
             </tr>
 
             <tr>
@@ -493,8 +494,8 @@
                 <div class="module-desc">One-handed on-site touch interface with oversized numeric keypad, tape fraction shortcuts (+¼", +½", +¾"), haptic vibration, voice dictation, room presets, and categorized civil/interior work items.</div>
                 <span class="tag">MOBILE UI / HAPTIC</span>
               </td>
-              <td style="text-align: center; font-weight: 600;">Completed</td>
-              <td class="amount-col">₹ 18,000</td>
+              <td style="text-align: center; font-weight: 600; color: var(--success);">Delivered</td>
+              <td class="amount-col">₹ 1,800</td>
             </tr>
 
             <tr>
@@ -504,8 +505,8 @@
                 <div class="module-desc">Dual-mode toggle between pure Measurement Sheet and Billing Mode. Unit rate assignment, line calculations, GST/tax computation, and contractor bill summary generation.</div>
                 <span class="tag">BILLING &amp; GST</span>
               </td>
-              <td style="text-align: center; font-weight: 600;">Completed</td>
-              <td class="amount-col">₹ 14,000</td>
+              <td style="text-align: center; font-weight: 600; color: var(--success);">Delivered</td>
+              <td class="amount-col">₹ 1,400</td>
             </tr>
 
             <tr>
@@ -515,8 +516,8 @@
                 <div class="module-desc">Node.js Express REST API connected to MongoDB Atlas Cloud. Non-blocking 1-second auto-save debounce ensuring zero data loss during site measurement sessions.</div>
                 <span class="tag">NODE.JS + MONGODB</span>
               </td>
-              <td style="text-align: center; font-weight: 600;">Completed</td>
-              <td class="amount-col">₹ 16,000</td>
+              <td style="text-align: center; font-weight: 600; color: var(--success);">Delivered</td>
+              <td class="amount-col">₹ 1,600</td>
             </tr>
 
             <tr>
@@ -526,8 +527,8 @@
                 <div class="module-desc">Multi-user RBAC (Admin, Madanlal, Jagdish), 6-digit identity PIN verification, Cloudflare Turnstile bot defense, Bcrypt encryption, and JWT token protection.</div>
                 <span class="tag">SECURITY &amp; 2FA</span>
               </td>
-              <td style="text-align: center; font-weight: 600;">Completed</td>
-              <td class="amount-col">₹ 12,000</td>
+              <td style="text-align: center; font-weight: 600; color: var(--success);">Delivered</td>
+              <td class="amount-col">₹ 1,200</td>
             </tr>
 
             <tr>
@@ -537,8 +538,8 @@
                 <div class="module-desc">Background Google Drive API v3 sync on every save (debounced 25s), 12-hour cron backup scheduler, Admin Drive health panel, and 1-click database JSON download.</div>
                 <span class="tag">GOOGLE DRIVE API</span>
               </td>
-              <td style="text-align: center; font-weight: 600;">Completed</td>
-              <td class="amount-col">₹ 12,000</td>
+              <td style="text-align: center; font-weight: 600; color: var(--success);">Delivered</td>
+              <td class="amount-col">₹ 1,200</td>
             </tr>
 
             <tr>
@@ -548,8 +549,8 @@
                 <div class="module-desc">Official branded multi-sheet Excel (.xlsx) export with automatic formatting, formulas, and contractor headers. Print-optimized PDF view with company signatures.</div>
                 <span class="tag">EXCEL &amp; PDF</span>
               </td>
-              <td style="text-align: center; font-weight: 600;">Completed</td>
-              <td class="amount-col">₹ 10,000</td>
+              <td style="text-align: center; font-weight: 600; color: var(--success);">Delivered</td>
+              <td class="amount-col">₹ 1,000</td>
             </tr>
 
             <tr>
@@ -559,8 +560,8 @@
                 <div class="module-desc">Electron configuration for Windows (.exe installer &amp; portable) and macOS (.dmg). GitHub Actions workflow automated compilation on every repository push.</div>
                 <span class="tag">ELECTRON + GITHUB ACTIONS</span>
               </td>
-              <td style="text-align: center; font-weight: 600;">Completed</td>
-              <td class="amount-col">₹ 15,000</td>
+              <td style="text-align: center; font-weight: 600; color: var(--success);">Delivered</td>
+              <td class="amount-col">₹ 1,500</td>
             </tr>
 
             <tr>
@@ -570,8 +571,8 @@
                 <div class="module-desc">Dedicated admin panel for password resets, new user creation, dynamic quote &amp; photo carousel on login, project audits, and system diagnostics.</div>
                 <span class="tag">ADMIN PORTAL</span>
               </td>
-              <td style="text-align: center; font-weight: 600;">Completed</td>
-              <td class="amount-col">₹ 9,000</td>
+              <td style="text-align: center; font-weight: 600; color: var(--success);">Delivered</td>
+              <td class="amount-col">₹ 900</td>
             </tr>
           </tbody>
         </table>
@@ -587,7 +588,7 @@
               <th style="width: 50px;">#</th>
               <th>SERVICE / RESOURCE</th>
               <th style="width: 140px;">TYPE</th>
-              <th style="width: 140px; text-align: right;">ANNUAL ESTIMATE</th>
+              <th style="width: 140px; text-align: right;">ANNUAL RECURRING</th>
             </tr>
           </thead>
           <tbody>
@@ -598,7 +599,7 @@
                 <div class="module-desc">M0 Free Tier Cluster with SSL encryption, daily backups, and 99.99% availability.</div>
               </td>
               <td>Cloud Database</td>
-              <td class="amount-col">₹ 0 (Free Tier)</td>
+              <td class="amount-col" style="color: var(--success);">₹ 0 (Free)</td>
             </tr>
             <tr>
               <td class="module-num">B</td>
@@ -607,7 +608,7 @@
                 <div class="module-desc">Global CDN, automated continuous deployment from GitHub, custom domain support.</div>
               </td>
               <td>Web Service</td>
-              <td class="amount-col">₹ 0 (Free Tier)</td>
+              <td class="amount-col" style="color: var(--success);">₹ 0 (Free)</td>
             </tr>
             <tr>
               <td class="module-num">C</td>
@@ -616,7 +617,7 @@
                 <div class="module-desc">Enterprise-grade visitor verification and brute-force protection with zero user friction.</div>
               </td>
               <td>Security Gateway</td>
-              <td class="amount-col">₹ 0 (Free Tier)</td>
+              <td class="amount-col" style="color: var(--success);">₹ 0 (Free)</td>
             </tr>
           </tbody>
         </table>
@@ -625,31 +626,34 @@
       <!-- FINANCIAL SUMMARY & TERMS -->
       <div class="financial-summary">
         <div class="terms-box">
-          <h5>TERMS &amp; INCLUSIONS</h5>
+          <h5>SPECIAL TERMS &amp; INCLUSIONS</h5>
           <ul>
-            <li><strong>Full IP &amp; Source Code Transfer</strong>: 100% ownership of source code, repositories, and credentials belongs to MTS Decor.</li>
-            <li><strong>Zero Recurring SaaS Fees</strong>: Configured using production-ready free-tier cloud architectures (saves ₹25,000+ per year in third-party software subscriptions).</li>
-            <li><strong>Multi-Platform Support</strong>: Web, Mobile (Android/iOS browser), and Desktop (Windows/macOS).</li>
-            <li><strong>Maintenance Warranty</strong>: Free bug fixes and updates included.</li>
+            <li><strong>Full IP &amp; Source Code Ownership</strong>: 100% lifetime ownership transferred to MTS Decor.</li>
+            <li><strong>Zero Monthly / Yearly Software Subscription</strong>: Built on permanent free-tier cloud architectures (saving ₹20,000+ per year in recurring SaaS bills).</li>
+            <li><strong>Multi-Device Access</strong>: Usable on unlimited phones, tablets, laptops, and desktop computers.</li>
+            <li><strong>Free Ongoing Updates</strong>: Minor tweaks, unit adjustments, and maintenance included.</li>
           </ul>
         </div>
 
         <div class="totals-box">
           <div class="total-row">
-            <span>Development Gross Value:</span>
-            <span style="font-family: 'JetBrains Mono', monospace;">₹ 1,30,000</span>
+            <span>Subtotal (All 9 Modules):</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-weight: 600;">₹ 12,800</span>
           </div>
           <div class="total-row">
-            <span>Special Family / In-House Contractor Concession:</span>
-            <span class="discount-badge">- ₹ 65,000</span>
+            <span>Special In-House / Family Concession:</span>
+            <span class="discount-badge">- ₹ 2,801</span>
           </div>
           <div class="total-row">
-            <span>Cloud Infrastructure &amp; Setup:</span>
-            <span style="font-family: 'JetBrains Mono', monospace;">INCLUDED</span>
+            <span>Cloud Hosting &amp; Server Setup:</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-weight: 600; color: var(--success);">FREE</span>
           </div>
           <div class="total-row highlight">
-            <span>TOTAL ESTIMATED COST:</span>
-            <span class="amount">₹ 65,000</span>
+            <span>NET PAYABLE TOTAL:</span>
+            <span class="amount">₹ 9,999</span>
+          </div>
+          <div style="font-size: 11px; color: var(--text-muted); text-align: right; text-transform: uppercase;">
+            (Nine Thousand Nine Hundred Ninety-Nine Rupees Only)
           </div>
         </div>
       </div>
