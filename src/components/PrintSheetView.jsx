@@ -302,8 +302,8 @@ export default function PrintSheetView({
 
         {/* Signatures and Endorsement Block */}
         <div className="mt-5 pt-4 border-top">
-          <div className="row text-center justify-content-between g-3">
-            <div className="col-4">
+          <div className="d-flex justify-content-end">
+            <div className="text-center" style={{ minWidth: '240px', maxWidth: '320px' }}>
               <div className="border-top border-dark pt-2 fw-semibold small">
                 {header.checkedBy ? (
                   <>
@@ -316,18 +316,6 @@ export default function PrintSheetView({
                     <div className="text-muted extra-small">Signature</div>
                   </>
                 )}
-              </div>
-            </div>
-            <div className="col-4">
-              <div className="border-top border-dark pt-2 fw-semibold small">
-                <div className="text-uppercase">Contractor Signature</div>
-                <div className="text-muted extra-small">{header.contractorName || 'MTS DECOR'}</div>
-              </div>
-            </div>
-            <div className="col-4">
-              <div className="border-top border-dark pt-2 fw-semibold small">
-                <div className="text-uppercase">Client / PMC Representative</div>
-                <div className="text-muted extra-small">{header.clientName || 'Client / PMC'}</div>
               </div>
             </div>
           </div>
