@@ -1,0 +1,288 @@
+/* Import Bootstrap 5 and Bootstrap Icons */
+@import 'bootstrap/dist/css/bootstrap.min.css';
+@import 'bootstrap-icons/font/bootstrap-icons.css';
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  --primary-color: #1e40af;
+  --secondary-color: #475569;
+  --accent-color: #f59e0b;
+  --success-color: #15803d;
+  --danger-color: #b91c1c;
+  --surface-bg: #f8fafc;
+  --card-border: #e2e8f0;
+}
+
+body {
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: #f1f5f9;
+  color: #1e293b;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom Extra-Small Utilities */
+.extra-small {
+  font-size: 0.75rem;
+}
+
+.btn-xs {
+  padding: 0.15rem 0.4rem;
+  font-size: 0.72rem;
+  line-height: 1.2;
+  border-radius: 0.2rem;
+}
+
+/* Stat Cards */
+.stat-card {
+  border-radius: 8px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* Area Block */
+.area-block {
+  border-radius: 8px;
+  background-color: #ffffff;
+  overflow: hidden;
+  border: 1px solid var(--card-border);
+}
+
+.area-block .card-header {
+  background-color: #ffffff;
+}
+
+/* Line Item Rows & Table Responsiveness */
+.table-responsive {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+.table-responsive::-webkit-scrollbar {
+  height: 6px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 3px;
+}
+
+.line-items-table {
+  min-width: 820px;
+}
+
+.line-items-table.billing-active {
+  min-width: 980px;
+}
+
+.line-items-table th {
+  font-size: 0.75rem;
+  letter-spacing: 0.5px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  background-color: #f8fafc;
+  border-bottom: 2px solid #cbd5e1;
+  white-space: nowrap;
+}
+
+.line-item-row:hover {
+  background-color: #f8fafc !important;
+}
+
+.line-item-row input[type="number"],
+.line-item-row input[type="text"] {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.85rem;
+  border-color: #cbd5e1;
+}
+
+.line-item-row input[type="number"]:focus,
+.line-item-row input[type="text"]:focus,
+.line-item-row select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 0.15rem rgba(37, 99, 235, 0.15);
+}
+
+/* Monospace font for numerical inputs and totals */
+.line-item-row td.text-end,
+.sheet-grid-table td.text-end {
+  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── MOBILE STICKY BAR ──────────────────────────── */
+.mobile-sticky-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1030;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 8px 12px;
+}
+
+@media (min-width: 768px) {
+  .mobile-sticky-bar {
+    display: none !important;
+  }
+}
+
+/* Mobile adjustments */
+@media (max-width: 767.98px) {
+  .app-container {
+    padding-bottom: 70px; /* Space for mobile sticky bar */
+  }
+
+  .stat-card .fs-4 {
+    font-size: 1.25rem !important;
+  }
+
+  .admin-sidebar {
+    position: static !important;
+    min-height: auto !important;
+    width: 100% !important;
+  }
+}
+
+/* Print Sheet Styling - Matches Contractor PDF / Engineering Book */
+.contractor-sheet-page {
+  max-width: 1050px;
+  border: 1px solid #cbd5e1;
+  background: white;
+  min-height: 800px;
+}
+
+.sheet-grid-table {
+  border-collapse: collapse !important;
+  width: 100%;
+}
+
+.sheet-grid-table th,
+.sheet-grid-table td {
+  border: 1.2px solid #000000 !important;
+  padding: 4px 6px !important;
+  font-size: 0.8rem;
+  color: #000000 !important;
+}
+
+.sheet-grid-table thead th {
+  background-color: #f3f4f6 !important;
+  font-weight: 700 !important;
+  text-align: center;
+}
+
+/* Print View Styles */
+@media print {
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11pt;
+  }
+
+  .no-print,
+  .btn,
+  .toast,
+  .mobile-sticky-bar,
+  footer,
+  header {
+    display: none !important;
+  }
+
+  .print-view-wrapper {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .contractor-sheet-page {
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  .sheet-grid-table {
+    page-break-inside: auto;
+  }
+
+  .sheet-grid-table tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+
+  .sheet-grid-table th,
+  .sheet-grid-table td {
+    border: 1.5px solid #000000 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+
+/* ─── LOGIN PAGE ─────────────────────────────────── */
+.login-page {
+  position: relative;
+  overflow: hidden;
+}
+
+.login-bg {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #1e293b 100%);
+  z-index: 0;
+}
+
+.login-bg::before {
+  content: '';
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(37,99,235,0.15) 0%, transparent 70%);
+  top: -150px;
+  right: -150px;
+}
+
+.login-bg::after {
+  content: '';
+  position: absolute;
+  width: 400px;
+  height: 400px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(245,158,11,0.08) 0%, transparent 70%);
+  bottom: -100px;
+  left: -100px;
+}
+
+.login-card {
+  border-radius: 16px;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+}
+
+/* ─── ADMIN PANEL ────────────────────────────────── */
+.admin-sidebar {
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  min-height: 100vh;
+  overflow-y: auto;
+}
+
+/* ─── GLOBAL UPPERCASE HELPERS ───────────────────── */
+.tracking-wider {
+  letter-spacing: 2px;
+}
+
+input::placeholder {
+  text-transform: uppercase;
+  font-size: 0.82rem;
+  letter-spacing: 0.4px;
+  opacity: 0.5;
+}
