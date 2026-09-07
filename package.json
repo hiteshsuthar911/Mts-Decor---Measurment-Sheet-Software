@@ -18,9 +18,16 @@
     "electron:build": "cross-env ELECTRON_BUILD=true npm run build && electron-builder",
     "electron:build:win": "cross-env ELECTRON_BUILD=true npm run build && electron-builder --win",
     "electron:build:mac": "cross-env ELECTRON_BUILD=true npm run build && electron-builder --mac",
-    "electron:build:dir": "cross-env ELECTRON_BUILD=true npm run build && electron-builder --dir"
+    "electron:build:dir": "cross-env ELECTRON_BUILD=true npm run build && electron-builder --dir",
+    "cap:sync": "npm run build && cap sync",
+    "cap:android": "cap open android",
+    "cap:ios": "cap open ios"
   },
   "dependencies": {
+    "@capacitor/android": "^8.5.1",
+    "@capacitor/cli": "^8.5.1",
+    "@capacitor/core": "^8.5.1",
+    "@capacitor/ios": "^8.5.1",
     "@vitejs/plugin-react": "^6.1.0",
     "bootstrap": "^5.3.8",
     "bootstrap-icons": "^1.13.1",
@@ -64,11 +71,15 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         },
         {
           "target": "zip",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "icon": "build/icon.png"
