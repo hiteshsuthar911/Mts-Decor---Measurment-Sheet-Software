@@ -1,25 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login } from '../utils/auth';
+import { getFounderSlides } from '../utils/storage';
 
-const TESTIMONIALS = [
+const DEFAULT_SLIDES = [
   {
-    quote: "“We've been using Untitled to kick start every new project and can't imagine working without it.”",
-    author: "Amélie Laurent",
-    role: "Lead Designer, Layers",
-    company: "Web Development Agency"
+    name: 'Jagdish Suthar',
+    role: 'Founder & Managing Director',
+    company: 'MTS Decor & Interiors',
+    quote: '“Precision in civil and interior measurements is the foundation of flawless execution. MS Pro ensures every site calculation is 100% accurate.”',
+    imageUrl: '/login_hero.jpg'
   },
   {
-    quote: "“MS Pro transformed how we manage civil and interior measurements at MTS Decor. Complete precision on every floor.”",
-    author: "Jagdish Suthar",
-    role: "Head of Site Execution",
-    company: "MTS Decor & Interiors"
-  },
-  {
-    quote: "“Real-time MongoDB cloud synchronization and instant RA bill generation make our contractor workflows effortless.”",
-    author: "Madanlal Suthar",
-    role: "Quantity Surveyor & Project Lead",
-    company: "MTS Decor & Interiors"
+    name: 'Madanlal Suthar',
+    role: 'Co-Founder & Technical Lead',
+    company: 'MTS Decor & Interiors',
+    quote: '“Our goal with MTS Decor has always been trust and perfection. Real-time cloud synchronization empowers our team to deliver on time, every time.”',
+    imageUrl: '/login_hero.jpg'
   }
 ];
 
@@ -31,7 +28,28 @@ export default function LoginPage() {
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [slides, setSlides] = useState(DEFAULT_SLIDES);
   const [testimonialIdx, setTestimonialIdx] = useState(0);
+
+  // Load founder slides from MongoDB Atlas
+  useEffect(() => {
+    getFounderSlides()
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          setSlides(data);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  // Automatic sliding every 6 seconds
+  useEffect(() => {
+    if (slides.length <= 1) return;
+    const interval = setInterval(() => {
+      setTestimonialIdx(prev => (prev + 1) % slides.length);
+    }, 6000);
+    return () => clearInterval(interval);
+  }, [slides.length]);
 
   const handleSubmit = async (e) => {
     e?.preventDefault();
@@ -58,14 +76,14 @@ export default function LoginPage() {
   };
 
   const nextTestimonial = () => {
-    setTestimonialIdx((prev) => (prev + 1) % TESTIMONIALS.length);
+    setTestimonialIdx((prev) => (prev + 1) % slides.length);
   };
 
   const prevTestimonial = () => {
-    setTestimonialIdx((prev) => (prev - 1 + TESTIMONIALS.length) % TESTIMONIALS.length);
+    setTestimonialIdx((prev) => (prev - 1 + slides.length) % slides.length);
   };
 
-  const currentQuote = TESTIMONIALS[testimonialIdx];
+  const currentQuote = slides[testimonialIdx] || slides[0] || DEFAULT_SLIDES[0];
 
   return (
     <div className="untitled-login-wrapper">
@@ -73,12 +91,12 @@ export default function LoginPage() {
       <div className="untitled-form-side">
         {/* Top Brand Logo */}
         <div className="untitled-brand-logo">
-          <div className="untitled-logo-icon">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-            </svg>
-          </div>
-          <span>Untitled UI</span>
+          <img
+            src="/mtsdecor.png"
+            alt="MTS Decor"
+            style={{ height: '44px', maxWidth: '170px', objectFit: 'contain' }}
+            onError={(e) => { e.target.onerror = null; e.target.src = '/logo.png'; }}
+          />
         </div>
 
         {/* Centered Sign In Form Container */}
@@ -249,7 +267,7 @@ export default function LoginPage() {
 
         {/* Bottom Copyright */}
         <div className="untitled-footer-text">
-          &copy; Untitled UI 2077
+          &copy; MTS Decor {new Date().getFullYear()} &bull; All Rights Reserved
         </div>
       </div>
 
@@ -257,7 +275,10 @@ export default function LoginPage() {
       <div className="untitled-image-side">
         <div
           className="untitled-hero-card"
-          style={{ backgroundImage: `url('/login_hero.jpg')` }}
+          style={{
+            backgroundImage: `url('${currentQuote.imageUrl || '/login_hero.jpg'}')`,
+            transition: 'background-image 0.5s ease-in-out'
+          }}
         >
           {/* Subtle Dark Gradient Overlay */}
           <div className="untitled-hero-overlay"></div>
@@ -269,14 +290,34 @@ export default function LoginPage() {
                 {currentQuote.quote}
               </p>
               <div className="untitled-author-name">
-                {currentQuote.author}
+                {currentQuote.name || currentQuote.author}
               </div>
               <div className="untitled-author-role">
                 {currentQuote.role}
               </div>
               <div className="untitled-author-company">
-                {currentQuote.company}
+                {currentQuote.company || 'MTS Decor & Interiors'}
               </div>
+
+              {/* Slide dots indicator */}
+              {slides.length > 1 && (
+                <div className="d-flex gap-1 mt-3">
+                  {slides.map((_, i) => (
+                    <span
+                      key={i}
+                      onClick={() => setTestimonialIdx(i)}
+                      style={{
+                        width: testimonialIdx === i ? '22px' : '7px',
+                        height: '7px',
+                        borderRadius: '4px',
+                        backgroundColor: testimonialIdx === i ? '#ffffff' : 'rgba(255, 255, 255, 0.4)',
+                        transition: 'all 0.3s ease',
+                        cursor: 'pointer'
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Testimonial Slider Controls */}

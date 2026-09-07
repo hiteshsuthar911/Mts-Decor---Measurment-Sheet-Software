@@ -123,7 +123,15 @@ export default function ProjectsPage() {
       {/* Top Nav */}
       <nav className="navbar navbar-dark bg-dark px-4 py-2 shadow-sm">
         <div className="d-flex align-items-center gap-3">
-          <span className="navbar-brand fw-bolder fs-5 text-uppercase mb-0">📐 MS PRO</span>
+          <div className="d-flex align-items-center gap-2">
+            <img
+              src="/mtsdecor.png"
+              alt="MTS Decor"
+              style={{ height: '28px', maxWidth: '120px', objectFit: 'contain' }}
+              onError={(e) => { e.target.onerror = null; e.target.src = '/logo.png'; }}
+            />
+            <span className="navbar-brand fw-bolder fs-5 text-uppercase mb-0">MS PRO</span>
+          </div>
           <span className="text-secondary d-none d-md-inline extra-small text-uppercase">MEASUREMENT SHEET SYSTEM</span>
         </div>
         <div className="d-flex align-items-center gap-2">

@@ -34,9 +34,17 @@ export default function Header({
         <div className="container-fluid d-flex flex-wrap justify-content-between align-items-center gap-2">
           {/* Brand & Project Name preview */}
           <div className="d-flex align-items-center flex-wrap gap-2">
-            <span className="badge bg-primary px-2 py-1 fs-6 text-uppercase">
-              <i className="bi bi-rulers me-1"></i> MS Pro
-            </span>
+            <div className="d-flex align-items-center gap-2">
+              <img
+                src="/mtsdecor.png"
+                alt="MTS Decor"
+                style={{ height: '24px', maxWidth: '110px', objectFit: 'contain' }}
+                onError={(e) => { e.target.onerror = null; e.target.src = '/logo.png'; }}
+              />
+              <span className="badge bg-primary px-2 py-1 fs-6 text-uppercase">
+                MS Pro
+              </span>
+            </div>
             <span className="fw-bold text-light small text-uppercase d-none d-sm-inline">
               {headerData.projectName || 'MEASUREMENT SHEET'}
             </span>

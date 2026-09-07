@@ -29,3 +29,20 @@ export async function deleteProject(id) {
 export async function getProjectStats() {
   return api.get('/projects/stats/all');
 }
+
+// ── FOUNDER SLIDES (Public GET, Admin POST/PUT/DELETE) ──
+export async function getFounderSlides() {
+  return api.get('/founder-slides');
+}
+
+export async function createFounderSlide(data) {
+  return api.post('/founder-slides', data);
+}
+
+export async function updateFounderSlide(id, data) {
+  return api.put(`/founder-slides/${id}`, data);
+}
+
+export async function deleteFounderSlide(id) {
+  return api.delete(`/founder-slides/${id}`);
+}

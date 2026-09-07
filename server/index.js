@@ -6,6 +6,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const User = require('./models/User');
+const FounderSlide = require('./models/FounderSlide');
 
 const app = express();
 
@@ -14,8 +15,9 @@ app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: '10mb' })); // Large limit for measurement data
 
 // ── Routes ────────────────────────────────────────────────
-app.use('/api/auth',     require('./routes/auth'));
-app.use('/api/projects', require('./routes/projects'));
+app.use('/api/auth',           require('./routes/auth'));
+app.use('/api/projects',       require('./routes/projects'));
+app.use('/api/founder-slides', require('./routes/founderSlides'));
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'OK', time: new Date().toISOString() }));
@@ -60,6 +62,32 @@ async function seedUsers() {
   }
 }
 
+// ── Database Seed (creates default founder quotes on first run) ─
+async function seedFounderSlides() {
+  const count = await FounderSlide.countDocuments();
+  if (count === 0) {
+    await FounderSlide.create([
+      {
+        name: 'Jagdish Suthar',
+        role: 'Founder & Managing Director',
+        company: 'MTS Decor & Interiors',
+        quote: '“Precision in civil and interior measurements is the foundation of flawless execution. MS Pro ensures every site calculation is 100% accurate.”',
+        imageUrl: '/login_hero.jpg',
+        order: 1
+      },
+      {
+        name: 'Madanlal Suthar',
+        role: 'Co-Founder & Technical Lead',
+        company: 'MTS Decor & Interiors',
+        quote: '“Our goal with MTS Decor has always been trust and perfection. Real-time cloud synchronization empowers our team to deliver on time, every time.”',
+        imageUrl: '/login_hero.jpg',
+        order: 2
+      }
+    ]);
+    console.log('✅ Seeded default founder slides');
+  }
+}
+
 // ── Connect to MongoDB and Start Server ───────────────────
 const PORT = process.env.PORT || 5000;
 
@@ -67,6 +95,7 @@ mongoose.connect(process.env.MONGO_URI)
   .then(async () => {
     console.log('✅ Connected to MongoDB Atlas');
     await seedUsers();
+    await seedFounderSlides();
     app.listen(PORT, () => {
       console.log(`🚀 MS PRO Server running on http://localhost:${PORT}`);
     });

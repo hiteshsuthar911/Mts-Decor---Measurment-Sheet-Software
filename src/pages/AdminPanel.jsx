@@ -1,7 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { getSession, logout, ADMIN_USERS } from '../utils/auth';
-import { getAllProjects, deleteProject, getProjectStats } from '../utils/storage';
+import { 
+  getAllProjects, 
+  deleteProject, 
+  getProjectStats,
+  getFounderSlides,
+  createFounderSlide,
+  updateFounderSlide,
+  deleteFounderSlide
+} from '../utils/storage';
 
 export default function AdminPanel() {
   const navigate = useNavigate();
@@ -11,6 +19,20 @@ export default function AdminPanel() {
   const [stats, setStats] = useState({});
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState('');
+
+  // Founder slides state
+  const [founderSlides, setFounderSlides] = useState([]);
+  const [loadingSlides, setLoadingSlides] = useState(false);
+  const [editingSlideId, setEditingSlideId] = useState(null);
+  const [savingSlide, setSavingSlide] = useState(false);
+  const [slideForm, setSlideForm] = useState({
+    name: '',
+    role: '',
+    company: 'MTS Decor & Interiors',
+    quote: '',
+    imageUrl: '',
+    order: 0
+  });
 
   const loadData = async () => {
     try {
@@ -34,9 +56,22 @@ export default function AdminPanel() {
     }
   };
 
+  const loadFounderSlides = async () => {
+    try {
+      setLoadingSlides(true);
+      const data = await getFounderSlides();
+      setFounderSlides(Array.isArray(data) ? data : []);
+    } catch {
+      // ignore
+    } finally {
+      setLoadingSlides(false);
+    }
+  };
+
   useEffect(() => {
     if (!session || session.role !== 'ADMIN') { navigate('/login'); return; }
     loadData();
+    loadFounderSlides();
   }, []);
 
   if (!session || session.role !== 'ADMIN') return null;
@@ -45,12 +80,93 @@ export default function AdminPanel() {
   const users = ADMIN_USERS.filter(u => u.role === 'USER');
 
   const navItems = [
-    { key: 'dashboard',  label: 'DASHBOARD',         icon: 'bi-speedometer2' },
-    { key: 'projects',   label: 'ALL PROJECTS',       icon: 'bi-folder2-open' },
-    { key: 'users',      label: 'USER MANAGEMENT',    icon: 'bi-people-fill'  },
-    { key: 'credentials',label: 'LOGIN CREDENTIALS',  icon: 'bi-key-fill'     },
-    { key: 'about',      label: 'SYSTEM INFO',        icon: 'bi-info-circle-fill' },
+    { key: 'dashboard',   label: 'DASHBOARD',         icon: 'bi-speedometer2' },
+    { key: 'projects',    label: 'ALL PROJECTS',       icon: 'bi-folder2-open' },
+    { key: 'users',       label: 'USER MANAGEMENT',    icon: 'bi-people-fill'  },
+    { key: 'slides',      label: 'FOUNDER SLIDES',     icon: 'bi-images'       },
+    { key: 'credentials', label: 'LOGIN CREDENTIALS',  icon: 'bi-key-fill'     },
+    { key: 'about',       label: 'SYSTEM INFO',        icon: 'bi-info-circle-fill' },
   ];
+
+  const handleImageFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 8 * 1024 * 1024) {
+      alert('IMAGE SIZE MUST BE UNDER 8MB');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setSlideForm(prev => ({ ...prev, imageUrl: reader.result }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleEditSlide = (slide) => {
+    setEditingSlideId(slide._id);
+    setSlideForm({
+      name: slide.name || '',
+      role: slide.role || '',
+      company: slide.company || 'MTS Decor & Interiors',
+      quote: slide.quote || '',
+      imageUrl: slide.imageUrl || '',
+      order: slide.order ?? 0
+    });
+    // Scroll smoothly to form
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingSlideId(null);
+    setSlideForm({
+      name: '',
+      role: '',
+      company: 'MTS Decor & Interiors',
+      quote: '',
+      imageUrl: '',
+      order: 0
+    });
+  };
+
+  const handleSaveSlide = async (e) => {
+    e.preventDefault();
+    if (!slideForm.name.trim() || !slideForm.quote.trim()) {
+      alert('FOUNDER NAME AND QUOTE / THOUGHT ARE REQUIRED');
+      return;
+    }
+    if (!slideForm.imageUrl) {
+      alert('PLEASE UPLOAD A PHOTO OR PROVIDE AN IMAGE URL');
+      return;
+    }
+
+    try {
+      setSavingSlide(true);
+      if (editingSlideId) {
+        await updateFounderSlide(editingSlideId, slideForm);
+        showToast('FOUNDER SLIDE UPDATED');
+      } else {
+        await createFounderSlide(slideForm);
+        showToast('NEW FOUNDER SLIDE ADDED');
+      }
+      handleCancelEdit();
+      await loadFounderSlides();
+    } catch (err) {
+      alert('FAILED TO SAVE SLIDE: ' + err.message);
+    } finally {
+      setSavingSlide(false);
+    }
+  };
+
+  const handleDeleteSlide = async (id, name) => {
+    if (!confirm(`DELETE FOUNDER SLIDE FOR "${name?.toUpperCase()}"?`)) return;
+    try {
+      await deleteFounderSlide(id);
+      showToast('FOUNDER SLIDE DELETED');
+      await loadFounderSlides();
+    } catch (err) {
+      alert('FAILED TO DELETE SLIDE: ' + err.message);
+    }
+  };
 
   return (
     <div className="admin-panel d-flex min-vh-100 bg-light">
@@ -70,10 +186,14 @@ export default function AdminPanel() {
       <aside className="admin-sidebar bg-dark text-white d-flex flex-column" style={{ width: '260px', minHeight: '100vh' }}>
         <div className="p-4 border-bottom border-secondary">
           <div className="d-flex align-items-center gap-2 mb-1">
-            <span className="fs-4">📐</span>
-            <span className="fw-bolder fs-5 text-uppercase">MS PRO</span>
+            <img 
+              src="/mtsdecor.png" 
+              alt="MTS Decor" 
+              style={{ height: 32, maxWidth: '100%', objectFit: 'contain' }} 
+              onError={(e) => { e.target.onerror = null; e.target.src = '/logo.png'; }}
+            />
           </div>
-          <div className="text-secondary extra-small text-uppercase">ADMIN CONTROL PANEL</div>
+          <div className="text-secondary extra-small text-uppercase">MS PRO &bull; ADMIN CONTROL PANEL</div>
         </div>
 
         {/* Logged-in admin info */}
@@ -96,7 +216,11 @@ export default function AdminPanel() {
               className={`btn w-100 text-start mb-1 py-2 px-3 rounded fw-semibold extra-small text-uppercase d-flex align-items-center gap-2 ${
                 activeSection === item.key ? 'btn-primary text-white' : 'btn-dark text-secondary border-0'
               }`}
-              onClick={() => { setActiveSection(item.key); loadData(); }}
+              onClick={() => { 
+                setActiveSection(item.key); 
+                if (item.key === 'slides') loadFounderSlides();
+                else loadData(); 
+              }}
             >
               <i className={`bi ${item.icon}`}></i>
               {item.label}
@@ -324,6 +448,299 @@ export default function AdminPanel() {
                   </div>
                 );
               })}
+            </div>
+          </div>
+        )}
+
+        {/* ── FOUNDER SLIDES ── */}
+        {activeSection === 'slides' && (
+          <div>
+            {/* Header info & Preview Button */}
+            <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4 bg-white p-3 rounded shadow-sm border">
+              <div>
+                <h6 className="fw-bolder text-uppercase mb-1">
+                  <i className="bi bi-images text-primary me-2"></i>FOUNDER SLIDESHOW &amp; THOUGHTS
+                </h6>
+                <div className="text-muted extra-small text-uppercase">
+                  PHOTOS AND THOUGHTS CONFIGURED HERE WILL DYNAMICALLY ROTATE ON THE LOGIN PAGE
+                </div>
+              </div>
+              <div className="d-flex align-items-center gap-2">
+                <a
+                  href="/login"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn btn-sm btn-outline-primary fw-bold text-uppercase extra-small d-flex align-items-center gap-1"
+                >
+                  <i className="bi bi-box-arrow-up-right"></i> PREVIEW LOGIN PAGE
+                </a>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-secondary fw-bold text-uppercase extra-small"
+                  onClick={loadFounderSlides}
+                  disabled={loadingSlides}
+                >
+                  <i className={`bi bi-arrow-clockwise me-1 ${loadingSlides ? 'spin' : ''}`}></i> REFRESH
+                </button>
+              </div>
+            </div>
+
+            {/* Slide Creation / Edit Form */}
+            <div className="card border-0 shadow-sm mb-4">
+              <div className="card-header bg-white border-bottom fw-bolder text-uppercase small d-flex justify-content-between align-items-center">
+                <span>
+                  <i className={`bi ${editingSlideId ? 'bi-pencil-square text-warning' : 'bi-plus-circle-fill text-primary'} me-2`}></i>
+                  {editingSlideId ? 'EDIT FOUNDER SLIDE' : 'ADD NEW FOUNDER SLIDE'}
+                </span>
+                {editingSlideId && (
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-secondary extra-small fw-bold text-uppercase"
+                    onClick={handleCancelEdit}
+                  >
+                    CANCEL EDIT
+                  </button>
+                )}
+              </div>
+              <div className="card-body">
+                <form onSubmit={handleSaveSlide}>
+                  <div className="row g-3">
+                    {/* Founder Name */}
+                    <div className="col-12 col-md-6">
+                      <label className="form-label extra-small fw-bold text-uppercase text-secondary mb-1">
+                        FOUNDER NAME *
+                      </label>
+                      <input
+                        type="text"
+                        className="form-control form-control-sm"
+                        placeholder="e.g. Jagdish Suthar"
+                        value={slideForm.name}
+                        onChange={(e) => setSlideForm({ ...slideForm, name: e.target.value })}
+                        required
+                      />
+                    </div>
+
+                    {/* Role / Designation */}
+                    <div className="col-12 col-md-6">
+                      <label className="form-label extra-small fw-bold text-uppercase text-secondary mb-1">
+                        ROLE / DESIGNATION *
+                      </label>
+                      <input
+                        type="text"
+                        className="form-control form-control-sm"
+                        placeholder="e.g. Founder & Managing Director"
+                        value={slideForm.role}
+                        onChange={(e) => setSlideForm({ ...slideForm, role: e.target.value })}
+                        required
+                      />
+                    </div>
+
+                    {/* Company */}
+                    <div className="col-12 col-md-6">
+                      <label className="form-label extra-small fw-bold text-uppercase text-secondary mb-1">
+                        COMPANY NAME
+                      </label>
+                      <input
+                        type="text"
+                        className="form-control form-control-sm"
+                        placeholder="e.g. MTS Decor & Interiors"
+                        value={slideForm.company}
+                        onChange={(e) => setSlideForm({ ...slideForm, company: e.target.value })}
+                      />
+                    </div>
+
+                    {/* Order / Priority */}
+                    <div className="col-12 col-md-6">
+                      <label className="form-label extra-small fw-bold text-uppercase text-secondary mb-1">
+                        DISPLAY ORDER (LOWER APPEARS FIRST)
+                      </label>
+                      <input
+                        type="number"
+                        className="form-control form-control-sm"
+                        placeholder="0"
+                        value={slideForm.order}
+                        onChange={(e) => setSlideForm({ ...slideForm, order: parseInt(e.target.value, 10) || 0 })}
+                      />
+                    </div>
+
+                    {/* Founder Quote / Thought */}
+                    <div className="col-12">
+                      <label className="form-label extra-small fw-bold text-uppercase text-secondary mb-1">
+                        FOUNDER THOUGHT / QUOTE *
+                      </label>
+                      <textarea
+                        className="form-control form-control-sm"
+                        rows="3"
+                        placeholder="e.g. “Precision in civil and interior measurements is the foundation of flawless execution...”"
+                        value={slideForm.quote}
+                        onChange={(e) => setSlideForm({ ...slideForm, quote: e.target.value })}
+                        required
+                      ></textarea>
+                    </div>
+
+                    {/* Founder Photo Upload or URL */}
+                    <div className="col-12 col-md-8">
+                      <label className="form-label extra-small fw-bold text-uppercase text-secondary mb-1">
+                        FOUNDER PHOTO (UPLOAD IMAGE OR ENTER IMAGE URL) *
+                      </label>
+                      <div className="input-group input-group-sm mb-2">
+                        <input
+                          type="file"
+                          className="form-control"
+                          accept="image/*"
+                          onChange={handleImageFileChange}
+                        />
+                      </div>
+                      <div className="d-flex align-items-center gap-2">
+                        <span className="text-muted extra-small text-uppercase">OR URL:</span>
+                        <input
+                          type="text"
+                          className="form-control form-control-sm"
+                          placeholder="https://... or /photo.jpg"
+                          value={slideForm.imageUrl}
+                          onChange={(e) => setSlideForm({ ...slideForm, imageUrl: e.target.value })}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Image Preview */}
+                    <div className="col-12 col-md-4">
+                      <label className="form-label extra-small fw-bold text-uppercase text-secondary mb-1">
+                        PHOTO PREVIEW
+                      </label>
+                      <div
+                        className="rounded-3 border overflow-hidden position-relative d-flex align-items-center justify-content-center bg-dark"
+                        style={{ height: '110px', background: '#18181b' }}
+                      >
+                        {slideForm.imageUrl ? (
+                          <img
+                            src={slideForm.imageUrl}
+                            alt="Preview"
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          />
+                        ) : (
+                          <div className="text-center text-muted extra-small text-uppercase p-2">
+                            <i className="bi bi-image fs-3 d-block mb-1"></i>
+                            NO PHOTO SELECTED
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+                    {editingSlideId && (
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-secondary fw-bold text-uppercase extra-small px-3"
+                        onClick={handleCancelEdit}
+                      >
+                        CANCEL
+                      </button>
+                    )}
+                    <button
+                      type="submit"
+                      className="btn btn-sm btn-primary fw-bold text-uppercase extra-small px-4"
+                      disabled={savingSlide}
+                    >
+                      {savingSlide ? (
+                        <>
+                          <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                          SAVING...
+                        </>
+                      ) : (
+                        <>
+                          <i className="bi bi-cloud-arrow-up-fill me-1"></i>
+                          {editingSlideId ? 'UPDATE SLIDE' : 'SAVE FOUNDER SLIDE'}
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            {/* Active Slides List */}
+            <div className="card border-0 shadow-sm">
+              <div className="card-header bg-white border-bottom fw-bolder text-uppercase small d-flex justify-content-between align-items-center">
+                <span>
+                  <i className="bi bi-collection-play-fill text-primary me-2"></i>
+                  ACTIVE FOUNDER SLIDES ({founderSlides.length})
+                </span>
+                <span className="badge bg-light text-secondary border extra-small">
+                  ROTATES EVERY 6 SECONDS ON LOGIN
+                </span>
+              </div>
+              <div className="table-responsive">
+                <table className="table table-hover align-middle mb-0 small">
+                  <thead className="table-light">
+                    <tr className="text-uppercase extra-small fw-bold">
+                      <th style={{ width: '60px' }}>ORDER</th>
+                      <th style={{ width: '80px' }}>PHOTO</th>
+                      <th>FOUNDER INFO</th>
+                      <th>THOUGHT / QUOTE</th>
+                      <th style={{ width: '110px' }} className="text-end">ACTIONS</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {founderSlides.map((slide, idx) => (
+                      <tr key={slide._id || idx}>
+                        <td>
+                          <span className="badge bg-secondary text-uppercase">{slide.order ?? idx}</span>
+                        </td>
+                        <td>
+                          <img
+                            src={slide.imageUrl || '/login_hero.jpg'}
+                            alt={slide.name}
+                            className="rounded-3 shadow-sm"
+                            style={{ width: '56px', height: '56px', objectFit: 'cover' }}
+                            onError={(e) => { e.target.onerror = null; e.target.src = '/login_hero.jpg'; }}
+                          />
+                        </td>
+                        <td>
+                          <div className="fw-bold text-uppercase text-dark">{slide.name}</div>
+                          <div className="extra-small text-primary fw-semibold">{slide.role}</div>
+                          <div className="extra-small text-muted">{slide.company || 'MTS DECOR'}</div>
+                        </td>
+                        <td>
+                          <div className="text-secondary small fst-italic" style={{ maxWidth: '480px' }}>
+                            "{slide.quote}"
+                          </div>
+                        </td>
+                        <td className="text-end">
+                          <div className="btn-group btn-group-sm">
+                            <button
+                              type="button"
+                              className="btn btn-outline-secondary"
+                              onClick={() => handleEditSlide(slide)}
+                              title="Edit slide"
+                            >
+                              <i className="bi bi-pencil-fill"></i>
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-outline-danger"
+                              onClick={() => handleDeleteSlide(slide._id, slide.name)}
+                              title="Delete slide"
+                            >
+                              <i className="bi bi-trash3-fill"></i>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {founderSlides.length === 0 && (
+                      <tr>
+                        <td colSpan={5} className="text-center text-muted text-uppercase py-5">
+                          <i className="bi bi-images fs-2 d-block mb-2 text-secondary opacity-50"></i>
+                          NO FOUNDER SLIDES ADDED YET. ADD ONE ABOVE TO SHOW ON THE LOGIN PAGE!
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}
