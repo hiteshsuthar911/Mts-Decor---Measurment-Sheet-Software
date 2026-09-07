@@ -1,4 +1,5 @@
 const path = require('path');
+const fs = require('fs');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 require('dotenv').config();
 const express = require('express');
@@ -68,6 +69,27 @@ app.use('/api/users',          require('./routes/users'));
 app.use('/api/projects',       require('./routes/projects'));
 app.use('/api/founder-slides', require('./routes/founderSlides'));
 app.use('/api/backup',         require('./routes/backup'));
+
+// Direct download endpoints for Windows & Mac builds
+app.get('/api/download/windows', (req, res) => {
+  const exePath = path.join(__dirname, '../dist-electron/MTS Decor Setup 1.0.0.exe');
+  if (fs.existsSync(exePath)) {
+    return res.download(exePath, 'MTS-Decor-Setup-1.0.0.exe');
+  }
+  const zipPath = path.join(__dirname, '../dist-electron/MTS Decor-1.0.0-win.zip');
+  if (fs.existsSync(zipPath)) {
+    return res.download(zipPath, 'MTS-Decor-1.0.0-win.zip');
+  }
+  res.status(404).json({ error: 'Windows installer not found on server' });
+});
+
+app.get('/api/download/mac', (req, res) => {
+  const dmgPath = path.join(__dirname, '../dist-electron/MTS Decor-1.0.0-arm64.dmg');
+  if (fs.existsSync(dmgPath)) {
+    return res.download(dmgPath, 'MTS-Decor-1.0.0-arm64.dmg');
+  }
+  res.status(404).json({ error: 'macOS DMG not found on server' });
+});
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ 

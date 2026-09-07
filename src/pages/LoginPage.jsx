@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { loginInit, loginVerify2FA } from '../utils/auth';
 import { getFounderSlides } from '../utils/storage';
+import AppStoreBadges from '../components/AppStoreBadges';
 
 const STATIC_FOUNDER_SLIDES = [
   {
@@ -391,8 +392,22 @@ export default function LoginPage() {
           )}
         </div>
 
+        {/* App Store & Google Play Download Badges */}
+        <div className="mt-4 pt-2 text-center border-top border-light">
+          <div className="text-muted extra-small text-uppercase fw-bold mb-2" style={{ letterSpacing: '0.05em' }}>
+            Get MTS Decor on Mobile & Desktop
+          </div>
+          <AppStoreBadges height={38} showWindowsMac={false} align="center" />
+          <div className="mt-2">
+            <Link to="/download" className="text-decoration-none extra-small text-muted fw-semibold">
+              <i className="bi bi-display me-1 text-primary"></i>
+              <span>Also available for Windows PC & Mac →</span>
+            </Link>
+          </div>
+        </div>
+
         {/* Bottom Copyright */}
-        <div className="untitled-footer-text mt-4 text-center">
+        <div className="untitled-footer-text mt-3 text-center">
           <div className="text-secondary extra-small text-uppercase fw-semibold">
             &copy; {new Date().getFullYear()} MTS Decor &bull; All Rights Reserved
           </div>

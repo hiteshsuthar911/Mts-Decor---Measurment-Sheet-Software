@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
+import DownloadPage from './pages/DownloadPage';
 import AdminPanel from './pages/AdminPanel';
 import ProjectsPage from './pages/ProjectsPage';
 import MeasurementSheet from './pages/MeasurementSheet';
@@ -38,6 +39,8 @@ export default function App() {
       <Routes>
         {/* Public */}
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/download" element={<DownloadPage />} />
+        <Route path="/apps" element={<DownloadPage />} />
 
         {/* ADMIN only */}
         <Route

@@ -862,7 +862,7 @@ export default function MeasurementSheet() {
       />
 
       <footer className="bg-white border-top py-2 text-center text-muted extra-small mt-auto no-print text-uppercase">
-        &copy; {new Date().getFullYear()} MS PRO — CONTRACTOR MEASUREMENT &amp; RA BILL SYSTEM
+        &copy; {new Date().getFullYear()} MS PRO — CONTRACTOR MEASUREMENT &amp; RA BILL SYSTEM &bull; <Link to="/download" className="text-decoration-none text-muted fw-bold">GET MOBILE &amp; DESKTOP APPS</Link>
       </footer>
     </div>
   );

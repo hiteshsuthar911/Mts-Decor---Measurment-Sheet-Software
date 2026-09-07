@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { getSession, logout } from '../utils/auth';
 import { getAllProjects, createProject, deleteProject } from '../utils/storage';
 import { BLANK_PROJECT } from '../data/sampleData';
+import AppStoreBadges from '../components/AppStoreBadges';
 
 export default function ProjectsPage() {
   const navigate = useNavigate();
@@ -245,8 +246,21 @@ export default function ProjectsPage() {
         )}
       </main>
 
-      <footer className="bg-white border-top py-2 text-center text-muted extra-small text-uppercase">
-        © {new Date().getFullYear()} MS PRO — CONTRACTOR MEASUREMENT SYSTEM &bull; CLOUD SYNC: MONGODB ATLAS
+      <footer className="bg-white border-top py-4 text-center">
+        <div className="container">
+          <div className="d-flex flex-column flex-md-row align-items-center justify-content-between gap-3 mb-3">
+            <div className="text-start text-muted extra-small">
+              <div className="fw-bold text-dark text-uppercase">MTS Decor &bull; MS Pro</div>
+              <div>Civil & Interior Contractor Measurement System</div>
+            </div>
+            <div>
+              <AppStoreBadges height={34} showWindowsMac={true} align="center" />
+            </div>
+          </div>
+          <div className="border-top pt-2 text-muted extra-small text-uppercase">
+            © {new Date().getFullYear()} MS PRO &bull; CLOUD SYNC: MONGODB ATLAS &bull; <Link to="/download" className="text-decoration-none text-muted fw-bold">DOWNLOAD APPS</Link>
+          </div>
+        </div>
       </footer>
     </div>
   );
