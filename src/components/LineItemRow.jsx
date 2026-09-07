@@ -49,7 +49,7 @@ export default function LineItemRow({
           type="text"
           list={`remark-suggestions-${item.id}`}
           className="form-control form-control-sm"
-          placeholder={item.isLess ? 'e.g. Nahani Trap, Core Cut' : 'e.g. Koba, Floor Tiles, Skirting'}
+          placeholder={item.isLess ? 'e.g. Door Opening, Window Cut' : 'e.g. Living Room, Master Bed, Kitchen'}
           value={item.remark || ''}
           onChange={(e) => handleFieldChange('remark', e.target.value)}
         />

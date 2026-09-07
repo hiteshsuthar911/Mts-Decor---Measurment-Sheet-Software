@@ -181,7 +181,7 @@ export default function AreaBlock({
             <label className="form-label extra-small text-muted fw-bold mb-1">Work Category (Work Detail)</label>
             <select
               className="form-select form-select-sm fw-semibold"
-              value={area.parentCategory || 'Main Floor'}
+              value={area.parentCategory || 'Floor Tiles'}
               onChange={(e) => handleFieldChange('parentCategory', e.target.value)}
             >
               {WORK_CATEGORIES.map((catKey) => (

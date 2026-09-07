@@ -14,7 +14,7 @@ export const createEmptyArea = () => ({
   floor: '',
   flat: '',
   room: '',
-  parentCategory: 'Main Floor',
+  parentCategory: 'Floor Tiles',
   customParentCategory: '',
   descriptionHeader: '',
   items: [createEmptyItem('SFT')]
