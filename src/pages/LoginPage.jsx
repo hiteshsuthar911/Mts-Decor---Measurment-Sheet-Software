@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { login } from '../utils/auth';
+import { loginInit, loginVerify2FA } from '../utils/auth';
 import { getFounderSlides } from '../utils/storage';
 
 const DEFAULT_SLIDES = [
@@ -22,12 +22,21 @@ const DEFAULT_SLIDES = [
 
 export default function LoginPage() {
   const navigate = useNavigate();
+
+  // Step 1: Credentials | Step 2: Two-Step 6-Digit Verification
+  const [step, setStep] = useState(1);
   const [emailOrUser, setEmailOrUser] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // 2FA state
+  const [twoFAData, setTwoFAData] = useState(null);
+  const [otpCode, setOtpCode] = useState('');
+
+  // Founder Slides
   const [slides, setSlides] = useState(DEFAULT_SLIDES);
   const [testimonialIdx, setTestimonialIdx] = useState(0);
 
@@ -51,28 +60,48 @@ export default function LoginPage() {
     return () => clearInterval(interval);
   }, [slides.length]);
 
-  const handleSubmit = async (e) => {
+  // Step 1 Submit: Validate credentials and initialize 2FA
+  const handleStep1Submit = async (e) => {
     e?.preventDefault();
     setError('');
     setLoading(true);
     try {
-      const session = await login(emailOrUser.trim(), password);
-      if (session) {
-        navigate(session.role === 'ADMIN' ? '/admin' : '/projects');
+      const res = await loginInit(emailOrUser.trim(), password);
+      if (res && res.require2FA) {
+        setTwoFAData(res);
+        setOtpCode(res.verificationCode || '');
+        setStep(2);
       } else {
-        setError('Invalid credentials. Please check your email/username and password.');
+        setError('Invalid credentials. Please check your username and password.');
       }
-    } catch {
-      setError('Cannot connect to server. Please try again.');
+    } catch (err) {
+      setError(err.message || 'Invalid credentials or server unavailable.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleQuickFill = (u, p) => {
-    setEmailOrUser(u);
-    setPassword(p);
+  // Step 2 Submit: Verify 6-digit OTP code
+  const handleVerify2FASubmit = async (e) => {
+    e?.preventDefault();
+    if (!otpCode || otpCode.trim().length !== 6) {
+      setError('Please enter the full 6-digit verification code.');
+      return;
+    }
     setError('');
+    setLoading(true);
+    try {
+      const session = await loginVerify2FA(twoFAData.challengeId, otpCode.trim());
+      if (session) {
+        navigate(session.role === 'ADMIN' ? '/admin' : '/projects');
+      } else {
+        setError('Verification failed. Please try again.');
+      }
+    } catch (err) {
+      setError(err.message || 'Invalid or expired verification code.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const nextTestimonial = () => {
@@ -90,7 +119,7 @@ export default function LoginPage() {
       {/* ── LEFT FORM SIDE ── */}
       <div className="untitled-form-side">
         {/* Top Brand Logo */}
-        <div className="untitled-brand-logo">
+        <div className="untitled-brand-logo mb-4">
           <img
             src="/mtsdecor.png"
             alt="MTS Decor"
@@ -99,11 +128,8 @@ export default function LoginPage() {
           />
         </div>
 
-        {/* Centered Sign In Form Container */}
+        {/* Form Container */}
         <div className="untitled-form-container">
-          <h1>Welcome back</h1>
-          <p className="subtitle">Welcome back! Please enter your details.</p>
-
           {error && (
             <div className="alert alert-danger py-2 px-3 small rounded-3 mb-3 border-0">
               <i className="bi bi-exclamation-circle-fill me-2"></i>
@@ -111,189 +137,215 @@ export default function LoginPage() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} autoComplete="off">
-            {/* Email / Username Input */}
-            <div className="mb-3">
-              <label className="untitled-label" htmlFor="emailInput">
-                Email
-              </label>
-              <input
-                id="emailInput"
-                type="text"
-                className="untitled-input"
-                placeholder="Enter your email"
-                value={emailOrUser}
-                onChange={(e) => setEmailOrUser(e.target.value)}
-                required
-                autoFocus
-              />
-            </div>
+          {/* STEP 1: Enter Username & Password */}
+          {step === 1 && (
+            <>
+              <h1>Welcome back</h1>
+              <p className="subtitle">Please enter your credentials to proceed.</p>
 
-            {/* Password Input */}
-            <div className="mb-3">
-              <label className="untitled-label" htmlFor="passwordInput">
-                Password
-              </label>
-              <div className="position-relative">
-                <input
-                  id="passwordInput"
-                  type={showPass ? 'text' : 'password'}
-                  className="untitled-input pe-5"
-                  placeholder="••••••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
+              <form onSubmit={handleStep1Submit} autoComplete="off">
+                {/* Email / Username Input */}
+                <div className="mb-3">
+                  <label className="untitled-label" htmlFor="emailInput">
+                    Username or Email
+                  </label>
+                  <input
+                    id="emailInput"
+                    type="text"
+                    className="untitled-input"
+                    placeholder="ENTER YOUR USERNAME"
+                    value={emailOrUser}
+                    onChange={(e) => setEmailOrUser(e.target.value)}
+                    required
+                    autoFocus
+                  />
+                </div>
+
+                {/* Password Input */}
+                <div className="mb-3">
+                  <label className="untitled-label" htmlFor="passwordInput">
+                    Password
+                  </label>
+                  <div className="position-relative">
+                    <input
+                      id="passwordInput"
+                      type={showPass ? 'text' : 'password'}
+                      className="untitled-input pe-5"
+                      placeholder="••••••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                    />
+                    <button
+                      type="button"
+                      className="untitled-eye-btn"
+                      onClick={() => setShowPass(!showPass)}
+                      tabIndex={-1}
+                      aria-label={showPass ? 'Hide password' : 'Show password'}
+                    >
+                      <i className={`bi ${showPass ? 'bi-eye-slash' : 'bi-eye'}`}></i>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Remember Me */}
+                <div className="d-flex justify-content-between align-items-center mb-4">
+                  <div className="form-check mb-0">
+                    <input
+                      className="form-check-input"
+                      type="checkbox"
+                      id="rememberCheck"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                      style={{ borderColor: '#d0d5dd', cursor: 'pointer' }}
+                    />
+                    <label
+                      className="form-check-label small text-secondary fw-normal ms-1"
+                      htmlFor="rememberCheck"
+                      style={{ cursor: 'pointer', fontSize: '0.875rem' }}
+                    >
+                      Remember for 30 days
+                    </label>
+                  </div>
+                  <span className="badge bg-light text-dark border extra-small text-uppercase">
+                    <i className="bi bi-shield-check text-success me-1"></i>2FA ENABLED
+                  </span>
+                </div>
+
+                {/* Submit Credentials Button */}
                 <button
-                  type="button"
-                  className="untitled-eye-btn"
-                  onClick={() => setShowPass(!showPass)}
-                  tabIndex={-1}
-                  aria-label={showPass ? 'Hide password' : 'Show password'}
+                  type="submit"
+                  className="untitled-btn-primary"
+                  disabled={loading}
                 >
-                  <i className={`bi ${showPass ? 'bi-eye-slash' : 'bi-eye'}`}></i>
+                  {loading ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                      Authenticating...
+                    </>
+                  ) : (
+                    'Continue with Two-Step Verification →'
+                  )}
                 </button>
-              </div>
-            </div>
+              </form>
+            </>
+          )}
 
-            {/* Remember Me & Forgot Password */}
-            <div className="d-flex justify-content-between align-items-center mb-4">
-              <div className="form-check mb-0">
-                <input
-                  className="form-check-input"
-                  type="checkbox"
-                  id="rememberCheck"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  style={{ borderColor: '#d0d5dd', cursor: 'pointer' }}
-                />
-                <label
-                  className="form-check-label small text-secondary fw-normal ms-1"
-                  htmlFor="rememberCheck"
-                  style={{ cursor: 'pointer', fontSize: '0.875rem' }}
-                >
-                  Remember for 30 days
-                </label>
+          {/* STEP 2: Two-Step 6-Digit Number Verification */}
+          {step === 2 && (
+            <div>
+              <div className="d-flex align-items-center gap-2 mb-2">
+                <span className="p-2 bg-primary bg-opacity-10 text-primary rounded-circle">
+                  <i className="bi bi-shield-lock-fill fs-4"></i>
+                </span>
+                <div>
+                  <h3 className="mb-0 fw-bold">Two-Step Verification</h3>
+                  <div className="extra-small text-muted text-uppercase">STEP 2 OF 2 &bull; 6-DIGIT CODE</div>
+                </div>
               </div>
-              <a
-                href="#forgot"
-                className="untitled-link"
-                onClick={(e) => {
-                  e.preventDefault();
-                  alert('Default login credentials: jagdish / jagdish@123 or madanlal / madanlal@123');
-                }}
-              >
-                Forgot password
-              </a>
-            </div>
 
-            {/* Primary Sign In Button */}
-            <button
-              type="submit"
-              className="untitled-btn-primary"
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <span className="spinner-border spinner-border-sm me-2" role="status"></span>
-                  Signing in...
-                </>
-              ) : (
-                'Sign in'
+              <p className="subtitle mt-2">
+                Hello <strong>{twoFAData?.name || twoFAData?.username}</strong>, enter the 6-digit security code to verify your sign-in.
+              </p>
+
+              {/* Display code alert */}
+              {twoFAData?.verificationCode && (
+                <div className="alert alert-primary py-2 px-3 rounded-3 mb-4 border d-flex align-items-center justify-content-between">
+                  <div>
+                    <span className="extra-small fw-bold text-uppercase d-block text-secondary">
+                      SECURITY VERIFICATION CODE:
+                    </span>
+                    <span className="fs-4 fw-bolder font-monospace text-primary tracking-wider">
+                      {twoFAData.verificationCode}
+                    </span>
+                  </div>
+                  <span className="badge bg-primary px-2 py-1 extra-small">
+                    <i className="bi bi-clock-history me-1"></i>VALID FOR 5 MIN
+                  </span>
+                </div>
               )}
-            </button>
 
-            {/* Google Sign In Button */}
-            <button
-              type="button"
-              className="untitled-btn-google"
-              onClick={() => handleQuickFill('jagdish', 'jagdish@123')}
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24">
-                <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/>
-                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.34 24 12 24z"/>
-                <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
-                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
-              </svg>
-              <span>Sign in with Google</span>
-            </button>
-          </form>
+              <form onSubmit={handleVerify2FASubmit} autoComplete="off">
+                <div className="mb-4">
+                  <label className="untitled-label mb-2" htmlFor="otpInput">
+                    ENTER 6-DIGIT CODE
+                  </label>
+                  <input
+                    id="otpInput"
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    className="form-control otp-input-field w-100"
+                    placeholder="000000"
+                    value={otpCode}
+                    onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    required
+                    autoFocus
+                  />
+                </div>
 
-          {/* Sign Up Link */}
-          <div className="text-center mt-4">
-            <span className="text-secondary small">
-              Don't have an account?{' '}
-              <a
-                href="#signup"
-                className="untitled-link"
-                onClick={(e) => {
-                  e.preventDefault();
-                  alert('Accounts are managed by MTS Decor Administrator.');
-                }}
-              >
-                Sign up
-              </a>
-            </span>
-          </div>
+                <button
+                  type="submit"
+                  className="untitled-btn-primary"
+                  disabled={loading || otpCode.length !== 6}
+                >
+                  {loading ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                      Verifying...
+                    </>
+                  ) : (
+                    'Verify & Sign in'
+                  )}
+                </button>
 
-          {/* 1-Click Quick Fill for testing convenience */}
-          <div className="mt-4 pt-3 border-top text-center">
-            <div className="text-muted extra-small mb-2 fw-medium">Quick account fill:</div>
-            <div className="d-flex justify-content-center gap-2">
-              <button
-                type="button"
-                className="untitled-quick-pill"
-                onClick={() => handleQuickFill('jagdish', 'jagdish@123')}
-              >
-                Jagdish
-              </button>
-              <button
-                type="button"
-                className="untitled-quick-pill"
-                onClick={() => handleQuickFill('madanlal', 'madanlal@123')}
-              >
-                Madanlal
-              </button>
-              <button
-                type="button"
-                className="untitled-quick-pill"
-                onClick={() => handleQuickFill('admin', 'admin@123')}
-              >
-                Admin
-              </button>
+                <div className="text-center mt-3">
+                  <button
+                    type="button"
+                    className="btn btn-link text-decoration-none text-muted extra-small text-uppercase fw-bold p-0"
+                    onClick={() => { setStep(1); setError(''); }}
+                  >
+                    ← BACK TO LOGIN
+                  </button>
+                </div>
+              </form>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Bottom Copyright */}
-        <div className="untitled-footer-text">
+        <div className="untitled-footer-text mt-4">
           &copy; MTS Decor {new Date().getFullYear()} &bull; All Rights Reserved
         </div>
       </div>
 
-      {/* ── RIGHT IMAGE & QUOTE CARD SIDE ── */}
+      {/* ── RIGHT IMAGE & QUOTE CARD SIDE (FOUNDER SLIDES) ── */}
       <div className="untitled-image-side">
-        <div
-          className="untitled-hero-card"
-          style={{
-            backgroundImage: `url('${currentQuote.imageUrl || '/login_hero.jpg'}')`,
-            transition: 'background-image 0.5s ease-in-out'
-          }}
-        >
-          {/* Subtle Dark Gradient Overlay */}
-          <div className="untitled-hero-overlay"></div>
+        <div className="untitled-hero-card position-relative overflow-hidden">
+          {/* Active Founder Image */}
+          <img
+            key={currentQuote.imageUrl || testimonialIdx}
+            src={currentQuote.imageUrl || '/login_hero.jpg'}
+            alt={currentQuote.name || 'Founder'}
+            className="position-absolute top-0 start-0 w-100 h-100"
+            style={{ objectFit: 'cover', zIndex: 1, transition: 'opacity 0.5s ease' }}
+            onError={(e) => { e.target.onerror = null; e.target.src = '/login_hero.jpg'; }}
+          />
+
+          {/* Dark Gradient Overlay for Readability */}
+          <div className="untitled-hero-overlay" style={{ zIndex: 2 }}></div>
 
           {/* Quote & Author Content */}
-          <div className="untitled-hero-content d-flex justify-content-between align-items-end">
+          <div className="untitled-hero-content d-flex justify-content-between align-items-end" style={{ zIndex: 3 }}>
             <div>
               <p className="untitled-quote-text">
                 {currentQuote.quote}
               </p>
               <div className="untitled-author-name">
-                {currentQuote.name || currentQuote.author}
+                {currentQuote.name || 'MTS Decor Founder'}
               </div>
               <div className="untitled-author-role">
-                {currentQuote.role}
+                {currentQuote.role || 'Founder'}
               </div>
               <div className="untitled-author-company">
                 {currentQuote.company || 'MTS Decor & Interiors'}
@@ -307,13 +359,14 @@ export default function LoginPage() {
                       key={i}
                       onClick={() => setTestimonialIdx(i)}
                       style={{
-                        width: testimonialIdx === i ? '22px' : '7px',
-                        height: '7px',
+                        width: testimonialIdx === i ? '24px' : '8px',
+                        height: '8px',
                         borderRadius: '4px',
                         backgroundColor: testimonialIdx === i ? '#ffffff' : 'rgba(255, 255, 255, 0.4)',
                         transition: 'all 0.3s ease',
                         cursor: 'pointer'
                       }}
+                      title={`Slide ${i + 1}`}
                     />
                   ))}
                 </div>
@@ -326,7 +379,7 @@ export default function LoginPage() {
                 type="button"
                 className="untitled-carousel-btn"
                 onClick={prevTestimonial}
-                aria-label="Previous quote"
+                aria-label="Previous slide"
               >
                 <i className="bi bi-arrow-left"></i>
               </button>
@@ -334,7 +387,7 @@ export default function LoginPage() {
                 type="button"
                 className="untitled-carousel-btn"
                 onClick={nextTestimonial}
-                aria-label="Next quote"
+                aria-label="Next slide"
               >
                 <i className="bi bi-arrow-right"></i>
               </button>

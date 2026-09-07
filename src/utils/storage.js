@@ -46,3 +46,21 @@ export async function updateFounderSlide(id, data) {
 export async function deleteFounderSlide(id) {
   return api.delete(`/founder-slides/${id}`);
 }
+
+// ── USER MANAGEMENT (Admin Only) ──
+export async function getAllUsers() {
+  return api.get('/users');
+}
+
+export async function createUser(data) {
+  return api.post('/users', data);
+}
+
+export async function updateUserPassword(id, password) {
+  return api.put(`/users/${id}/password`, { password });
+}
+
+export async function deleteUser(id) {
+  return api.delete(`/users/${id}`);
+}
+

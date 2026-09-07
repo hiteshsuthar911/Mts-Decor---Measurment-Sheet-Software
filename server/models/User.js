@@ -9,10 +9,11 @@ const userSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 // Hash password before save
-userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
+userSchema.pre('save', async function () {
+  if (!this.isModified('password')) return;
+  // If already a bcrypt hash (starts with $2), don't rehash
+  if (this.password && this.password.startsWith('$2')) return;
   this.password = await bcrypt.hash(this.password, 10);
-  next();
 });
 
 // Compare plain password

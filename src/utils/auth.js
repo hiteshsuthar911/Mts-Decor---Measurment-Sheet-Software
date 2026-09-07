@@ -2,11 +2,31 @@ import { api } from './api';
 
 const AUTH_KEY = 'MS_PRO_AUTH_V1';
 
-// Login: calls API, stores { token, user } in localStorage
+// Step 1: Validate credentials and initialize 2FA challenge
+export async function loginInit(username, password) {
+  const result = await api.post('/auth/login-init', { username, password });
+  return result; // { require2FA: true, challengeId, verificationCode, username, name }
+}
+
+// Step 2: Verify 6-digit OTP code and complete login
+export async function loginVerify2FA(challengeId, code) {
+  const result = await api.post('/auth/verify-2fa', { challengeId, code });
+  const session = {
+    token: result.token,
+    id: result.user.id,
+    username: result.user.username,
+    name: result.user.name,
+    role: result.user.role,
+    loginTime: new Date().toISOString(),
+  };
+  localStorage.setItem(AUTH_KEY, JSON.stringify(session));
+  return session;
+}
+
+// Direct Login (fallback)
 export async function login(username, password) {
   try {
     const result = await api.post('/auth/login', { username, password });
-    // result = { token, user: { id, username, name, role } }
     const session = {
       token: result.token,
       id: result.user.id,

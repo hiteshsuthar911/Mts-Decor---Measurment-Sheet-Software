@@ -56,32 +56,59 @@ export default function MeasurementSheet() {
 
   const showToast = (msg) => { setToastMessage(msg); setTimeout(() => setToastMessage(''), 3000); };
 
+  const isDirtyRef = useRef(false);
+  const latestDataRef = useRef(null);
+
+  // Auto-save every 1 second if changes were detected
+  useEffect(() => {
+    if (readOnly || !projectId) return;
+
+    const interval = setInterval(async () => {
+      if (isDirtyRef.current && latestDataRef.current) {
+        isDirtyRef.current = false;
+        setIsSaving(true);
+        try {
+          await saveProject(projectId, latestDataRef.current);
+          setLastSavedAt(new Date());
+        } catch {
+          // If save failed, re-mark dirty to retry on next 1-second tick
+          isDirtyRef.current = true;
+        } finally {
+          setIsSaving(false);
+        }
+      }
+    }, 1000);
+
+    // Save on beforeunload if dirty
+    const handleBeforeUnload = () => {
+      if (isDirtyRef.current && latestDataRef.current) {
+        saveProject(projectId, latestDataRef.current).catch(() => {});
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [projectId, readOnly]);
+
   // Manual save trigger
   const handleManualSave = async () => {
     if (readOnly) return;
     setIsSaving(true);
-    clearTimeout(saveTimer.current);
+    isDirtyRef.current = false;
+    const toSave = latestDataRef.current || projectData;
     try {
-      await saveProject(projectId, projectData);
+      await saveProject(projectId, toSave);
       setLastSavedAt(new Date());
       showToast('PROJECT SAVED TO CLOUD');
     } catch (err) {
+      isDirtyRef.current = true;
       showToast('SAVE FAILED: ' + (err.message || 'SERVER ERROR'));
     } finally {
       setIsSaving(false);
     }
-  };
-
-  // Debounced auto-save: 1.5s after last change
-  const scheduleAutoSave = (data) => {
-    if (readOnly) return;
-    clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(async () => {
-      try {
-        await saveProject(projectId, data);
-        setLastSavedAt(new Date());
-      } catch { /* silent fail */ }
-    }, 1500);
   };
 
   const grandTotals = projectData
@@ -95,7 +122,8 @@ export default function MeasurementSheet() {
   const setAndSave = (updater) => {
     setProjectData(prev => {
       const next = typeof updater === 'function' ? updater(prev) : updater;
-      scheduleAutoSave(next);
+      latestDataRef.current = next;
+      isDirtyRef.current = true;
       return next;
     });
   };

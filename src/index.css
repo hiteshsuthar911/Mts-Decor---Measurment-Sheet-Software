@@ -512,19 +512,55 @@ body {
   border-color: #d6bbfb;
 }
 
+/* 2FA Verification Styling */
+.otp-input-field {
+  letter-spacing: 10px;
+  font-size: 1.75rem;
+  font-weight: 700;
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace, sans-serif;
+  color: #101828;
+  border-radius: 10px;
+  border: 2px solid #d0d5dd;
+  padding: 10px 16px;
+  transition: all 0.2s ease;
+}
+
+.otp-input-field:focus {
+  border-color: #7f56d9;
+  box-shadow: 0 0 0 4px rgba(127, 86, 217, 0.15);
+  outline: none;
+}
+
 /* Responsive */
 @media (max-width: 991.98px) {
   .untitled-login-wrapper {
     flex-direction: column;
+    min-height: 100vh;
   }
 
   .untitled-form-side {
-    padding: 32px 20px;
+    padding: 32px 20px 20px;
     min-height: auto;
   }
 
   .untitled-image-side {
-    display: none; /* Hide image card on small mobile screens to keep sign in fast */
+    display: flex;
+    min-height: 460px;
+    padding: 16px;
+    margin-bottom: 24px;
+  }
+
+  .untitled-hero-card {
+    padding: 28px 20px;
+    border-radius: 20px;
+    min-height: 420px;
+  }
+
+  .untitled-quote-text {
+    font-size: 1.2rem;
+    line-height: 1.4;
+    margin-bottom: 16px;
   }
 }
 
