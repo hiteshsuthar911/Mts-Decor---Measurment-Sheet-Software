@@ -123,48 +123,50 @@ export default function ProjectsPage() {
       )}
 
       {/* Top Nav */}
-      <nav className="navbar navbar-dark bg-dark px-4 py-2 shadow-sm">
-        <div className="d-flex align-items-center gap-3">
+      <nav className="navbar navbar-dark bg-dark px-2 px-sm-4 py-2 shadow-sm">
+        <div className="d-flex align-items-center gap-2 gap-sm-3">
           <div className="d-flex align-items-center gap-2">
             <img
               src="/mtsdecor.png"
               alt="MTS Decor"
-              style={{ height: '28px', maxWidth: '120px', objectFit: 'contain' }}
+              style={{ height: '26px', maxWidth: '110px', objectFit: 'contain' }}
               onError={(e) => { e.target.onerror = null; e.target.src = '/logo.png'; }}
             />
             <span className="navbar-brand fw-bolder fs-5 text-uppercase mb-0">MS PRO</span>
           </div>
           <span className="text-secondary d-none d-md-inline extra-small text-uppercase">MEASUREMENT SHEET SYSTEM</span>
         </div>
-        <div className="d-flex align-items-center gap-2">
+        <div className="d-flex align-items-center gap-1 gap-sm-2">
           <Link
             to="/profile"
-            className="btn btn-outline-light btn-sm extra-small fw-bold text-uppercase d-flex align-items-center gap-1"
+            className="btn btn-outline-light btn-sm extra-small fw-bold text-uppercase d-flex align-items-center gap-1 px-2"
             title="View & Edit Profile"
           >
             <i className="bi bi-person-circle text-warning"></i>
             <span className="d-none d-sm-inline">{session.name}</span>
           </Link>
-          <button className="btn btn-warning btn-sm fw-bold text-uppercase" onClick={handleNewProject}>
-            <i className="bi bi-plus-circle-fill me-1"></i> NEW PROJECT
+          <button className="btn btn-warning btn-sm fw-bold text-uppercase px-2 px-sm-3" onClick={handleNewProject}>
+            <i className="bi bi-plus-circle-fill me-sm-1"></i>
+            <span className="d-none d-sm-inline"> NEW PROJECT</span>
+            <span className="d-sm-none"> NEW</span>
           </button>
-          <button className="btn btn-outline-danger btn-sm fw-bold text-uppercase" onClick={() => { logout(); navigate('/login'); }}>
+          <button className="btn btn-outline-danger btn-sm fw-bold text-uppercase px-2" onClick={() => { logout(); navigate('/login'); }}>
             <i className="bi bi-box-arrow-right"></i>
           </button>
         </div>
       </nav>
 
-      <main className="container-fluid py-4 px-4 flex-grow-1">
+      <main className="container-fluid py-3 py-sm-4 px-2 px-sm-4 flex-grow-1">
         <div className="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
           <div>
-            <h4 className="fw-bolder text-uppercase mb-0">
+            <h4 className="fw-bolder text-uppercase mb-0 fs-5 fs-sm-4">
               <i className="bi bi-folder2-open text-primary me-2"></i>ALL PROJECTS
             </h4>
             <div className="text-muted extra-small text-uppercase">
               {projects.length} PROJECT{projects.length !== 1 ? 'S' : ''} TOTAL &bull; LOGGED IN AS <strong>{session.name}</strong>
             </div>
           </div>
-          <div style={{ width: '280px' }}>
+          <div className="flex-grow-1 flex-sm-grow-0" style={{ minWidth: '220px', maxWidth: '340px' }}>
             <div className="input-group">
               <span className="input-group-text bg-white border-end-0"><i className="bi bi-search text-muted"></i></span>
               <input type="text" className="form-control border-start-0 text-uppercase fw-semibold" placeholder="SEARCH PROJECTS..."

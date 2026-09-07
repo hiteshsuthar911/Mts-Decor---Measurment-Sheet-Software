@@ -15,13 +15,13 @@ export default function QuickStatsBar({ grandTotals: rawTotals, billingMode, cur
   const rftData = grandTotals.unitRollup?.['RFT'] || { net: 0 };
 
   return (
-    <div className="container-fluid mb-4">
-      <div className="row g-3">
+    <div className="container-fluid px-2 px-md-3 mb-3 mb-md-4">
+      <div className="row g-2 g-md-3">
         {/* Total Area (SFT) */}
         <div className="col-6 col-md-3 col-lg-2">
           <div className="card stat-card shadow-sm border-0 border-start border-primary border-4 h-100">
             <div className="card-body p-2 p-md-3">
-              <div className="text-muted small fw-semibold text-uppercase">Total Area (SFT)</div>
+              <div className="text-muted extra-small fw-semibold text-uppercase text-truncate">Total Area (SFT)</div>
               <div className="fs-4 fw-bold text-primary mt-1">
                 {formatNumber(sftData.net)} <small className="fs-6 text-secondary fw-normal">sft</small>
               </div>
@@ -38,7 +38,7 @@ export default function QuickStatsBar({ grandTotals: rawTotals, billingMode, cur
         <div className="col-6 col-md-3 col-lg-2">
           <div className="card stat-card shadow-sm border-0 border-start border-info border-4 h-100">
             <div className="card-body p-2 p-md-3">
-              <div className="text-muted small fw-semibold text-uppercase">Running Length</div>
+              <div className="text-muted extra-small fw-semibold text-uppercase text-truncate">Running Length</div>
               <div className="fs-4 fw-bold text-dark mt-1">
                 {formatNumber(rftData.net)} <small className="fs-6 text-secondary fw-normal">rft</small>
               </div>
@@ -53,7 +53,7 @@ export default function QuickStatsBar({ grandTotals: rawTotals, billingMode, cur
         <div className="col-6 col-md-3 col-lg-2">
           <div className="card stat-card shadow-sm border-0 border-start border-secondary border-4 h-100">
             <div className="card-body p-2 p-md-3">
-              <div className="text-muted small fw-semibold text-uppercase">Line Items</div>
+              <div className="text-muted extra-small fw-semibold text-uppercase text-truncate">Line Items</div>
               <div className="fs-4 fw-bold text-dark mt-1">
                 {grandTotals.totalLineItems} <small className="fs-6 text-muted fw-normal">entries</small>
               </div>
@@ -68,7 +68,7 @@ export default function QuickStatsBar({ grandTotals: rawTotals, billingMode, cur
         <div className="col-6 col-md-3 col-lg-2">
           <div className="card stat-card shadow-sm border-0 border-start border-success border-4 h-100">
             <div className="card-body p-2 p-md-3">
-              <div className="text-muted small fw-semibold text-uppercase">Net Measured Qty</div>
+              <div className="text-muted extra-small fw-semibold text-uppercase text-truncate">Net Measured Qty</div>
               <div className="fs-4 fw-bold text-success mt-1">
                 {formatNumber(grandTotals.totalNetQty)}
               </div>

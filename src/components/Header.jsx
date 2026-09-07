@@ -79,7 +79,7 @@ export default function Header({
             {!readOnly && (
               <button
                 type="button"
-                className="btn btn-sm btn-success fw-bold text-uppercase d-flex align-items-center gap-1 shadow-sm px-3"
+                className="btn btn-sm btn-success fw-bold text-uppercase d-flex align-items-center gap-1 shadow-sm px-2 px-sm-3"
                 onClick={onSave}
                 disabled={isSaving}
                 title="Save changes to MongoDB Atlas Cloud"
@@ -102,12 +102,13 @@ export default function Header({
             {!readOnly && (
               <button 
                 type="button" 
-                className="btn btn-sm btn-primary fw-bold text-uppercase d-flex align-items-center gap-1"
+                className="btn btn-sm btn-primary fw-bold text-uppercase d-flex align-items-center gap-1 px-2 px-sm-3"
                 onClick={onAddNewArea}
                 title="Add a new room or area group"
               >
                 <i className="bi bi-plus-circle-fill"></i>
-                <span>+ ADD AREA</span>
+                <span className="d-none d-sm-inline">+ ADD AREA</span>
+                <span className="d-sm-none">+ AREA</span>
               </button>
             )}
 
@@ -115,30 +116,32 @@ export default function Header({
             {!readOnly && (
               <button 
                 type="button" 
-                className="btn btn-sm btn-outline-warning text-warning fw-bold text-uppercase d-flex align-items-center gap-1 shadow-sm"
+                className="btn btn-sm btn-outline-warning text-warning fw-bold text-uppercase d-flex align-items-center gap-1 shadow-sm px-2 px-sm-2"
                 onClick={onOpenQuickMeasure}
                 title="Open one-handed mobile field measurement mode"
               >
                 <i className="bi bi-phone-fill"></i>
-                <span>FIELD MODE</span>
+                <span className="d-none d-sm-inline">FIELD MODE</span>
+                <span className="d-sm-none">FIELD</span>
               </button>
             )}
 
             {/* Print / PDF View */}
             <button 
               type="button" 
-              className="btn btn-sm btn-warning text-dark fw-bold text-uppercase d-flex align-items-center gap-1"
+              className="btn btn-sm btn-warning text-dark fw-bold text-uppercase d-flex align-items-center gap-1 px-2 px-sm-3"
               onClick={onOpenPrintView}
               title="Switch to Contractor Print / PDF Sheet view"
             >
               <i className="bi bi-printer-fill"></i>
               <span className="d-none d-sm-inline">{isPrintView ? 'EDIT VIEW' : 'PRINT / PDF'}</span>
+              <span className="d-sm-none">{isPrintView ? 'EDIT' : 'PRINT'}</span>
             </button>
 
             {/* Export Excel */}
             <button 
               type="button" 
-              className="btn btn-sm btn-outline-light text-white fw-bold text-uppercase d-flex align-items-center gap-1"
+              className="btn btn-sm btn-outline-light text-white fw-bold text-uppercase d-flex align-items-center gap-1 px-2"
               onClick={onExportExcel}
               title="Download Excel spreadsheet (.xlsx)"
             >

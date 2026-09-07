@@ -261,29 +261,29 @@ export default function MeasurementSheet() {
       )}
 
       {/* Top Nav Bar */}
-      <div className="bg-dark text-white py-1 px-3 d-flex align-items-center justify-content-between no-print" style={{ fontSize: '11px' }}>
-        <div className="d-flex align-items-center gap-3 text-uppercase fw-bold">
+      <div className="bg-dark text-white py-1 px-2 px-md-3 d-flex flex-wrap align-items-center justify-content-between gap-1 no-print" style={{ fontSize: '11px' }}>
+        <div className="d-flex align-items-center flex-wrap gap-2 text-uppercase fw-bold">
           <Link to="/projects" className="text-warning text-decoration-none">📐 MS PRO</Link>
-          <span className="text-secondary">|</span>
+          <span className="text-secondary d-none d-sm-inline">|</span>
           <span className="text-secondary">{session.name}</span>
-          <span className="text-secondary">|</span>
-          <span className="text-info">
+          <span className="text-secondary d-none d-md-inline">|</span>
+          <span className="text-info d-none d-md-inline">
             {isOwn ? '📁 MY PROJECT' : `👁 VIEWING ${project?.ownerName?.toUpperCase()}'S PROJECT`}
           </span>
         </div>
-        <div className="d-flex gap-2 align-items-center">
+        <div className="d-flex gap-1 gap-sm-2 align-items-center">
           <Link to="/profile" className="btn btn-sm btn-outline-light text-uppercase fw-bold px-2 py-0" style={{ fontSize: '10px' }}>
-            <i className="bi bi-person-circle me-1"></i>PROFILE
+            <i className="bi bi-person-circle me-sm-1"></i><span className="d-none d-sm-inline">PROFILE</span>
           </Link>
           <Link to="/projects" className="btn btn-sm btn-outline-light text-uppercase fw-bold px-2 py-0" style={{ fontSize: '10px' }}>
-            <i className="bi bi-grid-3x3-gap-fill me-1"></i>ALL PROJECTS
+            <i className="bi bi-grid-3x3-gap-fill me-sm-1"></i><span className="d-none d-sm-inline">PROJECTS</span>
           </Link>
           <button
             className="btn btn-sm btn-outline-danger text-uppercase fw-bold px-2 py-0"
             style={{ fontSize: '10px' }}
             onClick={() => { logout(); navigate('/login'); }}
           >
-            <i className="bi bi-box-arrow-right me-1"></i>LOGOUT
+            <i className="bi bi-box-arrow-right me-sm-1"></i><span className="d-none d-sm-inline">LOGOUT</span>
           </button>
         </div>
       </div>

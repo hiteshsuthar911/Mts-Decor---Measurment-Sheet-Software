@@ -30,9 +30,9 @@ export default function PrintSheetView({
   };
 
   return (
-    <div className="print-view-wrapper py-4 px-2 px-md-4">
+    <div className="print-view-wrapper py-2 py-sm-3 py-md-4 px-1 px-sm-2 px-md-4">
       {/* Action Bar (Hidden in physical print) */}
-      <div className="no-print mb-4 d-flex justify-content-between align-items-center bg-white p-3 rounded shadow-sm border">
+      <div className="no-print mb-3 mb-md-4 d-flex flex-wrap justify-content-between align-items-center gap-2 bg-white p-2 p-sm-3 rounded shadow-sm border">
         <div className="d-flex align-items-center gap-2">
           <button
             type="button"
@@ -41,7 +41,7 @@ export default function PrintSheetView({
           >
             <i className="bi bi-arrow-left me-1"></i> Back to Editor
           </button>
-          <span className="badge bg-dark">Contractor Measurement Book Format</span>
+          <span className="badge bg-dark d-none d-sm-inline-block">Contractor Measurement Book Format</span>
         </div>
 
         <div className="d-flex align-items-center gap-2">
@@ -56,10 +56,15 @@ export default function PrintSheetView({
       </div>
 
       {/* The Printable Sheet (Styled exactly like the contractor PDF) */}
-      <div className="contractor-sheet-page bg-white p-4 p-md-5 mx-auto shadow-sm">
+      <div className="contractor-sheet-page bg-white p-2 p-sm-3 p-md-4 p-lg-5 mx-auto shadow-sm">
+        {/* Mobile Swipe Hint */}
+        <div className="d-print-none d-md-none text-muted extra-small py-1 px-2 mb-2 text-center bg-light border rounded">
+          <i className="bi bi-arrow-left-right me-1 text-primary"></i> SWIPE TABLE TO VIEW ALL COLUMNS
+        </div>
+
         {/* Company Title */}
         <div className="text-center mb-3">
-          <h3 className="fw-bold text-uppercase tracking-wide mb-1" style={{ letterSpacing: '2px' }}>
+          <h3 className="fw-bold text-uppercase tracking-wide mb-1 fs-5 fs-sm-4 fs-md-3" style={{ letterSpacing: '2px' }}>
             {header.contractorName || 'CONTRACTOR NAME'}
           </h3>
           {header.clientName && (

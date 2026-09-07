@@ -122,10 +122,12 @@ body {
   left: 0;
   right: 0;
   z-index: 1030;
-  background: rgba(15, 23, 42, 0.95);
-  backdrop-filter: blur(8px);
+  background: rgba(15, 23, 42, 0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-top: 1px solid rgba(255, 255, 255, 0.15);
   padding: 8px 12px;
+  padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
 }
 
 @media (min-width: 768px) {
@@ -134,14 +136,14 @@ body {
   }
 }
 
-/* Mobile adjustments */
+/* Global Mobile & Tablet Adjustments */
 @media (max-width: 767.98px) {
   .app-container {
-    padding-bottom: 70px; /* Space for mobile sticky bar */
+    padding-bottom: calc(75px + env(safe-area-inset-bottom, 0px)); /* Space for mobile sticky bar */
   }
 
   .stat-card .fs-4 {
-    font-size: 1.25rem !important;
+    font-size: 1.15rem !important;
   }
 
   .admin-sidebar {
@@ -149,14 +151,34 @@ body {
     min-height: auto !important;
     width: 100% !important;
   }
+
+  /* Compact form controls for mobile */
+  .form-control-sm,
+  .form-select-sm {
+    font-size: 0.82rem;
+  }
+}
+
+/* Tablet & iPad Portrait (768px to 1024px) */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .stat-card .fs-4 {
+    font-size: 1.25rem !important;
+  }
+
+  .contractor-sheet-page {
+    padding: 1.5rem !important;
+  }
 }
 
 /* Print Sheet Styling - Matches Contractor PDF / Engineering Book */
 .contractor-sheet-page {
-  max-width: 1050px;
+  width: 100%;
+  max-width: 1100px;
   border: 1px solid #cbd5e1;
   background: white;
   min-height: 800px;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
 }
 
 .sheet-grid-table {
@@ -172,6 +194,48 @@ body {
   color: #000000 !important;
 }
 
+/* Responsive Table Typography across Device Breakpoints */
+@media (max-width: 575.98px) {
+  .sheet-grid-table th,
+  .sheet-grid-table td {
+    padding: 3px 4px !important;
+    font-size: 0.72rem !important;
+  }
+
+  .contractor-sheet-page {
+    padding: 0.75rem !important;
+    border-radius: 6px;
+  }
+}
+
+@media (min-width: 576px) and (max-width: 767.98px) {
+  .sheet-grid-table th,
+  .sheet-grid-table td {
+    padding: 3.5px 5px !important;
+    font-size: 0.75rem !important;
+  }
+
+  .contractor-sheet-page {
+    padding: 1.25rem !important;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  .sheet-grid-table th,
+  .sheet-grid-table td {
+    padding: 4px 6px !important;
+    font-size: 0.78rem !important;
+  }
+}
+
+@media (min-width: 1024.02px) {
+  .sheet-grid-table th,
+  .sheet-grid-table td {
+    padding: 5px 7px !important;
+    font-size: 0.82rem !important;
+  }
+}
+
 .sheet-grid-table thead th {
   background-color: #f3f4f6 !important;
   font-weight: 700 !important;
@@ -182,6 +246,12 @@ body {
   border-top: 2px solid #000000 !important;
   border-bottom: 2px solid #000000 !important;
   background-color: #f8fafc !important;
+}
+
+/* Touch targets and smooth scrolling */
+.table-responsive {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
 }
 
 /* Print View Styles */

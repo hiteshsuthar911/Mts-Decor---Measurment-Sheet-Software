@@ -185,7 +185,8 @@ export default function AreaBlock({
               onClick={() => onDuplicateArea(area.id)}
               title="Duplicate entire area"
             >
-              <i className="bi bi-copy me-1"></i> Clone Area
+              <i className="bi bi-copy me-sm-1"></i>
+              <span className="d-none d-sm-inline"> Clone Area</span>
             </button>
             <button
               type="button"
