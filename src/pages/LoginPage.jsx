@@ -214,16 +214,17 @@ export default function LoginPage() {
               <form onSubmit={handleStep1Submit} autoComplete="off">
                 {/* Email / Username Input */}
                 <div className="mb-3">
-                  <label className="untitled-label" htmlFor="emailInput">
-                    Username or Email
+                  <label className="untitled-label text-uppercase" htmlFor="emailInput">
+                    User ID or Email
                   </label>
                   <input
                     id="emailInput"
                     type="text"
-                    className="untitled-input"
-                    placeholder="ENTER YOUR USERNAME"
+                    className="untitled-input text-uppercase"
+                    placeholder="ENTER YOUR USER ID OR EMAIL"
                     value={emailOrUser}
-                    onChange={(e) => setEmailOrUser(e.target.value)}
+                    onChange={(e) => setEmailOrUser(e.target.value.toUpperCase())}
+                    style={{ textTransform: 'uppercase' }}
                     required
                     autoFocus
                   />
