@@ -30,9 +30,9 @@ export function exportToExcel(projectData, billingMode = false) {
 
   areas.forEach((area, areaIdx) => {
     const areaTotals = calculateAreaTotals(area);
-    const categoryTitle = area.parentCategory === 'Other' 
-      ? (area.customParentCategory || 'Other Work') 
-      : (area.parentCategory || 'General Work');
+    const categoryTitle = area.parentCategory === 'Other'
+      ? (area.customParentCategory ? String(area.customParentCategory) : 'Other Work')
+      : (area.parentCategory != null && area.parentCategory !== '' ? String(area.parentCategory) : 'General Work');
     const headerTitle = area.descriptionHeader || categoryTitle;
     const roomTitle = area.room ? area.room.toUpperCase() : 'LIVING ROOM';
 

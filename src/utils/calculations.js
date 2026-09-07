@@ -141,9 +141,9 @@ export function calculateProjectGrandTotals(rawAreas = [], billingMode = false, 
     (area.items || []).forEach(item => {
       const lineTotal = calculateLineItemTotal(item);
       const lineAmount = calculateLineItemAmount(item, lineTotal);
-      const effectiveCategory = area.parentCategory === 'Other' 
-        ? (area.customParentCategory || 'Other Work') 
-        : (area.parentCategory || 'General Work');
+      const effectiveCategory = area.parentCategory === 'Other'
+        ? (area.customParentCategory ? String(area.customParentCategory) : 'Other Work')
+        : (area.parentCategory != null && area.parentCategory !== '' ? String(area.parentCategory) : 'General Work');
 
       const unit = item.unit || 'SFT';
       const rollupKey = `${effectiveCategory} - ${unit}`;
@@ -229,9 +229,10 @@ export function groupAreasIntoPages(rawAreas = []) {
   let currentPage = null;
 
   areas.forEach((area, index) => {
-    const category = (area.parentCategory === 'Other' && area.customParentCategory)
-      ? area.customParentCategory.trim()
-      : (area.parentCategory || 'Floor Tiles').trim();
+    const rawCat = area.parentCategory;
+    const category = (rawCat === 'Other' && area.customParentCategory)
+      ? String(area.customParentCategory).trim()
+      : (rawCat != null && rawCat !== '' ? String(rawCat) : 'Floor Tiles').trim();
 
     const isFirstArea = index === 0;
     const isManualPageBreak = area.startNewPage === true;
