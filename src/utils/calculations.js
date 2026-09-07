@@ -183,7 +183,11 @@ export function calculateProjectGrandTotals(rawAreas = [], billingMode = false, 
     totalLineItems,
     unitRollup,
     categoryRollup: Object.values(categoryRollup).map(c => ({
-      ...c,
+      parentCategory: c.parentCategory,
+      unit: c.unit,
+      totalQty: c.totalQty,
+      totalAmount: c.totalAmount,
+      itemsCount: c.itemsCount,
       flatCount: c.flatUnits.size,
       flatsList: Array.from(c.flatUnits).join(', ')
     })),
