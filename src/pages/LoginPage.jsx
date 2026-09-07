@@ -354,7 +354,7 @@ export default function LoginPage() {
               border: '1px solid rgba(255, 255, 255, 0.08)'
             }}
           >
-            {/* Active Founder Image (Full height, grounded at bottom, stretched properly to box size without clipping) */}
+            {/* Active Founder Image (Full height, wide, grounded, with feathered edges so no hard borders are visible) */}
             {currentQuote.imageUrl && (
               <div
                 className="position-absolute top-0 end-0 h-100 w-100 d-flex justify-content-end align-items-end"
@@ -362,7 +362,7 @@ export default function LoginPage() {
                   zIndex: 1,
                   pointerEvents: 'none',
                   overflow: 'hidden',
-                  paddingRight: 'clamp(8px, 1.8vw, 28px)',
+                  paddingRight: 'clamp(4px, 1.5vw, 24px)',
                 }}
               >
                 <img
@@ -372,11 +372,11 @@ export default function LoginPage() {
                   style={{
                     height: '100%',
                     width: 'auto',
-                    maxWidth: '82%',
+                    maxWidth: '88%',
                     objectFit: 'contain',
                     objectPosition: 'right bottom',
-                    maskImage: 'linear-gradient(to right, transparent 0%, black 14%, black 100%)',
-                    WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 14%, black 100%)',
+                    maskImage: 'radial-gradient(ellipse 85% 90% at 55% 52%, black 50%, rgba(0, 0, 0, 0.85) 72%, transparent 100%)',
+                    WebkitMaskImage: 'radial-gradient(ellipse 85% 90% at 55% 52%, black 50%, rgba(0, 0, 0, 0.85) 72%, transparent 100%)',
                     transition: 'opacity 0.4s ease-in-out',
                   }}
                 />
