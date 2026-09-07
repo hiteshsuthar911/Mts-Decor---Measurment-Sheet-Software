@@ -59,13 +59,13 @@ export default function App() {
           }
         />
 
-        {/* USER only — Measurement sheet (by project ID) */}
+        {/* Measurement sheet (by project ID) — Accessible to all logged-in users & admins */}
         <Route
           path="/sheet/:projectId"
           element={
-            <RoleRoute allowedRole="USER">
+            <AuthRoute>
               <MeasurementSheet />
-            </RoleRoute>
+            </AuthRoute>
           }
         />
 

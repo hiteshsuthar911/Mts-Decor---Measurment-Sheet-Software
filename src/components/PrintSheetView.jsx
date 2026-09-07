@@ -7,8 +7,9 @@ export default function PrintSheetView({
   currencySymbol = '₹',
   onClose
 }) {
-  const { header, areas } = projectData;
-  const grandTotals = calculateProjectGrandTotals(areas, billingMode, projectData.settings?.taxPercent || 0);
+  const header = projectData?.header || {};
+  const areas = Array.isArray(projectData?.areas) ? projectData.areas : [];
+  const grandTotals = calculateProjectGrandTotals(areas, billingMode, projectData?.settings?.taxPercent || 0);
 
   const handlePrint = () => {
     window.print();

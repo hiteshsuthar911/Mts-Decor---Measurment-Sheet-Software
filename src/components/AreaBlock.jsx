@@ -5,15 +5,16 @@ import { calculateAreaTotals, formatNumber, formatCurrency } from '../utils/calc
 import { createEmptyItem } from '../data/sampleData';
 
 export default function AreaBlock({
-  area,
-  index,
-  totalAreas,
+  area = {},
+  index = 0,
+  totalAreas = 1,
   billingMode,
   currencySymbol = '₹',
   onChangeArea,
   onDeleteArea,
   onDuplicateArea,
-  onMoveArea
+  onMoveArea,
+  readOnly
 }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [customCategories, setCustomCategories] = useState(() => {

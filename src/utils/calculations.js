@@ -50,7 +50,7 @@ export function calculateLineItemAmount(item, lineTotal) {
  * - Net Total (Total After Less)
  * - Gross Amount, Deduction Amount, Net Amount (for RA bill mode)
  */
-export function calculateAreaTotals(area) {
+export function calculateAreaTotals(area = {}) {
   let grossQty = 0;
   let lessQty = 0;
   let grossAmount = 0;
@@ -58,8 +58,9 @@ export function calculateAreaTotals(area) {
 
   // Breakdown by units (e.g. SFT vs RFT vs NOS)
   const unitBreakdown = {};
+  const items = Array.isArray(area?.items) ? area.items : [];
 
-  (area.items || []).forEach(item => {
+  items.forEach(item => {
     const lineTotal = calculateLineItemTotal(item);
     const lineAmount = calculateLineItemAmount(item, lineTotal);
     const unit = item.unit || 'SFT';
@@ -99,7 +100,8 @@ export function calculateAreaTotals(area) {
 /**
  * Calculate grand project-wide rollup metrics
  */
-export function calculateProjectGrandTotals(areas = [], billingMode = false, taxPercent = 0) {
+export function calculateProjectGrandTotals(rawAreas = [], billingMode = false, taxPercent = 0) {
+  const areas = Array.isArray(rawAreas) ? rawAreas : [];
   let totalGrossQty = 0;
   let totalLessQty = 0;
   let totalNetQty = 0;

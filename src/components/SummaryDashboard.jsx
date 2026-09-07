@@ -1,8 +1,16 @@
 import React, { useState } from 'react';
 import { formatNumber, formatCurrency } from '../utils/calculations';
 
-export default function SummaryDashboard({ grandTotals, billingMode, currencySymbol = '₹' }) {
+export default function SummaryDashboard({ grandTotals: rawTotals, billingMode, currencySymbol = '₹' }) {
   const [activeTab, setActiveTab] = useState('category'); // 'category' | 'unit' | 'floor'
+  const grandTotals = rawTotals || {
+    categoryRollup: [],
+    unitRollup: {},
+    floorRollup: {},
+    totalNetQty: 0,
+    totalNetAmount: 0,
+    totalPayable: 0
+  };
 
   return (
     <div className="card summary-dashboard shadow-sm border-0 border-top border-4 border-dark mt-5 mb-5">

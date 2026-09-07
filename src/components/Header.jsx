@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 
 export default function Header({
-  headerData,
+  headerData = {},
   onChangeHeader,
-  settings,
+  settings = {},
   onToggleBillingMode,
   onLoadSample,
   onResetSheet,

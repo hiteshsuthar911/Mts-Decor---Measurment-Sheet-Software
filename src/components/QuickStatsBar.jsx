@@ -1,7 +1,16 @@
 import React from 'react';
 import { formatNumber, formatCurrency } from '../utils/calculations';
 
-export default function QuickStatsBar({ grandTotals, billingMode, currencySymbol = '₹' }) {
+export default function QuickStatsBar({ grandTotals: rawTotals, billingMode, currencySymbol = '₹' }) {
+  const grandTotals = rawTotals || {
+    unitRollup: {},
+    totalLineItems: 0,
+    totalLessQty: 0,
+    totalNetQty: 0,
+    totalNetAmount: 0,
+    totalPayable: 0,
+    taxAmount: 0
+  };
   const sftData = grandTotals.unitRollup?.['SFT'] || { net: 0 };
   const rftData = grandTotals.unitRollup?.['RFT'] || { net: 0 };
 

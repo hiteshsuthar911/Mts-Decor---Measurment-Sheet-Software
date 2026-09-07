@@ -14,7 +14,8 @@ export default function ProjectsPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (!session || session.role === 'ADMIN') { navigate('/admin'); return; }
+    if (!session) { navigate('/login'); return; }
+    if (session.role === 'ADMIN') { navigate('/admin'); return; }
     fetchProjects();
   }, []);
 
@@ -22,7 +23,7 @@ export default function ProjectsPage() {
     try {
       setLoading(true);
       const data = await getAllProjects();
-      setProjects(data);
+      setProjects(Array.isArray(data) ? data : []);
     } catch (err) {
       setError('FAILED TO LOAD PROJECTS. IS THE SERVER RUNNING?');
     } finally {
@@ -54,7 +55,8 @@ export default function ProjectsPage() {
     }
   };
 
-  const filtered = projects.filter(p =>
+  const safeProjects = Array.isArray(projects) ? projects : [];
+  const filtered = safeProjects.filter(p =>
     !search ||
     (p.name || '').toUpperCase().includes(search.toUpperCase()) ||
     (p.ownerName || '').toUpperCase().includes(search.toUpperCase())

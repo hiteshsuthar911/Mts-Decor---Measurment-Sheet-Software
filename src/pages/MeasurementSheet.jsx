@@ -31,10 +31,9 @@ export default function MeasurementSheet() {
   const [isSaving, setIsSaving]         = useState(false);
   const [lastSavedAt, setLastSavedAt]   = useState(null);
 
-  // Guard: must be logged-in USER
+  // Guard: must be logged in
   useEffect(() => {
     if (!session) { navigate('/login'); return; }
-    if (session.role === 'ADMIN') { navigate('/admin'); return; }
     fetchProject();
   }, [projectId]);
 
@@ -43,9 +42,22 @@ export default function MeasurementSheet() {
       setPageLoading(true);
       const proj = await getProject(projectId);
       setProject(proj);
-      setProjectData(proj.data || {});
-      if (proj.updatedAt) setLastSavedAt(new Date(proj.updatedAt));
-      if (proj.ownerUsername === session.username) setEditUnlocked(true);
+      const rawData = proj?.data || {};
+      const safeData = {
+        header: rawData.header || {},
+        settings: {
+          billingMode: false,
+          currencySymbol: '₹',
+          taxPercent: 18,
+          ...(rawData.settings || {})
+        },
+        areas: Array.isArray(rawData.areas) && rawData.areas.length > 0
+          ? rawData.areas
+          : [createEmptyArea()]
+      };
+      setProjectData(safeData);
+      if (proj?.updatedAt) setLastSavedAt(new Date(proj.updatedAt));
+      if (proj?.ownerUsername === session?.username || session?.role === 'ADMIN') setEditUnlocked(true);
     } catch {
       setNotFound(true);
     } finally {
@@ -113,13 +125,11 @@ export default function MeasurementSheet() {
     }
   };
 
-  const grandTotals = projectData
-    ? calculateProjectGrandTotals(
-        projectData.areas,
-        projectData.settings?.billingMode,
-        projectData.settings?.taxPercent
-      )
-    : null;
+  const grandTotals = calculateProjectGrandTotals(
+    projectData?.areas || [],
+    projectData?.settings?.billingMode,
+    projectData?.settings?.taxPercent
+  );
 
   const setAndSave = (updater) => {
     setProjectData(prev => {
@@ -343,7 +353,7 @@ export default function MeasurementSheet() {
             <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
               <h5 className="fw-bolder text-dark mb-0 d-flex align-items-center gap-2 text-uppercase">
                 <i className="bi bi-grid-3x3-gap-fill text-primary"></i>
-                LOCATION &amp; WORK MEASUREMENT GROUPS ({projectData.areas.length})
+                LOCATION &amp; WORK MEASUREMENT GROUPS ({projectData?.areas?.length || 0})
               </h5>
               <div className="d-flex gap-2">
                 {!readOnly && (
@@ -382,14 +392,14 @@ export default function MeasurementSheet() {
               </div>
             </div>
 
-            {projectData.areas.map((area, idx) => (
+            {(projectData?.areas || []).map((area, idx) => (
               <AreaBlock
                 key={area.id}
                 area={area}
                 index={idx}
-                totalAreas={projectData.areas.length}
-                billingMode={projectData.settings?.billingMode}
-                currencySymbol={projectData.settings?.currencySymbol}
+                totalAreas={projectData?.areas?.length || 1}
+                billingMode={projectData?.settings?.billingMode}
+                currencySymbol={projectData?.settings?.currencySymbol}
                 onChangeArea={readOnly ? () => {} : handleUpdateArea}
                 onDeleteArea={readOnly ? () => {} : handleDeleteArea}
                 onDuplicateArea={readOnly ? () => {} : handleDuplicateArea}
