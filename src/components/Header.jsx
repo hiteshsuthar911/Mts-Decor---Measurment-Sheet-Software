@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { COMMON_ROOM_AREAS } from '../data/categories';
+import { WORK_CATEGORIES, COMMON_ROOM_AREAS } from '../data/categories';
 
 export default function Header({
   headerData,
@@ -219,22 +219,25 @@ export default function Header({
             />
           </div>
 
-          {/* Location / Room */}
+          {/* Work Description (Trade / Category) */}
           <div className="col-12 col-md-3 col-lg-2">
             <label className="form-label text-secondary small fw-bold mb-1">
-              <i className="bi bi-geo-alt-fill me-1 text-primary"></i> Location / Room
+              <i className="bi bi-tools me-1 text-primary"></i> Description
             </label>
             <input
               type="text"
-              list="header-location-suggestions"
+              list="header-work-suggestions"
               className="form-control form-control-sm fw-bold border-primary-subtle"
-              placeholder="e.g. Living Room, Bedroom 1"
-              value={headerData.location || ''}
-              onChange={(e) => handleChange('location', e.target.value)}
+              placeholder="e.g. Floor Tiles, Koba"
+              value={headerData.workDescription || headerData.description || ''}
+              onChange={(e) => {
+                handleChange('workDescription', e.target.value);
+                handleChange('description', e.target.value);
+              }}
             />
-            <datalist id="header-location-suggestions">
-              {COMMON_ROOM_AREAS.map((loc, i) => (
-                <option key={i} value={loc} />
+            <datalist id="header-work-suggestions">
+              {WORK_CATEGORIES.map((cat, i) => (
+                <option key={i} value={cat} />
               ))}
             </datalist>
           </div>

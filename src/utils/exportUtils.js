@@ -10,12 +10,17 @@ export function exportToExcel(projectData, billingMode = false) {
 
   // Metadata block
   sheetRows.push([header.contractorName || 'CONTRACTOR MEASUREMENT SHEET']);
-  sheetRows.push([`Project: ${header.projectName || ''}`, `Date: ${header.date || ''}`, `Sheet No: ${header.sheetNo || ''}`]);
+  sheetRows.push([
+    `Project: ${header.projectName || ''}`,
+    `Description: ${header.workDescription || header.description || areas[0]?.parentCategory || 'Floor Tiles'}`,
+    `Date: ${header.date || ''}`,
+    `Sheet No: ${header.sheetNo || ''}`
+  ]);
   sheetRows.push([`Client: ${header.clientName || ''}`, `Prepared By: ${header.preparedBy || ''}`, `Checked By: ${header.checkedBy || ''}`]);
   sheetRows.push([]); // blank row
 
   // Table header
-  const tableHeaders = ['SR.', 'LOCATION / DESCRIPTION', 'REMARK / DETAIL', 'UNIT', 'QTY.', 'LENGTH', 'HIGHT', 'TOTAL'];
+  const tableHeaders = ['SR.', 'LOCATION', 'REMARK', 'UNIT', 'QTY.', 'LENGTH', 'HIGHT', 'TOTAL'];
   if (billingMode) {
     tableHeaders.push('RATE', 'AMOUNT');
   }
@@ -29,9 +34,10 @@ export function exportToExcel(projectData, billingMode = false) {
       ? (area.customParentCategory || 'Other Work') 
       : (area.parentCategory || 'General Work');
     const headerTitle = area.descriptionHeader || categoryTitle;
+    const roomTitle = area.room ? area.room.toUpperCase() : 'LIVING ROOM';
 
     // Section header row
-    const locationBanner = `[${area.floor || ''} - ${area.flat || ''}] ${area.room || ''} : ${headerTitle}`;
+    const locationBanner = `[${area.floor || ''} - ${area.flat || ''}] ${roomTitle} : ${headerTitle}`;
     sheetRows.push([`${areaIdx + 1}`, locationBanner, '', '', '', '', '', '']);
 
     const additionItems = (area.items || []).filter(i => !i.isLess);
@@ -43,7 +49,7 @@ export function exportToExcel(projectData, billingMode = false) {
       const lineAmount = calculateLineItemAmount(item, lineTotal);
       const row = [
         globalSr++,
-        headerTitle,
+        roomTitle,
         item.remark || '',
         item.unit || 'SFT',
         item.quantity || 0,

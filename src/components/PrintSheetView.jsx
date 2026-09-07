@@ -76,7 +76,7 @@ export default function PrintSheetView({
                   {header.sheetNo ? ` (${header.sheetNo})` : ''}
                 </td>
                 <td colSpan={billingMode ? 3 : 2} className="fw-bold text-uppercase py-2 px-3 bg-light-subtle text-center">
-                  {header.location?.toUpperCase() || areas[0]?.room?.toUpperCase() || 'LIVING ROOM'}
+                  {header.workDescription?.toUpperCase() || header.description?.toUpperCase() || (areas[0]?.parentCategory === 'Other' ? areas[0]?.customParentCategory?.toUpperCase() : areas[0]?.parentCategory?.toUpperCase()) || areas[0]?.descriptionHeader?.toUpperCase() || 'FLOOR TILES'}
                 </td>
                 <td colSpan={billingMode ? 2 : 2} className="text-center fw-bold py-2 bg-light-subtle" style={{ width: '150px' }}>
                   {formatDateDisplay(header.date) || 'DATE'}
@@ -92,7 +92,7 @@ export default function PrintSheetView({
             <thead className="text-center text-uppercase fw-bold">
               <tr className="bg-light-subtle">
                 <th style={{ width: '45px' }}>SR.</th>
-                <th style={{ minWidth: '180px', width: '25%' }}>DESCRIPTION</th>
+                <th style={{ minWidth: '180px', width: '25%' }}>LOCATION</th>
                 <th style={{ minWidth: '150px' }}>REMARK</th>
                 <th style={{ width: '60px' }}>UNIT</th>
                 <th style={{ width: '55px' }}>QTY.</th>
@@ -114,11 +114,7 @@ export default function PrintSheetView({
                 const additions = (area.items || []).filter(i => !i.isLess);
                 const deductions = (area.items || []).filter(i => i.isLess);
 
-                const categoryTitle = area.parentCategory === 'Other' 
-                  ? (area.customParentCategory || 'Other Work') 
-                  : (area.parentCategory || 'General Work');
-                const defaultDesc = categoryTitle.toUpperCase();
-                const mainDescription = area.descriptionHeader ? area.descriptionHeader.toUpperCase() : defaultDesc;
+                const mainLocation = area.room?.toUpperCase() || area.location?.toUpperCase() || area.descriptionHeader?.toUpperCase() || 'LIVING ROOM';
 
                 return (
                   <React.Fragment key={area.id}>
@@ -136,10 +132,10 @@ export default function PrintSheetView({
                             </td>
                           ) : null}
 
-                          {/* DESCRIPTION: spans the additions */}
+                          {/* LOCATION: spans the additions */}
                           {isFirst ? (
                             <td className="fw-bold align-middle text-uppercase px-2" rowSpan={additions.length}>
-                              {mainDescription}
+                              {mainLocation}
                             </td>
                           ) : null}
 

@@ -209,16 +209,19 @@ export default function AreaBlock({
             </div>
           )}
 
-          {/* Header Description on Sheet (e.g. ITALIAN MARBLE FLOORING WITH KOBA) */}
+          {/* Sheet Location Header (e.g. LIVING ROOM, BEDROOM 1) */}
           <div className="col-12 mt-2">
             <div className="input-group input-group-sm">
-              <span className="input-group-text text-secondary fw-semibold">Sheet Description Header:</span>
+              <span className="input-group-text text-secondary fw-semibold">Sheet Location Header:</span>
               <input
                 type="text"
                 className="form-control fw-bold"
-                placeholder="e.g. ITALIAN MARBLE FLOORING WITH KOBA, or leave empty for auto title"
-                value={area.descriptionHeader || ''}
-                onChange={(e) => handleFieldChange('descriptionHeader', e.target.value)}
+                placeholder="e.g. LIVING ROOM, BEDROOM 1 (defaults to Room / Location Area above)"
+                value={area.room || area.descriptionHeader || ''}
+                onChange={(e) => {
+                  handleFieldChange('room', e.target.value);
+                  handleFieldChange('descriptionHeader', e.target.value);
+                }}
               />
             </div>
           </div>
