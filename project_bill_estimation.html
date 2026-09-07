@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Software Project Bill & Cost Estimation — MTS Decor MS PRO</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #0f172a;
+      --accent: #2563eb;
+      --accent-light: #eff6ff;
+      --success: #16a34a;
+      --warning: #d97706;
+      --border: #e2e8f0;
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+      --bg-page: #f8fafc;
+      --card-bg: #ffffff;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      padding: 40px 20px;
+      line-height: 1.5;
+    }
+
+    .bill-container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+      overflow: hidden;
+    }
+
+    /* Header Bar */
+    .bill-header {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: white;
+      padding: 36px 40px;
+      position: relative;
+    }
+
+    .top-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .brand-title {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-badge {
+      background: var(--accent);
+      color: white;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      letter-spacing: 0.5px;
+    }
+
+    .print-btn {
+      background: white;
+      color: var(--primary);
+      border: none;
+      padding: 8px 18px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .print-btn:hover {
+      background: #f1f5f9;
+      transform: translateY(-1px);
+    }
+
+    .header-details {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.15);
+      padding-top: 20px;
+    }
+
+    .header-col h4 {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #94a3b8;
+      margin-bottom: 6px;
+    }
+
+    .header-col p {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .header-col .muted-desc {
+      font-size: 12px;
+      color: #cbd5e1;
+      font-weight: 400;
+    }
+
+    /* Meta Cards */
+    .meta-bar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border-bottom: 1px solid var(--border);
+      background: #f8fafc;
+    }
+
+    .meta-item {
+      padding: 18px 24px;
+      border-right: 1px solid var(--border);
+    }
+
+    .meta-item:last-child {
+      border-right: none;
+    }
+
+    .meta-item .meta-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+    }
+
+    .meta-item .meta-value {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--primary);
+      margin-top: 2px;
+    }
+
+    /* Section Body */
+    .bill-body {
+      padding: 36px 40px;
+    }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-title::before {
+      content: "";
+      width: 4px;
+      height: 18px;
+      background: var(--accent);
+      border-radius: 2px;
+    }
+
+    /* Tables */
+    .table-container {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 32px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 13px;
+    }
+
+    thead {
+      background: #f1f5f9;
+    }
+
+    th {
+      padding: 12px 16px;
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tbody tr:hover {
+      background-color: #f8fafc;
+    }
+
+    .module-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      color: var(--text-muted);
+      width: 40px;
+    }
+
+    .module-title {
+      font-weight: 700;
+      color: var(--primary);
+      font-size: 14px;
+      margin-bottom: 2px;
+    }
+
+    .module-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .tag {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-top: 4px;
+      background: var(--accent-light);
+      color: var(--accent);
+    }
+
+    .amount-col {
+      text-align: right;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    /* Financial Summary */
+    .financial-summary {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 32px;
+    }
+
+    .terms-box h5 {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .terms-box ul {
+      list-style-type: disc;
+      padding-left: 18px;
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    .totals-box {
+      display: flex;
+      flex-column: column;
+      gap: 8px;
+    }
+
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      padding: 4px 0;
+      color: var(--text-muted);
+    }
+
+    .total-row.highlight {
+      border-top: 2px solid var(--border);
+      padding-top: 10px;
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--primary);
+    }
+
+    .total-row.highlight .amount {
+      color: var(--success);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 20px;
+    }
+
+    .discount-badge {
+      color: #b91c1c;
+      font-weight: 700;
+    }
+
+    /* Signatures */
+    .signature-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      margin-top: 40px;
+      padding-top: 24px;
+      border-top: 1px dashed var(--border);
+    }
+
+    .signature-box {
+      text-align: center;
+    }
+
+    .signature-line {
+      height: 60px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      font-family: 'Brush Script MT', cursive, sans-serif;
+      font-size: 22px;
+      color: var(--accent);
+    }
+
+    .signature-box p {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--text-main);
+    }
+
+    .signature-box span {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    /* Print Styles */
+    @media print {
+      body {
+        background: white;
+        padding: 0;
+      }
+
+      .bill-container {
+        border: none;
+        box-shadow: none;
+        max-width: 100%;
+      }
+
+      .print-btn {
+        display: none;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .header-details, .meta-bar, .financial-summary, .signature-grid {
+        grid-template-columns: 1fr;
+      }
+      .meta-item {
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+      }
+      .bill-body {
+        padding: 20px;
+      }
+      .bill-header {
+        padding: 24px 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="bill-container">
+    
+    <!-- ── HEADER ── -->
+    <header class="bill-header">
+      <div class="top-actions">
+        <div class="brand-title">
+          <span>📐 MTS DECOR</span>
+          <span class="brand-badge">MS PRO SOFTWARE</span>
+        </div>
+        <button class="print-btn" onclick="window.print()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 6 2 18 2 18 9"></polyline>
+            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+            <rect x="6" y="14" width="12" height="8"></rect>
+          </svg>
+          PRINT / SAVE PDF
+        </button>
+      </div>
+
+      <div class="header-details">
+        <div class="header-col">
+          <h4>CLIENT DETAILS</h4>
+          <p>MTS DECOR</p>
+          <div class="muted-desc">Shri Madanlal Suthar &amp; Shri Jagdish Suthar</div>
+          <div class="muted-desc">Civil, Interior Contractors &amp; Measurement Specialists</div>
+        </div>
+        <div class="header-col" style="text-align: right;">
+          <h4>SOFTWARE DEVELOPER</h4>
+          <p>HITESH SUTHAR</p>
+          <div class="muted-desc">Lead Full-Stack Software Engineer &amp; Architect</div>
+          <div class="muted-desc">Specialized Contractor Systems Development</div>
+        </div>
+      </div>
+    </header>
+
+    <!-- ── METADATA BAR ── -->
+    <div class="meta-bar">
+      <div class="meta-item">
+        <div class="meta-label">INVOICE / BILL NO.</div>
+        <div class="meta-value">INV-MTS-2026-001</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">DATE OF ISSUANCE</div>
+        <div class="meta-value">07 SEPT 2026</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">SYSTEM VERSION</div>
+        <div class="meta-value">MS PRO v2.3.0</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">DEPLOYMENT STATUS</div>
+        <div class="meta-value" style="color: var(--success);">LIVE ON CLOUD</div>
+      </div>
+    </div>
+
+    <!-- ── BODY CONTENT ── -->
+    <div class="bill-body">
+
+      <!-- PROJECT SCOPE SUMMARY -->
+      <h3 class="section-title">1. Custom Software Engineering Deliverables</h3>
+      
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 50px;">#</th>
+              <th>MODULE &amp; DELIVERABLE SPECIFICATION</th>
+              <th style="width: 110px; text-align: center;">TIMELINE</th>
+              <th style="width: 140px; text-align: right;">COST (INR)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="module-num">01</td>
+              <td>
+                <div class="module-title">Architecture &amp; Core Measurement Workbook Engine</div>
+                <div class="module-desc">Dynamic multi-area measurement blocks, real-time formula calculations (SFT, RFT, NOS, SQM), subtraction/deduction engine (- LESS), and executive summary roll-up dashboard.</div>
+                <span class="tag">REACT 19 + VITE</span>
+              </td>
+              <td style="text-align: center; font-weight: 600;">Completed</td>
+              <td class="amount-col">₹ 24,000</td>
+            </tr>
+
+            <tr>
+              <td class="module-num">02</td>
+              <td>
+                <div class="module-title">Mobile "Quick-Measure" Field Mode with Large Keypad</div>
+                <div class="module-desc">One-handed on-site touch interface with oversized numeric keypad, tape fraction shortcuts (+¼", +½", +¾"), haptic vibration, voice dictation, room presets, and categorized civil/interior work items.</div>
+                <span class="tag">MOBILE UI / HAPTIC</span>
+              </td>
+              <td style="text-align: center; font-weight: 600;">Completed</td>
+              <td class="amount-col">₹ 18,000</td>
+            </tr>
+
+            <tr>
+              <td class="module-num">03</td>
+              <td>
+                <div class="module-title">Interim Payment Certificate (RA Bill) &amp; Rates Module</div>
+                <div class="module-desc">Dual-mode toggle between pure Measurement Sheet and Billing Mode. Unit rate assignment, line calculations, GST/tax computation, and contractor bill summary generation.</div>
+                <span class="tag">BILLING &amp; GST</span>
+              </td>
+              <td style="text-align: center; font-weight: 600;">Completed</td>
+              <td class="amount-col">₹ 14,000</td>
+            </tr>
+
+            <tr>
+              <td class="module-num">04</td>
+              <td>
+                <div class="module-title">Cloud Database Backend &amp; 1-Second Auto-Save</div>
+                <div class="module-desc">Node.js Express REST API connected to MongoDB Atlas Cloud. Non-blocking 1-second auto-save debounce ensuring zero data loss during site measurement sessions.</div>
+                <span class="tag">NODE.JS + MONGODB</span>
+              </td>
+              <td style="text-align: center; font-weight: 600;">Completed</td>
+              <td class="amount-col">₹ 16,000</td>
+            </tr>
+
+            <tr>
+              <td class="module-num">05</td>
+              <td>
+                <div class="module-title">Enterprise Security, 2-Factor PIN &amp; Cloudflare Bot Defense</div>
+                <div class="module-desc">Multi-user RBAC (Admin, Madanlal, Jagdish), 6-digit identity PIN verification, Cloudflare Turnstile bot defense, Bcrypt encryption, and JWT token protection.</div>
+                <span class="tag">SECURITY &amp; 2FA</span>
+              </td>
+              <td style="text-align: center; font-weight: 600;">Completed</td>
+              <td class="amount-col">₹ 12,000</td>
+            </tr>
+
+            <tr>
+              <td class="module-num">06</td>
+              <td>
+                <div class="module-title">Automated Google Drive Backup &amp; JSON Snapshot System</div>
+                <div class="module-desc">Background Google Drive API v3 sync on every save (debounced 25s), 12-hour cron backup scheduler, Admin Drive health panel, and 1-click database JSON download.</div>
+                <span class="tag">GOOGLE DRIVE API</span>
+              </td>
+              <td style="text-align: center; font-weight: 600;">Completed</td>
+              <td class="amount-col">₹ 12,000</td>
+            </tr>
+
+            <tr>
+              <td class="module-num">07</td>
+              <td>
+                <div class="module-title">Client-Ready Multi-Sheet Excel &amp; Printable PDF Engines</div>
+                <div class="module-desc">Official branded multi-sheet Excel (.xlsx) export with automatic formatting, formulas, and contractor headers. Print-optimized PDF view with company signatures.</div>
+                <span class="tag">EXCEL &amp; PDF</span>
+              </td>
+              <td style="text-align: center; font-weight: 600;">Completed</td>
+              <td class="amount-col">₹ 10,000</td>
+            </tr>
+
+            <tr>
+              <td class="module-num">08</td>
+              <td>
+                <div class="module-title">Desktop App Packaging &amp; Automated CI/CD Workflows</div>
+                <div class="module-desc">Electron configuration for Windows (.exe installer &amp; portable) and macOS (.dmg). GitHub Actions workflow automated compilation on every repository push.</div>
+                <span class="tag">ELECTRON + GITHUB ACTIONS</span>
+              </td>
+              <td style="text-align: center; font-weight: 600;">Completed</td>
+              <td class="amount-col">₹ 15,000</td>
+            </tr>
+
+            <tr>
+              <td class="module-num">09</td>
+              <td>
+                <div class="module-title">Admin Control Panel &amp; Rotating Founder Carousel</div>
+                <div class="module-desc">Dedicated admin panel for password resets, new user creation, dynamic quote &amp; photo carousel on login, project audits, and system diagnostics.</div>
+                <span class="tag">ADMIN PORTAL</span>
+              </td>
+              <td style="text-align: center; font-weight: 600;">Completed</td>
+              <td class="amount-col">₹ 9,000</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- INFRASTRUCTURE & MAINTENANCE -->
+      <h3 class="section-title">2. Cloud Infrastructure &amp; Licensing</h3>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 50px;">#</th>
+              <th>SERVICE / RESOURCE</th>
+              <th style="width: 140px;">TYPE</th>
+              <th style="width: 140px; text-align: right;">ANNUAL ESTIMATE</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="module-num">A</td>
+              <td>
+                <div class="module-title">MongoDB Atlas Cloud Database</div>
+                <div class="module-desc">M0 Free Tier Cluster with SSL encryption, daily backups, and 99.99% availability.</div>
+              </td>
+              <td>Cloud Database</td>
+              <td class="amount-col">₹ 0 (Free Tier)</td>
+            </tr>
+            <tr>
+              <td class="module-num">B</td>
+              <td>
+                <div class="module-title">Render Cloud Hosting &amp; SSL Certificates</div>
+                <div class="module-desc">Global CDN, automated continuous deployment from GitHub, custom domain support.</div>
+              </td>
+              <td>Web Service</td>
+              <td class="amount-col">₹ 0 (Free Tier)</td>
+            </tr>
+            <tr>
+              <td class="module-num">C</td>
+              <td>
+                <div class="module-title">Cloudflare Turnstile Bot Defense</div>
+                <div class="module-desc">Enterprise-grade visitor verification and brute-force protection with zero user friction.</div>
+              </td>
+              <td>Security Gateway</td>
+              <td class="amount-col">₹ 0 (Free Tier)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- FINANCIAL SUMMARY & TERMS -->
+      <div class="financial-summary">
+        <div class="terms-box">
+          <h5>TERMS &amp; INCLUSIONS</h5>
+          <ul>
+            <li><strong>Full IP &amp; Source Code Transfer</strong>: 100% ownership of source code, repositories, and credentials belongs to MTS Decor.</li>
+            <li><strong>Zero Recurring SaaS Fees</strong>: Configured using production-ready free-tier cloud architectures (saves ₹25,000+ per year in third-party software subscriptions).</li>
+            <li><strong>Multi-Platform Support</strong>: Web, Mobile (Android/iOS browser), and Desktop (Windows/macOS).</li>
+            <li><strong>Maintenance Warranty</strong>: Free bug fixes and updates included.</li>
+          </ul>
+        </div>
+
+        <div class="totals-box">
+          <div class="total-row">
+            <span>Development Gross Value:</span>
+            <span style="font-family: 'JetBrains Mono', monospace;">₹ 1,30,000</span>
+          </div>
+          <div class="total-row">
+            <span>Special Family / In-House Contractor Concession:</span>
+            <span class="discount-badge">- ₹ 65,000</span>
+          </div>
+          <div class="total-row">
+            <span>Cloud Infrastructure &amp; Setup:</span>
+            <span style="font-family: 'JetBrains Mono', monospace;">INCLUDED</span>
+          </div>
+          <div class="total-row highlight">
+            <span>TOTAL ESTIMATED COST:</span>
+            <span class="amount">₹ 65,000</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- SIGNATURE SECTION -->
+      <div class="signature-grid">
+        <div class="signature-box">
+          <div class="signature-line">Hitesh Suthar</div>
+          <p>Hitesh Suthar</p>
+          <span>Software Developer &amp; Architect</span>
+        </div>
+
+        <div class="signature-box">
+          <div class="signature-line">MTS Decor</div>
+          <p>Madanlal / Jagdish Suthar</p>
+          <span>For MTS Decor (Authorized Signatory)</span>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+</body>
+</html>
