@@ -47,17 +47,11 @@ export default function LineItemRow({
       <td className="align-middle">
         <input
           type="text"
-          list={`remark-suggestions-${item.id}`}
           className="form-control form-control-sm"
-          placeholder={item.isLess ? 'e.g. Door Opening, Window Cut' : 'e.g. Living Room, Master Bed, Kitchen'}
+          placeholder={item.isLess ? 'e.g. Door Opening, Window Cut' : 'Custom remark / note'}
           value={item.remark || ''}
           onChange={(e) => handleFieldChange('remark', e.target.value)}
         />
-        <datalist id={`remark-suggestions-${item.id}`}>
-          {REMARK_OPTIONS.map((opt, i) => (
-            <option key={i} value={opt} />
-          ))}
-        </datalist>
       </td>
 
       {/* Unit Dropdown */}

@@ -240,7 +240,7 @@ export default function AreaBlock({
                 <tr>
                   <th className="text-center" style={{ width: '45px' }}>SR.</th>
                   <th className="text-center" style={{ width: '90px' }}>TYPE</th>
-                  <th>REMARK / LOCATION DETAIL</th>
+                  <th>REMARK</th>
                   <th style={{ width: '110px' }}>UNIT</th>
                   <th className="text-center" style={{ width: '80px' }}>QTY</th>
                   <th className="text-end" style={{ width: '105px' }}>LENGTH</th>

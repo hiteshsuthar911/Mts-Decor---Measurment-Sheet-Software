@@ -1,4 +1,4 @@
-// Work categories (Item / Trade of Work)
+// Work categories (DESCRIPTION section data)
 export const WORK_CATEGORIES = [
   'Koba',
   'Floor Tiles',
@@ -19,7 +19,7 @@ export const WORK_CATEGORIES = [
   'Other'
 ];
 
-// Room / Location Area suggestions
+// Room / Location Area options (Between Project and Date)
 export const COMMON_ROOM_AREAS = [
   'Living Room',
   'Bedroom 1',
@@ -49,37 +49,8 @@ export const COMMON_ROOM_AREAS = [
   'Other'
 ];
 
-// Remark / Location description suggestions for line items (Swapped with Room Location Area)
-export const REMARK_OPTIONS = [
-  'Living Room',
-  'Bedroom 1',
-  'Bedroom 2',
-  'Bedroom 3',
-  'Bedroom 4',
-  'Bedroom 5',
-  'Bedroom 6',
-  'Master Bedroom 1',
-  'Master Bedroom 2',
-  'Master Bedroom 3',
-  'Master Bedroom 4',
-  'Common Bedroom',
-  'Passage',
-  'Kitchen',
-  'Dining Area',
-  'Utility',
-  'Deck Area',
-  'Toilet',
-  'Master Toilet',
-  'Common Toilet',
-  'Lobby',
-  'Terrace',
-  'Compound',
-  'Door Opening',
-  'Window Opening',
-  'Nahani Trap',
-  'Core Cut',
-  'Other'
-];
+// Remark section is custom empty by default
+export const REMARK_OPTIONS = [];
 
 export const UNIT_OPTIONS = [
   { value: 'SFT', label: 'SFT (Sq. Feet)', type: 'area', description: 'Qty × Length × Height/Width' },

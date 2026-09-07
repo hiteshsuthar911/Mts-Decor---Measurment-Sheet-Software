@@ -71,9 +71,12 @@ export default function PrintSheetView({
           <table className="table table-bordered border-dark sheet-grid-table mb-0">
             <tbody>
               <tr>
-                <td colSpan={billingMode ? 8 : 7} className="fw-bold text-uppercase py-2 px-3 bg-light-subtle">
-                  {header.projectName || 'PROJECT NAME'} - {areas[0]?.floor?.toUpperCase() || 'FLOOR'}
+                <td colSpan={billingMode ? 5 : 4} className="fw-bold text-uppercase py-2 px-3 bg-light-subtle">
+                  {header.projectName || 'PROJECT NAME'}{areas[0]?.floor ? ` - ${areas[0].floor.toUpperCase()}` : ''}
                   {header.sheetNo ? ` (${header.sheetNo})` : ''}
+                </td>
+                <td colSpan={billingMode ? 3 : 2} className="fw-bold text-uppercase py-2 px-3 bg-light-subtle text-center">
+                  {header.location?.toUpperCase() || areas[0]?.room?.toUpperCase() || 'LIVING ROOM'}
                 </td>
                 <td colSpan={billingMode ? 2 : 2} className="text-center fw-bold py-2 bg-light-subtle" style={{ width: '150px' }}>
                   {formatDateDisplay(header.date) || 'DATE'}
