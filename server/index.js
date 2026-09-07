@@ -67,6 +67,7 @@ app.use('/api/auth',           require('./routes/auth'));
 app.use('/api/users',          require('./routes/users'));
 app.use('/api/projects',       require('./routes/projects'));
 app.use('/api/founder-slides', require('./routes/founderSlides'));
+app.use('/api/backup',         require('./routes/backup'));
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ 

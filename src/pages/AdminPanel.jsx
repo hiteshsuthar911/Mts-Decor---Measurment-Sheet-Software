@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { getSession, logout, ADMIN_USERS } from '../utils/auth';
+import { BASE_URL } from '../utils/api';
 import { 
   getAllProjects, 
   deleteProject, 
@@ -12,7 +13,9 @@ import {
   getAllUsers,
   createUser,
   updateUserPassword,
-  deleteUser
+  deleteUser,
+  getBackupStatus,
+  triggerDriveBackup
 } from '../utils/storage';
 
 export default function AdminPanel() {
@@ -55,6 +58,12 @@ export default function AdminPanel() {
     imageUrl: '',
     order: 0
   });
+
+  // Google Drive & Database Backup State
+  const [backupStatus, setBackupStatus] = useState(null);
+  const [loadingBackup, setLoadingBackup] = useState(false);
+  const [backupRunning, setBackupRunning] = useState(false);
+  const [downloadingBackup, setDownloadingBackup] = useState(false);
 
   const loadData = async () => {
     try {
@@ -102,11 +111,68 @@ export default function AdminPanel() {
     }
   };
 
+  const loadBackupStatus = async () => {
+    try {
+      setLoadingBackup(true);
+      const data = await getBackupStatus();
+      setBackupStatus(data);
+    } catch {
+      // ignore
+    } finally {
+      setLoadingBackup(false);
+    }
+  };
+
+  const handleTriggerBackup = async () => {
+    try {
+      setBackupRunning(true);
+      const res = await triggerDriveBackup();
+      if (res && res.success) {
+        showToast('GOOGLE DRIVE BACKUP COMPLETED!');
+      } else {
+        alert(res?.message || 'Google Drive backup failed. Check your credentials.');
+      }
+      await loadBackupStatus();
+    } catch (err) {
+      alert('Backup error: ' + err.message);
+    } finally {
+      setBackupRunning(false);
+    }
+  };
+
+  const handleDownloadBackup = async () => {
+    try {
+      setDownloadingBackup(true);
+      const token = session?.token;
+      const res = await fetch(`${BASE_URL}/backup/download`, {
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        }
+      });
+      if (!res.ok) throw new Error('Failed to generate snapshot');
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `MTS_Decor_Database_Backup_${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      showToast('DATABASE BACKUP DOWNLOADED SUCCESSFULLY');
+    } catch (err) {
+      alert('Download error: ' + err.message);
+    } finally {
+      setDownloadingBackup(false);
+    }
+  };
+
   useEffect(() => {
     if (!session || session.role !== 'ADMIN') { navigate('/login'); return; }
     loadData();
     loadUsers();
     loadFounderSlides();
+    loadBackupStatus();
   }, []);
 
   if (!session || session.role !== 'ADMIN') return null;
@@ -114,12 +180,13 @@ export default function AdminPanel() {
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 3000); };
 
   const navItems = [
-    { key: 'dashboard',   label: 'DASHBOARD',         icon: 'bi-speedometer2' },
-    { key: 'projects',    label: 'ALL PROJECTS',       icon: 'bi-folder2-open' },
-    { key: 'users',       label: 'USER MANAGEMENT',    icon: 'bi-people-fill'  },
-    { key: 'slides',      label: 'FOUNDER SLIDES',     icon: 'bi-images'       },
-    { key: 'credentials', label: 'LOGIN CREDENTIALS',  icon: 'bi-key-fill'     },
-    { key: 'about',       label: 'SYSTEM INFO',        icon: 'bi-info-circle-fill' },
+    { key: 'dashboard',   label: 'DASHBOARD',           icon: 'bi-speedometer2' },
+    { key: 'projects',    label: 'ALL PROJECTS',         icon: 'bi-folder2-open' },
+    { key: 'users',       label: 'USER MANAGEMENT',      icon: 'bi-people-fill'  },
+    { key: 'slides',      label: 'FOUNDER SLIDES',       icon: 'bi-images'       },
+    { key: 'backup',      label: 'GOOGLE DRIVE BACKUP',  icon: 'bi-google'       },
+    { key: 'credentials', label: 'LOGIN CREDENTIALS',    icon: 'bi-key-fill'     },
+    { key: 'about',       label: 'SYSTEM INFO',          icon: 'bi-info-circle-fill' },
   ];
 
   // ── USER MANAGEMENT HANDLERS ──
@@ -412,6 +479,7 @@ export default function AdminPanel() {
                   setActiveSection(item.key);
                   if (item.key === 'slides') loadFounderSlides();
                   else if (item.key === 'users') loadUsers();
+                  else if (item.key === 'backup') loadBackupStatus();
                   else loadData();
                 }}
               >
@@ -438,6 +506,7 @@ export default function AdminPanel() {
             onClick={() => {
               if (activeSection === 'slides') loadFounderSlides();
               else if (activeSection === 'users') loadUsers();
+              else if (activeSection === 'backup') loadBackupStatus();
               else loadData();
             }}
           >
@@ -1034,7 +1103,229 @@ export default function AdminPanel() {
           </div>
         )}
 
-        {/* ── 5. LOGIN CREDENTIALS ── */}
+        {/* ── 5. GOOGLE DRIVE BACKUP ── */}
+        {activeSection === 'backup' && (
+          <div className="d-flex flex-column gap-4">
+            {/* Status overview cards */}
+            <div className="row g-3">
+              <div className="col-12 col-md-4">
+                <div className="card border-0 shadow-sm h-100 p-3">
+                  <div className="d-flex align-items-center justify-content-between mb-2">
+                    <span className="text-secondary extra-small fw-bold text-uppercase">Google Drive Status</span>
+                    <span className={`badge ${backupStatus?.driveConfigured ? 'bg-success' : 'bg-warning text-dark'} text-uppercase`}>
+                      {backupStatus?.driveConfigured ? 'CONNECTED' : 'SETUP REQUIRED'}
+                    </span>
+                  </div>
+                  <div className="d-flex align-items-center gap-2">
+                    <i className={`bi ${backupStatus?.driveConfigured ? 'bi-check-circle-fill text-success' : 'bi-exclamation-triangle-fill text-warning'} fs-4`}></i>
+                    <div>
+                      <div className="fw-bold text-dark small text-uppercase">
+                        {backupStatus?.driveConfigured ? 'Cloud Sync Active' : 'Credentials Missing'}
+                      </div>
+                      <div className="extra-small text-muted">
+                        {backupStatus?.driveConfigured 
+                          ? 'Automatic upload to your Google Drive folder' 
+                          : 'Set service account key & folder ID in Render'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="col-12 col-md-4">
+                <div className="card border-0 shadow-sm h-100 p-3">
+                  <div className="d-flex align-items-center justify-content-between mb-2">
+                    <span className="text-secondary extra-small fw-bold text-uppercase">Auto-Backup Trigger</span>
+                    <span className="badge bg-primary text-uppercase">REAL-TIME + 12H</span>
+                  </div>
+                  <div className="d-flex align-items-center gap-2">
+                    <i className="bi bi-arrow-repeat text-primary fs-4"></i>
+                    <div>
+                      <div className="fw-bold text-dark small text-uppercase">Every Project Save</div>
+                      <div className="extra-small text-muted">
+                        Automatically snapshots database on every edit / save (debounced 25s)
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="col-12 col-md-4">
+                <div className="card border-0 shadow-sm h-100 p-3">
+                  <div className="d-flex align-items-center justify-content-between mb-2">
+                    <span className="text-secondary extra-small fw-bold text-uppercase">Last Backup Record</span>
+                    <span className={`badge ${backupStatus?.lastBackupStatus === 'SUCCESS' ? 'bg-success' : backupStatus?.lastBackupStatus === 'ERROR' ? 'bg-danger' : 'bg-secondary'} text-uppercase`}>
+                      {backupStatus?.lastBackupStatus || 'PENDING'}
+                    </span>
+                  </div>
+                  <div className="d-flex align-items-center gap-2">
+                    <i className="bi bi-clock-history text-secondary fs-4"></i>
+                    <div>
+                      <div className="fw-bold text-dark small">
+                        {backupStatus?.lastBackupTime 
+                          ? new Date(backupStatus.lastBackupTime).toLocaleString() 
+                          : 'No upload recorded yet'}
+                      </div>
+                      <div className="extra-small text-muted font-monospace text-truncate" style={{ maxWidth: '220px' }}>
+                        {backupStatus?.lastBackupFile || 'MTS_Decor_Backup_*.json'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Error banner if any */}
+            {backupStatus?.lastError && (
+              <div className="alert alert-danger border-0 d-flex align-items-center gap-2 small mb-0 py-2">
+                <i className="bi bi-exclamation-octagon-fill fs-5"></i>
+                <div>
+                  <strong>Last Sync Warning:</strong> {backupStatus.lastError}
+                </div>
+              </div>
+            )}
+
+            {/* Action buttons panel */}
+            <div className="card border-0 shadow-sm">
+              <div className="card-header bg-white border-bottom fw-bolder text-uppercase small d-flex justify-content-between align-items-center">
+                <span>
+                  <i className="bi bi-cloud-arrow-up-fill text-primary me-2"></i>
+                  BACKUP &amp; EXPORT CONTROLS
+                </span>
+                {loadingBackup && (
+                  <span className="spinner-border spinner-border-sm text-primary" role="status"></span>
+                )}
+              </div>
+              <div className="card-body p-4">
+                <p className="text-muted small mb-4">
+                  All your client measurement sheets, projects, items, line calculations, users, and founder slides are serialized into standard JSON format with millisecond timestamps.
+                </p>
+
+                <div className="d-flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-sm fw-bold text-uppercase px-4 py-2 d-flex align-items-center gap-2"
+                    onClick={handleTriggerBackup}
+                    disabled={backupRunning || !backupStatus?.driveConfigured}
+                  >
+                    {backupRunning ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm" role="status"></span>
+                        UPLOADING TO DRIVE...
+                      </>
+                    ) : (
+                      <>
+                        <i className="bi bi-google"></i>
+                        BACKUP TO GOOGLE DRIVE NOW
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    className="btn btn-outline-dark btn-sm fw-bold text-uppercase px-4 py-2 d-flex align-items-center gap-2"
+                    onClick={handleDownloadBackup}
+                    disabled={downloadingBackup}
+                  >
+                    {downloadingBackup ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm" role="status"></span>
+                        GENERATING SNAPSHOT...
+                      </>
+                    ) : (
+                      <>
+                        <i className="bi bi-download"></i>
+                        DOWNLOAD DATABASE SNAPSHOT (.JSON)
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    className="btn btn-outline-secondary btn-sm fw-bold text-uppercase px-3 py-2 ms-auto"
+                    onClick={loadBackupStatus}
+                    disabled={loadingBackup}
+                  >
+                    <i className="bi bi-arrow-clockwise me-1"></i> REFRESH STATUS
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Google Drive Setup Guide */}
+            <div className="card border-0 shadow-sm">
+              <div className="card-header bg-white border-bottom fw-bolder text-uppercase small">
+                <i className="bi bi-question-circle-fill text-info me-2"></i>
+                HOW TO CONNECT YOUR GOOGLE DRIVE (STEP-BY-STEP)
+              </div>
+              <div className="card-body p-4">
+                <div className="row g-4">
+                  <div className="col-12 col-md-6">
+                    <div className="d-flex gap-3">
+                      <div className="badge bg-primary rounded-circle p-2 d-flex align-items-center justify-content-center" style={{ width: '32px', height: '32px', minWidth: '32px' }}>
+                        1
+                      </div>
+                      <div>
+                        <h6 className="fw-bold mb-1 text-uppercase small">Create a Backup Folder on Google Drive</h6>
+                        <p className="text-muted extra-small mb-1">
+                          Open Google Drive, create a folder named <code>MTS Decor Backups</code>. Open the folder and copy the ID from the address bar (e.g. <code>drive.google.com/drive/folders/<strong>1ABCxyz...</strong></code>).
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="col-12 col-md-6">
+                    <div className="d-flex gap-3">
+                      <div className="badge bg-primary rounded-circle p-2 d-flex align-items-center justify-content-center" style={{ width: '32px', height: '32px', minWidth: '32px' }}>
+                        2
+                      </div>
+                      <div>
+                        <h6 className="fw-bold mb-1 text-uppercase small">Create Free Google Cloud Service Account</h6>
+                        <p className="text-muted extra-small mb-1">
+                          Go to <strong>Google Cloud Console</strong> &rarr; <strong>APIs &amp; Services</strong> &rarr; Enable <strong>Google Drive API</strong>. In <strong>Credentials</strong>, click <em>Create Credentials</em> &rarr; <em>Service Account</em>.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="col-12 col-md-6">
+                    <div className="d-flex gap-3">
+                      <div className="badge bg-primary rounded-circle p-2 d-flex align-items-center justify-content-center" style={{ width: '32px', height: '32px', minWidth: '32px' }}>
+                        3
+                      </div>
+                      <div>
+                        <h6 className="fw-bold mb-1 text-uppercase small">Download Key &amp; Share Folder</h6>
+                        <p className="text-muted extra-small mb-1">
+                          Under your Service Account, go to <strong>Keys</strong> &rarr; <em>Add Key</em> &rarr; <em>Create new JSON key</em>. Then in Google Drive, click <strong>Share</strong> on your backup folder and paste the service account email (with <strong>Editor</strong> permission).
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="col-12 col-md-6">
+                    <div className="d-flex gap-3">
+                      <div className="badge bg-primary rounded-circle p-2 d-flex align-items-center justify-content-center" style={{ width: '32px', height: '32px', minWidth: '32px' }}>
+                        4
+                      </div>
+                      <div>
+                        <h6 className="fw-bold mb-1 text-uppercase small">Add Environment Variables on Render</h6>
+                        <p className="text-muted extra-small mb-1">
+                          In your Render dashboard for the web service, add two Environment Variables:
+                        </p>
+                        <div className="bg-light p-2 rounded extra-small font-monospace text-dark">
+                          <strong>GOOGLE_DRIVE_FOLDER_ID</strong> = your folder ID<br />
+                          <strong>GOOGLE_SERVICE_ACCOUNT_KEY</strong> = paste the full JSON contents of the key file
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── 6. LOGIN CREDENTIALS ── */}
         {activeSection === 'credentials' && (
           <div className="card border-0 shadow-sm">
             <div className="card-header bg-white border-bottom fw-bolder text-uppercase small">

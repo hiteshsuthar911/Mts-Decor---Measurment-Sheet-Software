@@ -76,3 +76,13 @@ export async function updateUserProfile(data) {
 export async function changeUserPassword(data) {
   return api.put('/users/change-password', data);
 }
+
+// ── DATABASE & GOOGLE DRIVE BACKUPS (Admin Only) ──
+export async function getBackupStatus() {
+  return api.get('/backup/status');
+}
+
+export async function triggerDriveBackup() {
+  return api.post('/backup/trigger');
+}
+

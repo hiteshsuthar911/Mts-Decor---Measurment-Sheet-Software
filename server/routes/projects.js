@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const auth = require('../middleware/authMiddleware');
 const Project = require('../models/Project');
+const { triggerAutoBackup } = require('../utils/googleDrive');
 
 // GET /api/projects — all projects (both users see all)
 router.get('/', auth, async (req, res) => {
@@ -38,6 +39,7 @@ router.post('/', auth, async (req, res) => {
       data: data || {},
     });
     res.status(201).json(project);
+    triggerAutoBackup();
   } catch (err) {
     console.error('CREATE PROJECT ERROR:', err);
     res.status(500).json({ message: 'SERVER ERROR' });
@@ -60,6 +62,7 @@ router.put('/:id', auth, async (req, res) => {
     );
     if (!project) return res.status(404).json({ message: 'PROJECT NOT FOUND' });
     res.json(project);
+    triggerAutoBackup();
   } catch (err) {
     res.status(500).json({ message: 'SERVER ERROR' });
   }
@@ -74,6 +77,7 @@ router.delete('/:id', auth, async (req, res) => {
       return res.status(403).json({ message: 'FORBIDDEN: ONLY OWNER OR ADMIN CAN DELETE' });
     await project.deleteOne();
     res.json({ message: 'PROJECT DELETED' });
+    triggerAutoBackup();
   } catch (err) {
     res.status(500).json({ message: 'SERVER ERROR' });
   }

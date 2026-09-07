@@ -31,3 +31,5 @@ export const api = {
   put:    (path, body)  => request('PUT', path, body),
   delete: (path)        => request('DELETE', path),
 };
+
+export { BASE_URL, getToken };
