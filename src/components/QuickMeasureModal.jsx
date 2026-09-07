@@ -10,9 +10,7 @@ export default function QuickMeasureModal({
   onUpdateProjectData,
   projectName
 }) {
-  if (!show || !projectData) return null;
-
-  const areas = projectData.areas || [];
+  const areas = projectData?.areas || [];
   const [selectedAreaId, setSelectedAreaId] = useState(areas[0]?.id || '');
   const [isLess, setIsLess] = useState(false);
   const [remark, setRemark] = useState('');
@@ -278,6 +276,8 @@ export default function QuickMeasureModal({
   const currentAreaItems = activeArea.items || [];
   const additions = currentAreaItems.filter(i => !i.isLess);
   const deductions = currentAreaItems.filter(i => i.isLess);
+
+  if (!show || !projectData) return null;
 
   return (
     <div 

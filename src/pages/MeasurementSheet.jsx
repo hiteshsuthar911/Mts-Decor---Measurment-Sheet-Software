@@ -11,12 +11,12 @@ import { getSession, logout } from '../utils/auth';
 import { calculateProjectGrandTotals, groupAreasIntoPages, calculateSheetPageTotals, formatNumber } from '../utils/calculations';
 import { exportToExcel } from '../utils/exportUtils';
 import { createEmptyArea } from '../data/sampleData';
+import { getProject, saveProject } from '../utils/storage';
 
 export default function MeasurementSheet() {
   const { projectId } = useParams();
   const navigate = useNavigate();
   const session = getSession();
-  const saveTimer = useRef(null);
 
   const [project, setProject]           = useState(null);
   const [projectData, setProjectData]   = useState(null);
@@ -26,6 +26,7 @@ export default function MeasurementSheet() {
   const [showQuickMeasure, setShowQuickMeasure] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [notFound, setNotFound]         = useState(false);
+  const [fetchError, setFetchError]     = useState('');
   const [pageLoading, setPageLoading]   = useState(true);
   const [isSaving, setIsSaving]         = useState(false);
   const [lastSavedAt, setLastSavedAt]   = useState(null);
@@ -40,7 +41,13 @@ export default function MeasurementSheet() {
   const fetchProject = async () => {
     try {
       setPageLoading(true);
+      setNotFound(false);
+      setFetchError('');
       const proj = await getProject(projectId);
+      if (!proj) {
+        setNotFound(true);
+        return;
+      }
       setProject(proj);
       const rawData = proj?.data || {};
       const safeData = {
@@ -58,8 +65,17 @@ export default function MeasurementSheet() {
       setProjectData(safeData);
       if (proj?.updatedAt) setLastSavedAt(new Date(proj.updatedAt));
       if (proj?.ownerUsername === session?.username || session?.role === 'ADMIN') setEditUnlocked(true);
-    } catch {
-      setNotFound(true);
+    } catch (err) {
+      console.error('Failed to load project:', err);
+      const msg = err?.message || '';
+      if (msg.includes('NOT FOUND')) {
+        setNotFound(true);
+      } else if (msg.includes('UNAUTHORIZED') || msg.includes('TOKEN')) {
+        logout();
+        navigate('/login');
+      } else {
+        setFetchError(msg || 'Failed to connect to server');
+      }
     } finally {
       setPageLoading(false);
     }
@@ -260,13 +276,29 @@ export default function MeasurementSheet() {
   );
 
   if (notFound) return (
-    <div className="d-flex flex-column align-items-center justify-content-center min-vh-100 bg-light text-center">
+    <div className="d-flex flex-column align-items-center justify-content-center min-vh-100 bg-light text-center p-4">
       <div className="display-1 mb-3">🔍</div>
       <h4 className="fw-bolder text-uppercase">PROJECT NOT FOUND</h4>
       <p className="text-muted text-uppercase small">THIS PROJECT MAY HAVE BEEN DELETED.</p>
       <Link to="/projects" className="btn btn-dark fw-bold text-uppercase px-4 mt-2">
         <i className="bi bi-arrow-left me-2"></i> BACK TO PROJECTS
       </Link>
+    </div>
+  );
+
+  if (fetchError) return (
+    <div className="d-flex flex-column align-items-center justify-content-center min-vh-100 bg-light text-center p-4">
+      <div className="display-1 mb-3 text-warning">⚠️</div>
+      <h4 className="fw-bolder text-uppercase">COULD NOT LOAD PROJECT</h4>
+      <p className="text-muted text-uppercase small mb-4">{fetchError}</p>
+      <div className="d-flex gap-2">
+        <button className="btn btn-primary fw-bold text-uppercase px-4" onClick={fetchProject}>
+          <i className="bi bi-arrow-clockwise me-2"></i> RETRY
+        </button>
+        <Link to="/projects" className="btn btn-outline-dark fw-bold text-uppercase px-4">
+          <i className="bi bi-arrow-left me-2"></i> BACK TO PROJECTS
+        </Link>
+      </div>
     </div>
   );
 

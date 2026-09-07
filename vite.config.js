@@ -5,4 +5,12 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   plugins: [react()],
   base: process.env.ELECTRON_BUILD === 'true' ? './' : '/',
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5001',
+        changeOrigin: true,
+      },
+    },
+  },
 })
