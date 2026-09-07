@@ -168,16 +168,18 @@ export default function MeasurementSheet() {
   };
 
   const handleAddNewArea = (targetCategory = null, forceNewPage = false) => {
+    // Guard: reject event objects or non-string values accidentally passed as targetCategory
+    const safeCategory = (targetCategory && typeof targetCategory === 'string') ? targetCategory : null;
     const newArea = createEmptyArea();
     if (projectData.areas?.length > 0) {
       const last = projectData.areas[projectData.areas.length - 1];
       newArea.floor = last.floor || '';
       newArea.flat = last.flat || '';
       newArea.room = '';
-      if (targetCategory) {
-        newArea.parentCategory = targetCategory;
+      if (safeCategory) {
+        newArea.parentCategory = safeCategory;
       } else {
-        newArea.parentCategory = last.parentCategory || 'Floor Tiles';
+        newArea.parentCategory = (typeof last.parentCategory === 'string' && last.parentCategory) ? last.parentCategory : 'Floor Tiles';
       }
     }
     if (forceNewPage) {
@@ -830,7 +832,7 @@ export default function MeasurementSheet() {
             <button
               type="button"
               className="btn btn-sm btn-primary fw-bold text-uppercase px-2 py-1 extra-small"
-              onClick={handleAddNewArea}
+              onClick={() => handleAddNewArea()}
             >
               <i className="bi bi-plus-circle-fill me-1"></i>AREA
             </button>
