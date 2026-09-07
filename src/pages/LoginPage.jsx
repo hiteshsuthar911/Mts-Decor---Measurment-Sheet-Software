@@ -3,13 +3,22 @@ import { useNavigate } from 'react-router-dom';
 import { loginInit, loginVerify2FA } from '../utils/auth';
 import { getFounderSlides } from '../utils/storage';
 
-const STATIC_FOUNDER_SLIDE = {
-  name: 'MADANLAL T SUTHAR',
-  role: 'FOUNDER',
-  company: 'MTS Decor',
-  quote: 'True quality starts where no one looks—in the concrete, framing, and waterproofing—long before the marble is laid or the lighting is installed.',
-  imageUrl: '/founder_madanlal.jpg',
-};
+const STATIC_FOUNDER_SLIDES = [
+  {
+    name: 'MADANLAL T SUTHAR',
+    role: 'FOUNDER',
+    company: 'MTS Decor',
+    quote: 'True quality starts where no one looks—in the concrete, framing, and waterproofing—long before the marble is laid or the lighting is installed.',
+    imageUrl: '/founder_madanlal.jpg',
+  },
+  {
+    name: 'JAGDISH SUTHAR',
+    role: 'FOUNDER',
+    company: 'MTS Decor',
+    quote: 'Every millimeter counts on site. Master craftsmanship is not just what you build, but the precision, dedication, and integrity you build it with.',
+    imageUrl: '/founder_jagdish.jpg',
+  }
+];
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -27,18 +36,18 @@ export default function LoginPage() {
   const [twoFAData, setTwoFAData] = useState(null);
   const [otpCode, setOtpCode] = useState('');
 
-  // Permanent Static Founder Slide (Never disappears on refresh)
+  // Permanent Static Founder Slides for Both Founders (Always visible, never disappears on refresh)
   const [slides, setSlides] = useState(() => {
     try {
       const cached = localStorage.getItem('MTS_FOUNDER_SLIDES_CACHE');
       const parsed = cached ? JSON.parse(cached) : null;
       if (Array.isArray(parsed) && parsed.length > 0) return parsed;
     } catch {}
-    return [STATIC_FOUNDER_SLIDE];
+    return STATIC_FOUNDER_SLIDES;
   });
   const [testimonialIdx, setTestimonialIdx] = useState(0);
 
-  // Load founder slides uploaded by admin from MongoDB Atlas (enhances or updates static slide)
+  // Load founder slides uploaded by admin from MongoDB Atlas
   useEffect(() => {
     getFounderSlides()
       .then(data => {
@@ -48,11 +57,11 @@ export default function LoginPage() {
             localStorage.setItem('MTS_FOUNDER_SLIDES_CACHE', JSON.stringify(data));
           } catch {}
         } else {
-          setSlides([STATIC_FOUNDER_SLIDE]);
+          setSlides(STATIC_FOUNDER_SLIDES);
         }
       })
       .catch(() => {
-        setSlides([STATIC_FOUNDER_SLIDE]);
+        setSlides(STATIC_FOUNDER_SLIDES);
       });
   }, []);
 
