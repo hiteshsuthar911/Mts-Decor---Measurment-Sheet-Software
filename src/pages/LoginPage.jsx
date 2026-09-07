@@ -3,6 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { loginInit, loginVerify2FA } from '../utils/auth';
 import { getFounderSlides } from '../utils/storage';
 
+const STATIC_FOUNDER_SLIDE = {
+  name: 'MADANLAL T SUTHAR',
+  role: 'FOUNDER',
+  company: 'MTS Decor',
+  quote: 'True quality starts where no one looks—in the concrete, framing, and waterproofing—long before the marble is laid or the lighting is installed.',
+  imageUrl: '/founder_madanlal.jpg',
+};
+
 export default function LoginPage() {
   const navigate = useNavigate();
 
@@ -19,29 +27,33 @@ export default function LoginPage() {
   const [twoFAData, setTwoFAData] = useState(null);
   const [otpCode, setOtpCode] = useState('');
 
-  // Founder Slides (Dynamic from MongoDB Admin Uploads + Synchronous Local Cache)
+  // Permanent Static Founder Slide (Never disappears on refresh)
   const [slides, setSlides] = useState(() => {
     try {
       const cached = localStorage.getItem('MTS_FOUNDER_SLIDES_CACHE');
-      return cached ? JSON.parse(cached) : [];
-    } catch {
-      return [];
-    }
+      const parsed = cached ? JSON.parse(cached) : null;
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    } catch {}
+    return [STATIC_FOUNDER_SLIDE];
   });
   const [testimonialIdx, setTestimonialIdx] = useState(0);
 
-  // Load founder slides uploaded by admin from MongoDB Atlas
+  // Load founder slides uploaded by admin from MongoDB Atlas (enhances or updates static slide)
   useEffect(() => {
     getFounderSlides()
       .then(data => {
-        if (Array.isArray(data)) {
+        if (Array.isArray(data) && data.length > 0) {
           setSlides(data);
           try {
             localStorage.setItem('MTS_FOUNDER_SLIDES_CACHE', JSON.stringify(data));
           } catch {}
+        } else {
+          setSlides([STATIC_FOUNDER_SLIDE]);
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        setSlides([STATIC_FOUNDER_SLIDE]);
+      });
   }, []);
 
   // Automatic sliding every 6 seconds if multiple slides exist
@@ -109,7 +121,7 @@ export default function LoginPage() {
     }
   };
 
-  const currentQuote = slides.length > 0 ? (slides[testimonialIdx] || slides[0]) : null;
+  const currentQuote = (slides.length > 0 ? (slides[testimonialIdx] || slides[0]) : null) || STATIC_FOUNDER_SLIDE;
 
   return (
     <div className="untitled-login-wrapper">
@@ -343,7 +355,7 @@ export default function LoginPage() {
             {/* Dark Gradient Overlay for Readability */}
             <div className="untitled-hero-overlay" style={{ zIndex: 2 }}></div>
 
-            {/* Top Logo & Title (Uniform across all states) */}
+            {/* Top Logo (Clean Branding) */}
             <div className="position-relative" style={{ zIndex: 3 }}>
               <img
                 src="/mtsdecor.png"
@@ -351,9 +363,6 @@ export default function LoginPage() {
                 style={{ height: '56px', maxWidth: '180px', objectFit: 'contain' }}
                 onError={(e) => { e.target.onerror = null; e.target.src = '/logo.png'; }}
               />
-              <div className="text-light opacity-75 extra-small fw-bold text-uppercase mt-2 tracking-wider">
-                CIVIL &bull; INTERIOR &bull; MEASUREMENT BOOK SYSTEM
-              </div>
             </div>
 
             {/* Quote & Author Content */}
@@ -434,7 +443,7 @@ export default function LoginPage() {
               border: '1px solid rgba(255, 255, 255, 0.1)'
             }}
           >
-            {/* Top Logo & Title */}
+            {/* Top Logo */}
             <div className="position-relative" style={{ zIndex: 2 }}>
               <img
                 src="/mtsdecor.png"
@@ -442,9 +451,6 @@ export default function LoginPage() {
                 style={{ height: '56px', maxWidth: '180px', objectFit: 'contain' }}
                 onError={(e) => { e.target.onerror = null; e.target.src = '/logo.png'; }}
               />
-              <div className="text-secondary extra-small fw-bold text-uppercase mt-2 tracking-wider">
-                CIVIL &bull; INTERIOR &bull; MEASUREMENT BOOK SYSTEM
-              </div>
             </div>
 
             {/* Middle Value Proposition */}
