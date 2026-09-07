@@ -10,6 +10,7 @@ export default function Header({
   onExportExcel,
   onOpenPrintView,
   onAddNewArea,
+  onOpenQuickMeasure,
   onSave,
   isSaving,
   lastSavedAt,
@@ -107,6 +108,19 @@ export default function Header({
               >
                 <i className="bi bi-plus-circle-fill"></i>
                 <span>+ ADD AREA</span>
+              </button>
+            )}
+
+            {/* Quick Measure / Field Mode */}
+            {!readOnly && (
+              <button 
+                type="button" 
+                className="btn btn-sm btn-outline-warning text-warning fw-bold text-uppercase d-flex align-items-center gap-1 shadow-sm"
+                onClick={onOpenQuickMeasure}
+                title="Open one-handed mobile field measurement mode"
+              >
+                <i className="bi bi-phone-fill"></i>
+                <span>FIELD MODE</span>
               </button>
             )}
 

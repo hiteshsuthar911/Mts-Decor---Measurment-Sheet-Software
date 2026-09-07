@@ -6,6 +6,7 @@ import AreaBlock from '../components/AreaBlock';
 import SummaryDashboard from '../components/SummaryDashboard';
 import PrintSheetView from '../components/PrintSheetView';
 import VerifyModal from '../components/VerifyModal';
+import QuickMeasureModal from '../components/QuickMeasureModal';
 import { getSession, logout } from '../utils/auth';
 import { getProject, saveProject } from '../utils/storage';
 import { calculateProjectGrandTotals } from '../utils/calculations';
@@ -23,6 +24,7 @@ export default function MeasurementSheet() {
   const [editUnlocked, setEditUnlocked] = useState(false);
   const [showVerify, setShowVerify]     = useState(false);
   const [isPrintView, setIsPrintView]   = useState(false);
+  const [showQuickMeasure, setShowQuickMeasure] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [notFound, setNotFound]         = useState(false);
   const [pageLoading, setPageLoading]   = useState(true);
@@ -314,6 +316,7 @@ export default function MeasurementSheet() {
         onExportExcel={handleExportExcel}
         onOpenPrintView={() => setIsPrintView(!isPrintView)}
         onAddNewArea={readOnly ? () => {} : handleAddNewArea}
+        onOpenQuickMeasure={readOnly ? () => {} : () => setShowQuickMeasure(true)}
         onSave={handleManualSave}
         isSaving={isSaving}
         lastSavedAt={lastSavedAt}
@@ -436,6 +439,13 @@ export default function MeasurementSheet() {
           <div className="d-flex gap-2">
             <button
               type="button"
+              className="btn btn-sm btn-warning text-dark fw-bold text-uppercase px-2 py-1 extra-small"
+              onClick={() => setShowQuickMeasure(true)}
+            >
+              <i className="bi bi-phone-fill me-1"></i>FIELD
+            </button>
+            <button
+              type="button"
               className="btn btn-sm btn-primary fw-bold text-uppercase px-2 py-1 extra-small"
               onClick={handleAddNewArea}
             >
@@ -456,6 +466,15 @@ export default function MeasurementSheet() {
           </div>
         </div>
       )}
+
+      {/* Quick Measure Field Mode Modal */}
+      <QuickMeasureModal
+        show={showQuickMeasure}
+        onClose={() => setShowQuickMeasure(false)}
+        projectData={projectData}
+        onUpdateProjectData={setAndSave}
+        projectName={projectData?.header?.projectName || project?.name}
+      />
 
       <footer className="bg-white border-top py-2 text-center text-muted extra-small mt-auto no-print text-uppercase">
         &copy; {new Date().getFullYear()} MS PRO — CONTRACTOR MEASUREMENT &amp; RA BILL SYSTEM
