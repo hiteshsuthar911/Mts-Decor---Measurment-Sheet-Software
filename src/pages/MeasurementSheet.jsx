@@ -24,6 +24,7 @@ export default function MeasurementSheet() {
   const [projectData, setProjectData]   = useState(null);
   const [editUnlocked, setEditUnlocked] = useState(false);
   const [showVerify, setShowVerify]     = useState(false);
+  const [isPrintView, setIsPrintView]   = useState(false);
   const [showQuickMeasure, setShowQuickMeasure] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [notFound, setNotFound]         = useState(false);
