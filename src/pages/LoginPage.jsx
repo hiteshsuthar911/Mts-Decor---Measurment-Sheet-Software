@@ -32,7 +32,6 @@ export default function LoginPage() {
   const [step, setStep] = useState(1);
   const [emailOrUser, setEmailOrUser] = useState('');
   const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -262,37 +261,9 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                {/* Remember Me */}
-                <div className="d-flex justify-content-between align-items-center mb-4">
-                  <div className="form-check mb-0">
-                    <input
-                      className="form-check-input"
-                      type="checkbox"
-                      id="rememberCheck"
-                      checked={rememberMe}
-                      onChange={(e) => setRememberMe(e.target.checked)}
-                      style={{ borderColor: '#d0d5dd', cursor: 'pointer' }}
-                    />
-                    <label
-                      className="form-check-label small text-secondary fw-normal ms-1"
-                      htmlFor="rememberCheck"
-                      style={{ cursor: 'pointer', fontSize: '0.875rem' }}
-                    >
-                      Remember for 30 days
-                    </label>
-                  </div>
-                  <span className="badge bg-light text-dark border extra-small text-uppercase">
-                    <i className="bi bi-shield-check text-success me-1"></i>2FA ENABLED
-                  </span>
-                </div>
-
                 {/* Cloudflare Turnstile Human Verification Screen (Free Bot Defense) */}
                 <div className="mb-3 d-flex flex-column align-items-center">
                   <div ref={turnstileContainerRef} id="cf-turnstile-container" style={{ minHeight: '65px' }}></div>
-                  <div className="d-flex align-items-center gap-1 mt-1 text-muted" style={{ fontSize: '0.72rem', letterSpacing: '0.3px' }}>
-                    <i className="bi bi-shield-lock-fill text-warning"></i>
-                    <span>Protected by Cloudflare Turnstile</span>
-                  </div>
                 </div>
 
                 {/* Hidden submit button for native Enter key support */}
