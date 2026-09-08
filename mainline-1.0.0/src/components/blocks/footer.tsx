@@ -84,7 +84,7 @@ export function Footer() {
 
       <div className="mt-8 w-full border-t border-border/40 pt-10 pb-6 text-center select-none">
         <div className="container">
-          <span className="font-display font-black tracking-tighter text-4xl sm:text-6xl md:text-8xl lg:text-9xl text-transparent bg-clip-text bg-gradient-to-b from-foreground/25 to-foreground/5 dark:from-foreground/20 dark:to-foreground/0 block">
+          <span className="font-display font-black tracking-tighter text-4xl sm:text-6xl md:text-8xl lg:text-9xl text-transparent bg-clip-text bg-gradient-to-b from-primary/35 to-primary/5 dark:from-primary/30 dark:to-transparent block">
             MTS DECOR
           </span>
         </div>

@@ -42,8 +42,8 @@ export const Hero = () => {
       <div className="container flex flex-col justify-between gap-8 md:gap-14 lg:flex-row lg:gap-16">
         {/* Left side - Main content */}
         <div className="flex-1 max-w-2xl">
-          <div className="inline-flex items-center gap-2 rounded-full border bg-muted/60 px-3 py-1 text-[11px] sm:text-xs font-mono font-medium text-muted-foreground mb-4">
-            <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3.5 py-1 text-[11px] sm:text-xs font-mono font-semibold text-primary mb-4 shadow-2xs">
+            <span className="size-1.5 rounded-full bg-primary animate-pulse" />
             ENGINEERED FOR CONTRACTORS & DESIGNERS
           </div>
 
