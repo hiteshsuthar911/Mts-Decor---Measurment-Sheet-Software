@@ -235,10 +235,10 @@ export default function AdminPanel() {
 
   const navItems = [
     { key: 'dashboard',   label: 'DASHBOARD',           icon: 'bi-speedometer2' },
-    { key: 'companies',   label: 'CLIENT COMPANIES',   icon: 'bi-building-fill-gear' },
     { key: 'projects',    label: 'ALL PROJECTS',         icon: 'bi-folder2-open' },
     { key: 'excel',       label: 'EXCEL SPREADSHEETS',   icon: 'bi-file-earmark-excel-fill' },
     { key: 'users',       label: 'USER MANAGEMENT',      icon: 'bi-people-fill'  },
+    { key: 'companies',   label: 'CLIENT PORTALS',      icon: 'bi-cone-striped', badge: 'ON HOLD' },
     { key: 'slides',      label: 'FOUNDER SLIDES',       icon: 'bi-images'       },
     { key: 'backup',      label: 'GOOGLE DRIVE BACKUP',  icon: 'bi-google'       },
     { key: 'credentials', label: 'LOGIN CREDENTIALS',    icon: 'bi-key-fill'     },
@@ -513,344 +513,6 @@ export default function AdminPanel() {
         </div>
       )}
 
-      {/* ── CLIENT COMPANY ONBOARD / EDIT MODAL ── */}
-      {companyModal.open && (
-        <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 9998 }}>
-          <div className="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
-            <div className="modal-content border-0 shadow-lg">
-              <div className="modal-header bg-dark text-white">
-                <h5 className="modal-title fw-bold extra-small text-uppercase d-flex align-items-center gap-2">
-                  <i className="bi bi-building-gear text-info"></i>
-                  {companyModal.mode === 'create' ? 'ONBOARD NEW CLIENT COMPANY & PORTAL' : `EDIT COMPANY: ${companyModal.data.name?.toUpperCase()}`}
-                </h5>
-                <button
-                  type="button"
-                  className="btn-close btn-close-white"
-                  onClick={() => setCompanyModal({ open: false, mode: 'create', data: {} })}
-                ></button>
-              </div>
-
-              <form onSubmit={handleSaveCompany}>
-                <div className="modal-body p-4">
-                  <div className="alert alert-light border small text-muted mb-4 d-flex align-items-start gap-2">
-                    <i className="bi bi-shield-check text-primary fs-5 flex-shrink-0 mt-1"></i>
-                    <div>
-                      <strong className="text-dark text-uppercase">Multi-Tenant Branded Client Portal:</strong>
-                      <div>
-                        Each company gets its dedicated branded portal at <code>/c/&lt;portal-slug&gt;</code>. Users belonging to this company will only see their own company's projects and Excel sheets.
-                      </div>
-                    </div>
-                  </div>
-
-                  <h6 className="fw-bolder text-uppercase extra-small text-primary border-bottom pb-1 mb-3">
-                    1. COMPANY PROFILE &amp; BRANDING
-                  </h6>
-
-                  <div className="row g-3 mb-4">
-                    <div className="col-12 col-md-6">
-                      <label className="form-label extra-small fw-bold text-uppercase text-secondary mb-1">
-                        COMPANY NAME *
-                      </label>
-                      <input
-                        type="text"
-                        className="form-control form-control-sm text-uppercase fw-bold"
-                        placeholder="e.g. APEX INTERIORS PVT LTD"
-                        value={companyModal.data.name || ''}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          const slugAuto = val.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-                          setCompanyModal({
-                            ...companyModal,
-                            data: {
-                              ...companyModal.data,
-                              name: val,
-                              slug: companyModal.mode === 'create' ? slugAuto : (companyModal.data.slug || slugAuto),
-                            }
-                          });
-                        }}
-                        required
-                      />
-                    </div>
-
-                    <div className="col-12 col-md-6">
-                      <label className="form-label extra-small fw-bold text-uppercase text-secondary mb-1">
-                        PORTAL SLUG (URL LINK) *
-                      </label>
-                      <div className="input-group input-group-sm">
-                        <span className="input-group-text font-monospace extra-small bg-light">/c/</span>
-                        <input
-                          type="text"
-                          className="form-control form-control-sm font-monospace"
-                          placeholder="apex-interiors"
-                          value={companyModal.data.slug || ''}
-                          onChange={(e) => setCompanyModal({
-                            ...companyModal,
-                            data: { ...companyModal.data, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') }
-                          })}
-                          required
-                          disabled={companyModal.data.slug === 'mts-decor'}
-                        />
-                      </div>
-                      <div className="extra-small text-muted mt-1">
-                        Portal URL: <code>{window.location.origin}/c/{companyModal.data.slug || 'slug'}</code>
-                      </div>
-                    </div>
-
-                    <div className="col-12 col-md-6">
-                      <label className="form-label extra-small fw-bold text-uppercase text-secondary mb-1">
-                        TAGLINE / BUSINESS TYPE
-                      </label>
-                      <input
-                        type="text"
-                        className="form-control form-control-sm"
-                        placeholder="e.g. Civil & Interior Contractor"
-                        value={companyModal.data.tagline || ''}
-                        onChange={(e) => setCompanyModal({
-                          ...companyModal,
-                          data: { ...companyModal.data, tagline: e.target.value }
-                        })}
-                      />
-                    </div>
-
-                    <div className="col-12 col-md-6">
-                      <label className="form-label extra-small fw-bold text-uppercase text-secondary mb-1">
-                        LOGO IMAGE URL (PNG / JPG / WEBP)
-                      </label>
-                      <input
-                        type="url"
-                        className="form-control form-control-sm"
-                        placeholder="https://example.com/logo.png"
-                        value={companyModal.data.logo || ''}
-                        onChange={(e) => setCompanyModal({
-                          ...companyModal,
-                          data: { ...companyModal.data, logo: e.target.value }
-                        })}
-                      />
-                    </div>
-                  </div>
-
-                  <h6 className="fw-bolder text-uppercase extra-small text-primary border-bottom pb-1 mb-3">
-                    2. OWNER &amp; CONTACT DETAILS
-                  </h6>
-
-                  <div className="row g-3 mb-4">
-                    <div className="col-12 col-md-4">
-                      <label className="form-label extra-small fw-bold text-uppercase text-secondary mb-1">
-                        OWNER / CONTACT NAME
-                      </label>
-                      <input
-                        type="text"
-                        className="form-control form-control-sm text-uppercase"
-                        placeholder="e.g. RAJESH SHARMA"
-                        value={companyModal.data.ownerName || ''}
-                        onChange={(e) => setCompanyModal({
-                          ...companyModal,
-                          data: { ...companyModal.data, ownerName: e.target.value }
-                        })}
-                      />
-                    </div>
-
-                    <div className="col-12 col-md-4">
-                      <label className="form-label extra-small fw-bold text-uppercase text-secondary mb-1">
-                        CONTACT PHONE
-                      </label>
-                      <input
-                        type="tel"
-                        className="form-control form-control-sm"
-                        placeholder="+91 98765 43210"
-                        value={companyModal.data.phone || ''}
-                        onChange={(e) => setCompanyModal({
-                          ...companyModal,
-                          data: { ...companyModal.data, phone: e.target.value }
-                        })}
-                      />
-                    </div>
-
-                    <div className="col-12 col-md-4">
-                      <label className="form-label extra-small fw-bold text-uppercase text-secondary mb-1">
-                        EMAIL ADDRESS
-                      </label>
-                      <input
-                        type="email"
-                        className="form-control form-control-sm"
-                        placeholder="info@client.com"
-                        value={companyModal.data.email || ''}
-                        onChange={(e) => setCompanyModal({
-                          ...companyModal,
-                          data: { ...companyModal.data, email: e.target.value }
-                        })}
-                      />
-                    </div>
-
-                    <div className="col-12 col-md-6">
-                      <label className="form-label extra-small fw-bold text-uppercase text-secondary mb-1">
-                        OFFICE ADDRESS (FOR MEASUREMENT PRINTOUTS)
-                      </label>
-                      <input
-                        type="text"
-                        className="form-control form-control-sm text-uppercase"
-                        placeholder="e.g. 102 BUSINESS PARK, ANDHERI WEST, MUMBAI"
-                        value={companyModal.data.address || ''}
-                        onChange={(e) => setCompanyModal({
-                          ...companyModal,
-                          data: { ...companyModal.data, address: e.target.value }
-                        })}
-                      />
-                    </div>
-
-                    <div className="col-12 col-md-6">
-                      <label className="form-label extra-small fw-bold text-uppercase text-secondary mb-1">
-                        GSTIN / TAX NUMBER
-                      </label>
-                      <input
-                        type="text"
-                        className="form-control form-control-sm text-uppercase font-monospace"
-                        placeholder="27AAAAA0000A1Z5"
-                        value={companyModal.data.gstin || ''}
-                        onChange={(e) => setCompanyModal({
-                          ...companyModal,
-                          data: { ...companyModal.data, gstin: e.target.value }
-                        })}
-                      />
-                    </div>
-                  </div>
-
-                  <h6 className="fw-bolder text-uppercase extra-small text-primary border-bottom pb-1 mb-3">
-                    3. SUBSCRIPTION &amp; DATABASE LICENSING
-                  </h6>
-
-                  <div className="row g-3 mb-4">
-                    <div className="col-12 col-md-3">
-                      <label className="form-label extra-small fw-bold text-uppercase text-secondary mb-1">
-                        PLAN
-                      </label>
-                      <select
-                        className="form-select form-select-sm"
-                        value={companyModal.data.plan || 'PRO'}
-                        onChange={(e) => setCompanyModal({
-                          ...companyModal,
-                          data: { ...companyModal.data, plan: e.target.value }
-                        })}
-                      >
-                        <option value="STANDARD">STANDARD</option>
-                        <option value="PRO">PRO CONTRACTOR</option>
-                        <option value="ENTERPRISE">ENTERPRISE (UNLIMITED)</option>
-                      </select>
-                    </div>
-
-                    <div className="col-12 col-md-3">
-                      <label className="form-label extra-small fw-bold text-uppercase text-secondary mb-1">
-                        ANNUAL FEE (₹)
-                      </label>
-                      <input
-                        type="number"
-                        className="form-control form-control-sm"
-                        placeholder="12000"
-                        value={companyModal.data.annualFee ?? 12000}
-                        onChange={(e) => setCompanyModal({
-                          ...companyModal,
-                          data: { ...companyModal.data, annualFee: Number(e.target.value) }
-                        })}
-                      />
-                    </div>
-
-                    <div className="col-12 col-md-3">
-                      <label className="form-label extra-small fw-bold text-uppercase text-secondary mb-1">
-                        STATUS
-                      </label>
-                      <select
-                        className="form-select form-select-sm"
-                        value={companyModal.data.subscriptionStatus || 'ACTIVE'}
-                        onChange={(e) => setCompanyModal({
-                          ...companyModal,
-                          data: { ...companyModal.data, subscriptionStatus: e.target.value }
-                        })}
-                      >
-                        <option value="ACTIVE">ACTIVE</option>
-                        <option value="TRIAL">FREE TRIAL</option>
-                        <option value="EXPIRED">SUSPENDED / EXPIRED</option>
-                      </select>
-                    </div>
-
-                    <div className="col-12 col-md-3">
-                      <label className="form-label extra-small fw-bold text-uppercase text-secondary mb-1">
-                        EXPIRY DATE
-                      </label>
-                      <input
-                        type="date"
-                        className="form-control form-control-sm"
-                        value={companyModal.data.subscriptionExpiresAt || ''}
-                        onChange={(e) => setCompanyModal({
-                          ...companyModal,
-                          data: { ...companyModal.data, subscriptionExpiresAt: e.target.value }
-                        })}
-                      />
-                    </div>
-                  </div>
-
-                  {companyModal.mode === 'create' && (
-                    <>
-                      <h6 className="fw-bolder text-uppercase extra-small text-primary border-bottom pb-1 mb-3">
-                        4. INITIAL CLIENT ADMIN ACCOUNT (OPTIONAL)
-                      </h6>
-                      <div className="row g-3">
-                        <div className="col-12 col-md-6">
-                          <label className="form-label extra-small fw-bold text-uppercase text-secondary mb-1">
-                            CLIENT ADMIN USERNAME
-                          </label>
-                          <input
-                            type="text"
-                            className="form-control form-control-sm font-monospace"
-                            placeholder="e.g. apexadmin"
-                            value={companyModal.data.initialAdminUsername || ''}
-                            onChange={(e) => setCompanyModal({
-                              ...companyModal,
-                              data: { ...companyModal.data, initialAdminUsername: e.target.value.toLowerCase().replace(/\s+/g, '') }
-                            })}
-                          />
-                        </div>
-
-                        <div className="col-12 col-md-6">
-                          <label className="form-label extra-small fw-bold text-uppercase text-secondary mb-1">
-                            CLIENT ADMIN PASSWORD
-                          </label>
-                          <input
-                            type="password"
-                            className="form-control form-control-sm"
-                            placeholder="SET PASSWORD"
-                            value={companyModal.data.initialAdminPassword || ''}
-                            onChange={(e) => setCompanyModal({
-                              ...companyModal,
-                              data: { ...companyModal.data, initialAdminPassword: e.target.value }
-                            })}
-                          />
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-
-                <div className="modal-footer bg-light">
-                  <button
-                    type="button"
-                    className="btn btn-secondary btn-sm fw-bold text-uppercase"
-                    onClick={() => setCompanyModal({ open: false, mode: 'create', data: {} })}
-                  >
-                    CANCEL
-                  </button>
-                  <button
-                    type="submit"
-                    className="btn btn-primary btn-sm fw-bold text-uppercase px-4"
-                  >
-                    <i className="bi bi-check-circle-fill me-1"></i>
-                    {companyModal.mode === 'create' ? 'ONBOARD CLIENT & CREATE PORTAL' : 'SAVE CHANGES'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ── RESPONSIVE TOP SCREEN NAVIGATION BAR ────────────────── */}
       <header className="bg-dark text-white border-bottom border-secondary sticky-top shadow-sm">
@@ -909,7 +571,12 @@ export default function AdminPanel() {
                 }}
               >
                 <i className={`bi ${item.icon}`}></i>
-                {item.label}
+                <span>{item.label}</span>
+                {item.badge && (
+                  <span className="badge bg-warning text-dark extra-small" style={{ fontSize: '9px', padding: '2px 5px' }}>
+                    {item.badge}
+                  </span>
+                )}
               </button>
             ))}
           </div>
@@ -1019,485 +686,255 @@ export default function AdminPanel() {
           </div>
         )}
 
-        {/* ── 1B. CLIENT COMPANIES & BRANDED PORTALS ── */}
+        {/* ── 1B. CLIENT COMPANIES & BRANDED PORTALS (UNDER CONSTRUCTION) ── */}
         {activeSection === 'companies' && (
-          <div>
-            {/* Action Top Bar */}
-            <div className="card border-0 shadow-sm mb-4">
-              <div className="card-body p-4 d-flex flex-wrap align-items-center justify-content-between gap-3 bg-white rounded-3">
-                <div>
-                  <h5 className="fw-bolder text-uppercase mb-1 text-dark d-flex align-items-center gap-2">
-                    <i className="bi bi-building-fill-gear text-primary"></i>
-                    CLIENT COMPANIES &amp; BRANDED PORTALS
-                  </h5>
-                  <div className="text-muted extra-small text-uppercase">
-                    Onboard client organizations, assign custom branding, generate dedicated portal URLs, and manage licenses.
-                  </div>
-                </div>
-                <button
-                  className="btn btn-primary fw-bold text-uppercase d-flex align-items-center gap-2 shadow-sm"
-                  onClick={() => {
-                    setCompanyModal({
-                      open: true,
-                      mode: 'create',
-                      data: {
-                        name: '',
-                        slug: '',
-                        tagline: 'Civil & Interior Contractor',
-                        logo: '',
-                        address: '',
-                        phone: '',
-                        email: '',
-                        gstin: '',
-                        plan: 'PRO',
-                        annualFee: 12000,
-                        subscriptionStatus: 'ACTIVE',
-                        subscriptionExpiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-                        ownerName: '',
-                        ownerEmail: '',
-                        ownerPhone: '',
-                        initialAdminUsername: '',
-                        initialAdminPassword: '',
-                      }
-                    });
-                  }}
-                >
-                  <i className="bi bi-plus-circle-fill"></i>
-                  <span>ONBOARD NEW COMPANY</span>
-                </button>
-              </div>
+          <div className="card border-0 shadow-sm p-4 p-md-5 text-center" style={{ borderRadius: '16px', backgroundColor: '#ffffff' }}>
+            <div
+              className="mx-auto mb-3 d-flex align-items-center justify-content-center"
+              style={{
+                width: '72px',
+                height: '72px',
+                borderRadius: '50%',
+                backgroundColor: '#fef3c7',
+                color: '#d97706',
+                fontSize: '32px',
+              }}
+            >
+              <i className="bi bi-cone-striped"></i>
             </div>
 
-            {/* Companies Table */}
-            <div className="card border-0 shadow-sm">
-              <div className="table-responsive">
-                <table className="table table-hover align-middle mb-0 extra-small">
-                  <thead className="table-light text-uppercase">
-                    <tr>
-                      <th style={{ width: '40px' }}>#</th>
-                      <th>ORGANIZATION / BRAND</th>
-                      <th>PORTAL URL (CLIENT LINK)</th>
-                      <th>CONTACT &amp; OWNER</th>
-                      <th>SUBSCRIPTION &amp; PLAN</th>
-                      <th>METRICS</th>
-                      <th className="text-end" style={{ width: '180px' }}>ACTIONS</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {companiesList.map((company, i) => {
-                      const portalUrl = `${window.location.origin}/c/${company.slug}`;
-                      const isMaster = company.slug === 'mts-decor';
+            <div className="mb-2">
+              <span
+                className="badge px-3 py-2 text-uppercase fw-bold"
+                style={{
+                  backgroundColor: '#fffbeb',
+                  color: '#b45309',
+                  border: '1px solid #fde68a',
+                  fontSize: '11px',
+                  letterSpacing: '0.8px',
+                }}
+              >
+                <i className="bi bi-tools me-1"></i> MODULE ON HOLD &bull; UNDER CONSTRUCTION
+              </span>
+            </div>
 
-                      return (
-                        <tr key={company._id}>
-                          <td className="text-muted fw-bold">{i + 1}</td>
-                          <td>
-                            <div className="d-flex align-items-center gap-2">
-                              {company.logo ? (
-                                <img
-                                  src={company.logo}
-                                  alt={company.name}
-                                  style={{ width: '36px', height: '36px', objectFit: 'contain', borderRadius: '6px' }}
-                                  onError={(e) => { e.target.style.display = 'none'; }}
-                                />
-                              ) : (
-                                <div
-                                  style={{
-                                    width: '36px',
-                                    height: '36px',
-                                    borderRadius: '6px',
-                                    backgroundColor: '#e0f2fe',
-                                    color: '#0369a1',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    fontWeight: 800,
-                                    fontSize: '14px',
-                                  }}
-                                >
-                                  {company.name.charAt(0).toUpperCase()}
-                                </div>
-                              )}
-                              <div>
-                                <div className="fw-bolder text-dark text-uppercase d-flex align-items-center gap-1">
-                                  <span>{company.name}</span>
-                                  {isMaster && (
-                                    <span className="badge bg-dark text-white extra-small" style={{ fontSize: '9px' }}>
-                                      MASTER
-                                    </span>
-                                  )}
-                                </div>
-                                <div className="text-muted" style={{ fontSize: '10px' }}>
-                                  {company.tagline || 'Contractor Portal'}
-                                </div>
-                              </div>
-                            </div>
-                          </td>
+            <h4 className="fw-bolder text-uppercase mb-2 text-dark" style={{ letterSpacing: '0.5px' }}>
+              CLIENT COMPANIES &amp; BRANDED PORTALS
+            </h4>
 
-                          <td>
-                            <div className="d-flex align-items-center gap-1">
-                              <span className="badge bg-light text-primary border text-lowercase font-monospace px-2 py-1">
-                                /c/{company.slug}
-                              </span>
-                              <button
-                                className="btn btn-sm btn-outline-secondary py-0 px-1 extra-small"
-                                title="Copy Portal Link"
-                                onClick={() => {
-                                  navigator.clipboard.writeText(portalUrl);
-                                  showToast(`COPIED PORTAL LINK: ${portalUrl}`);
-                                }}
-                              >
-                                <i className="bi bi-clipboard"></i>
-                              </button>
-                              <a
-                                href={`/c/${company.slug}`}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="btn btn-sm btn-outline-primary py-0 px-1 extra-small"
-                                title="Open Portal Page"
-                              >
-                                <i className="bi bi-box-arrow-up-right"></i>
-                              </a>
-                            </div>
-                          </td>
+            <p className="text-muted small mx-auto mb-4" style={{ maxWidth: '580px', lineHeight: 1.6 }}>
+              This multi-tenant client onboarding and portal management module is currently kept on hold and under construction.
+              All your core operations—<strong>All Projects</strong>, <strong>Excel Spreadsheets</strong>, <strong>User Management</strong>, and <strong>Google Drive Backups</strong>—remain 100% active, safe, and unaffected.
+            </p>
 
-                          <td>
-                            <div className="fw-bold text-dark text-uppercase">{company.ownerName || '-'}</div>
-                            <div className="text-muted extra-small">
-                              {company.phone && <span><i className="bi bi-telephone me-1"></i>{company.phone}</span>}
-                              {company.email && <span className="ms-2"><i className="bi bi-envelope me-1"></i>{company.email}</span>}
-                            </div>
-                          </td>
-
-                          <td>
-                            <div>
-                              <span
-                                className={`badge ${
-                                  company.subscriptionStatus === 'ACTIVE'
-                                    ? 'bg-success-subtle text-success border border-success-subtle'
-                                    : company.subscriptionStatus === 'TRIAL'
-                                    ? 'bg-info-subtle text-info border border-info-subtle'
-                                    : 'bg-danger-subtle text-danger border border-danger-subtle'
-                                } fw-bold text-uppercase me-1`}
-                              >
-                                {company.subscriptionStatus || 'ACTIVE'}
-                              </span>
-                              <span className="badge bg-light text-dark border extra-small">
-                                {company.plan || 'PRO'}
-                              </span>
-                            </div>
-                            <div className="text-muted extra-small mt-1">
-                              {company.subscriptionExpiresAt ? (
-                                <span>Expires: {new Date(company.subscriptionExpiresAt).toLocaleDateString('en-IN')}</span>
-                              ) : (
-                                <span>Annual: ₹{(company.annualFee || 12000).toLocaleString('en-IN')}</span>
-                              )}
-                            </div>
-                          </td>
-
-                          <td>
-                            <div className="d-flex flex-column gap-1">
-                              <span className="badge bg-light text-dark border text-uppercase" style={{ width: 'max-content' }}>
-                                <i className="bi bi-folder2 text-primary me-1"></i>
-                                {company.projectCount || 0} PROJECTS
-                              </span>
-                              <span className="badge bg-light text-dark border text-uppercase" style={{ width: 'max-content' }}>
-                                <i className="bi bi-person text-secondary me-1"></i>
-                                {company.userCount || 0} USERS
-                              </span>
-                            </div>
-                          </td>
-
-                          <td className="text-end">
-                            <div className="d-flex align-items-center justify-content-end gap-1">
-                              <button
-                                className="btn btn-sm btn-outline-primary extra-small fw-bold text-uppercase d-flex align-items-center gap-1"
-                                onClick={() => {
-                                  setCompanyModal({
-                                    open: true,
-                                    mode: 'edit',
-                                    data: {
-                                      ...company,
-                                      subscriptionExpiresAt: company.subscriptionExpiresAt
-                                        ? new Date(company.subscriptionExpiresAt).toISOString().split('T')[0]
-                                        : '',
-                                    }
-                                  });
-                                }}
-                              >
-                                <i className="bi bi-pencil-square"></i>
-                                <span>EDIT</span>
-                              </button>
-
-                              {!isMaster && (
-                                <button
-                                  className="btn btn-sm btn-outline-danger extra-small"
-                                  title="Delete Company"
-                                  onClick={async () => {
-                                    if (!confirm(`DELETE COMPANY "${company.name}" AND REMOVE ITS ACCESS?`)) return;
-                                    try {
-                                      await deleteCompany(company._id);
-                                      setCompaniesList(prev => prev.filter(c => c._id !== company._id));
-                                      showToast('COMPANY DELETED');
-                                    } catch (err) {
-                                      alert('DELETE FAILED: ' + err.message);
-                                    }
-                                  }}
-                                >
-                                  <i className="bi bi-trash3-fill"></i>
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-
-                    {companiesList.length === 0 && (
-                      <tr>
-                        <td colSpan={7} className="text-center text-muted text-uppercase py-5">
-                          <i className="bi bi-building-x fs-2 d-block mb-2 text-muted"></i>
-                          NO CLIENT COMPANIES CONFIGURED YET
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+            <div className="d-flex flex-wrap justify-content-center gap-2">
+              <button
+                className="btn btn-primary btn-sm fw-bold text-uppercase px-4 py-2"
+                style={{ borderRadius: '8px' }}
+                onClick={() => setActiveSection('dashboard')}
+              >
+                <i className="bi bi-speedometer2 me-1"></i> RETURN TO DASHBOARD
+              </button>
+              <button
+                className="btn btn-outline-secondary btn-sm fw-bold text-uppercase px-4 py-2"
+                style={{ borderRadius: '8px' }}
+                onClick={() => setActiveSection('projects')}
+              >
+                <i className="bi bi-folder2-open me-1"></i> VIEW ALL PROJECTS
+              </button>
+              <a
+                href="/construction"
+                target="_blank"
+                rel="noreferrer"
+                className="btn btn-outline-warning text-dark btn-sm fw-bold text-uppercase px-3 py-2"
+                style={{ borderRadius: '8px' }}
+              >
+                <i className="bi bi-eye me-1"></i> PREVIEW CLIENT PORTAL STATUS
+              </a>
             </div>
           </div>
         )}
 
         {/* ── 2. ALL PROJECTS ── */}
-        {activeSection === 'projects' && (() => {
-          const filteredProjects = companyFilter
-            ? projects.filter(p => (p.companySlug || 'mts-decor') === companyFilter)
-            : projects;
-
-          return (
-            <div className="card border-0 shadow-sm">
-              <div className="card-header bg-white border-bottom fw-bolder text-uppercase small d-flex flex-wrap justify-content-between align-items-center gap-2">
-                <span><i className="bi bi-folder2-open me-2 text-primary"></i> ALL PROJECTS ({filteredProjects.length})</span>
-                <div className="d-flex align-items-center gap-2">
-                  <select
-                    className="form-select form-select-sm"
-                    style={{ minWidth: '180px' }}
-                    value={companyFilter}
-                    onChange={(e) => setCompanyFilter(e.target.value)}
-                  >
-                    <option value="">ALL COMPANIES ({projects.length})</option>
-                    {companiesList.map(c => (
-                      <option key={c._id} value={c.slug}>{c.name}</option>
-                    ))}
-                  </select>
-                  <button className="btn btn-sm btn-outline-secondary extra-small fw-bold" onClick={loadData}>
-                    <i className="bi bi-arrow-clockwise me-1"></i> REFRESH
-                  </button>
-                </div>
-              </div>
-              <div className="table-responsive">
-                <table className="table table-hover align-middle mb-0 small">
-                  <thead className="table-light">
-                    <tr className="text-uppercase extra-small fw-bold">
-                      <th>#</th>
-                      <th>PROJECT NAME</th>
-                      <th>COMPANY</th>
-                      <th>OWNER</th>
-                      <th>CREATED</th>
-                      <th>LAST EDITED BY</th>
-                      <th>LAST EDITED</th>
-                      <th className="text-end">ACTION</th>
+        {activeSection === 'projects' && (
+          <div className="card border-0 shadow-sm">
+            <div className="card-header bg-white border-bottom fw-bolder text-uppercase small d-flex justify-content-between align-items-center">
+              <span><i className="bi bi-folder2-open me-2 text-primary"></i> ALL PROJECTS ({projects.length})</span>
+              <button className="btn btn-sm btn-outline-secondary extra-small fw-bold" onClick={loadData}>
+                <i className="bi bi-arrow-clockwise me-1"></i> REFRESH
+              </button>
+            </div>
+            <div className="table-responsive">
+              <table className="table table-hover align-middle mb-0 small">
+                <thead className="table-light">
+                  <tr className="text-uppercase extra-small fw-bold">
+                    <th>#</th>
+                    <th>PROJECT NAME</th>
+                    <th>OWNER</th>
+                    <th>CREATED</th>
+                    <th>LAST EDITED BY</th>
+                    <th>LAST EDITED</th>
+                    <th className="text-end">ACTION</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {projects.map((p, i) => (
+                    <tr key={p._id || p.id || i}>
+                      <td className="text-muted">{i + 1}</td>
+                      <td className="fw-bold text-uppercase">{p.name || 'UNTITLED'}</td>
+                      <td>
+                        <span className={`badge text-uppercase ${p.ownerUsername === 'jagdish' ? 'bg-info text-dark' : 'bg-warning text-dark'}`}>
+                          {p.ownerName}
+                        </span>
+                      </td>
+                      <td className="text-muted">{new Date(p.createdAt).toLocaleDateString('en-IN')}</td>
+                      <td className="text-uppercase fw-semibold">{p.lastEditedBy || '—'}</td>
+                      <td className="text-muted">{p.lastEditedAt ? new Date(p.lastEditedAt).toLocaleDateString('en-IN') : '—'}</td>
+                      <td className="text-end">
+                        <button
+                          className="btn btn-sm btn-outline-danger"
+                          title="Delete Project"
+                          onClick={async () => {
+                            if (!confirm('DELETE THIS PROJECT AND ALL MEASUREMENT DATA?')) return;
+                            try {
+                              await deleteProject(p._id || p.id);
+                              await loadData();
+                              showToast('PROJECT DELETED');
+                            } catch (err) {
+                              alert('FAILED TO DELETE: ' + err.message);
+                            }
+                          }}
+                        >
+                          <i className="bi bi-trash3-fill"></i>
+                        </button>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {filteredProjects.map((p, i) => (
-                      <tr key={p._id || p.id || i}>
-                        <td className="text-muted">{i + 1}</td>
-                        <td className="fw-bold text-uppercase">{p.name || 'UNTITLED'}</td>
-                        <td>
-                          <span className="badge bg-light text-dark border text-uppercase font-monospace extra-small">
-                            {p.companySlug || 'mts-decor'}
-                          </span>
-                        </td>
-                        <td>
-                          <span className={`badge text-uppercase ${p.ownerUsername === 'jagdish' ? 'bg-info text-dark' : 'bg-warning text-dark'}`}>
-                            {p.ownerName}
-                          </span>
-                        </td>
-                        <td className="text-muted">{new Date(p.createdAt).toLocaleDateString('en-IN')}</td>
-                        <td className="text-uppercase fw-semibold">{p.lastEditedBy || '—'}</td>
-                        <td className="text-muted">{p.lastEditedAt ? new Date(p.lastEditedAt).toLocaleDateString('en-IN') : '—'}</td>
-                        <td className="text-end">
+                  ))}
+                  {projects.length === 0 && (
+                    <tr><td colSpan={7} className="text-center text-muted text-uppercase py-4">NO PROJECTS FOUND</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* ── 2B. SAVED EXCEL SPREADSHEETS ── */}
+        {activeSection === 'excel' && (
+          <div className="card border-0 shadow-sm">
+            <div className="card-header bg-white border-bottom d-flex align-items-center justify-content-between py-3">
+              <span className="fw-bolder text-uppercase small text-success">
+                <i className="bi bi-file-earmark-excel-fill me-2"></i>
+                ALL SAVED EXCEL WORKBOOKS ({excelFiles.length})
+              </span>
+              <button
+                className="btn btn-sm btn-outline-secondary extra-small fw-bold text-uppercase"
+                onClick={loadData}
+              >
+                <i className="bi bi-arrow-clockwise me-1"></i> REFRESH
+              </button>
+            </div>
+            <div className="table-responsive">
+              <table className="table table-hover align-middle mb-0 extra-small">
+                <thead className="table-light text-uppercase">
+                  <tr>
+                    <th style={{ width: '40px' }}>#</th>
+                    <th>WORKBOOK FILE</th>
+                    <th>PROJECT</th>
+                    <th>SAVED BY</th>
+                    <th>DATE &amp; TIME</th>
+                    <th>SIZE</th>
+                    <th className="text-end" style={{ width: '220px' }}>ACTIONS</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {excelFiles.map((file, i) => (
+                    <tr key={file._id}>
+                      <td className="text-muted fw-bold">{i + 1}</td>
+                      <td>
+                        <div className="fw-bolder text-uppercase text-dark d-flex align-items-center gap-2">
+                          <i className="bi bi-file-earmark-excel-fill text-success fs-6"></i>
+                          <span>{file.fileName}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <span className="badge bg-light text-dark border text-uppercase">
+                          {file.projectName || 'MEASUREMENT SHEET'}
+                        </span>
+                      </td>
+                      <td>
+                        <span className="badge bg-dark text-white text-uppercase">
+                          {file.ownerName || file.ownerUsername}
+                        </span>
+                      </td>
+                      <td className="text-muted">
+                        {new Date(file.createdAt).toLocaleString('en-IN', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </td>
+                      <td className="fw-semibold text-muted">
+                        {file.fileSize ? `${(file.fileSize / 1024).toFixed(1)} KB` : '-'}
+                      </td>
+                      <td className="text-end">
+                        <div className="d-flex align-items-center justify-content-end gap-1">
                           <button
-                            className="btn btn-sm btn-outline-danger"
-                            title="Delete Project"
-                            onClick={async () => {
-                              if (!confirm('DELETE THIS PROJECT AND ALL MEASUREMENT DATA?')) return;
-                              try {
-                                await deleteProject(p._id || p.id);
-                                await loadData();
-                                showToast('PROJECT DELETED');
-                              } catch (err) {
-                                alert('FAILED TO DELETE: ' + err.message);
+                            className="btn btn-success btn-sm extra-small fw-bold text-uppercase d-flex align-items-center gap-1"
+                            onClick={() => setSelectedExcelId(file._id)}
+                            title="Open in-browser Excel Spreadsheet Viewer"
+                          >
+                            <i className="bi bi-eye-fill"></i>
+                            <span>VIEW</span>
+                          </button>
+                          <button
+                            className="btn btn-outline-success btn-sm extra-small fw-bold"
+                            onClick={() => {
+                              if (file.fileBase64) {
+                                downloadExcelFromBase64(file.fileName, file.fileBase64);
+                              } else {
+                                window.open(`/api/excel-files/${file._id}/download`, '_blank');
                               }
                             }}
+                            title="Download .xlsx file"
+                          >
+                            <i className="bi bi-download"></i>
+                          </button>
+                          <button
+                            className="btn btn-outline-danger btn-sm extra-small"
+                            onClick={async () => {
+                              if (!confirm(`DELETE "${file.fileName}"?`)) return;
+                              try {
+                                await deleteExcelFile(file._id);
+                                setExcelFiles(prev => prev.filter(f => f._id !== file._id));
+                                showToast('EXCEL FILE DELETED');
+                              } catch (err) {
+                                alert('DELETE FAILED: ' + err.message);
+                              }
+                            }}
+                            title="Delete File"
                           >
                             <i className="bi bi-trash3-fill"></i>
                           </button>
-                        </td>
-                      </tr>
-                    ))}
-                    {filteredProjects.length === 0 && (
-                      <tr><td colSpan={8} className="text-center text-muted text-uppercase py-4">NO PROJECTS FOUND</td></tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          );
-        })()}
-
-        {/* ── 2B. SAVED EXCEL SPREADSHEETS ── */}
-        {activeSection === 'excel' && (() => {
-          const filteredExcel = companyFilter
-            ? excelFiles.filter(f => (f.companySlug || 'mts-decor') === companyFilter)
-            : excelFiles;
-
-          return (
-            <div className="card border-0 shadow-sm">
-              <div className="card-header bg-white border-bottom d-flex flex-wrap align-items-center justify-content-between gap-2 py-3">
-                <span className="fw-bolder text-uppercase small text-success">
-                  <i className="bi bi-file-earmark-excel-fill me-2"></i>
-                  ALL SAVED EXCEL WORKBOOKS ({filteredExcel.length})
-                </span>
-                <div className="d-flex align-items-center gap-2">
-                  <select
-                    className="form-select form-select-sm"
-                    style={{ minWidth: '180px' }}
-                    value={companyFilter}
-                    onChange={(e) => setCompanyFilter(e.target.value)}
-                  >
-                    <option value="">ALL COMPANIES ({excelFiles.length})</option>
-                    {companiesList.map(c => (
-                      <option key={c._id} value={c.slug}>{c.name}</option>
-                    ))}
-                  </select>
-                  <button
-                    className="btn btn-sm btn-outline-secondary extra-small fw-bold text-uppercase"
-                    onClick={loadData}
-                  >
-                    <i className="bi bi-arrow-clockwise me-1"></i> REFRESH
-                  </button>
-                </div>
-              </div>
-              <div className="table-responsive">
-                <table className="table table-hover align-middle mb-0 extra-small">
-                  <thead className="table-light text-uppercase">
-                    <tr>
-                      <th style={{ width: '40px' }}>#</th>
-                      <th>WORKBOOK FILE</th>
-                      <th>COMPANY</th>
-                      <th>PROJECT</th>
-                      <th>SAVED BY</th>
-                      <th>DATE &amp; TIME</th>
-                      <th>SIZE</th>
-                      <th className="text-end" style={{ width: '220px' }}>ACTIONS</th>
+                        </div>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {filteredExcel.map((file, i) => (
-                      <tr key={file._id}>
-                        <td className="text-muted fw-bold">{i + 1}</td>
-                        <td>
-                          <div className="fw-bolder text-uppercase text-dark d-flex align-items-center gap-2">
-                            <i className="bi bi-file-earmark-excel-fill text-success fs-6"></i>
-                            <span>{file.fileName}</span>
-                          </div>
-                        </td>
-                        <td>
-                          <span className="badge bg-light text-dark border text-uppercase font-monospace">
-                            {file.companySlug || 'mts-decor'}
-                          </span>
-                        </td>
-                        <td>
-                          <span className="badge bg-light text-dark border text-uppercase">
-                            {file.projectName || 'MEASUREMENT SHEET'}
-                          </span>
-                        </td>
-                        <td>
-                          <span className="badge bg-dark text-white text-uppercase">
-                            {file.ownerName || file.ownerUsername}
-                          </span>
-                        </td>
-                        <td className="text-muted">
-                          {new Date(file.createdAt).toLocaleString('en-IN', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </td>
-                        <td className="fw-semibold text-muted">
-                          {file.fileSize ? `${(file.fileSize / 1024).toFixed(1)} KB` : '-'}
-                        </td>
-                        <td className="text-end">
-                          <div className="d-flex align-items-center justify-content-end gap-1">
-                            <button
-                              className="btn btn-success btn-sm extra-small fw-bold text-uppercase d-flex align-items-center gap-1"
-                              onClick={() => setSelectedExcelId(file._id)}
-                              title="Open in-browser Excel Spreadsheet Viewer"
-                            >
-                              <i className="bi bi-eye-fill"></i>
-                              <span>VIEW</span>
-                            </button>
-                            <button
-                              className="btn btn-outline-success btn-sm extra-small fw-bold"
-                              onClick={() => {
-                                if (file.fileBase64) {
-                                  downloadExcelFromBase64(file.fileName, file.fileBase64);
-                                } else {
-                                  window.open(`/api/excel-files/${file._id}/download`, '_blank');
-                                }
-                              }}
-                              title="Download .xlsx file"
-                            >
-                              <i className="bi bi-download"></i>
-                            </button>
-                            <button
-                              className="btn btn-outline-danger btn-sm extra-small"
-                              onClick={async () => {
-                                if (!confirm(`DELETE "${file.fileName}"?`)) return;
-                                try {
-                                  await deleteExcelFile(file._id);
-                                  setExcelFiles(prev => prev.filter(f => f._id !== file._id));
-                                  showToast('EXCEL FILE DELETED');
-                                } catch (err) {
-                                  alert('DELETE FAILED: ' + err.message);
-                                }
-                              }}
-                              title="Delete File"
-                            >
-                              <i className="bi bi-trash3-fill"></i>
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                    {filteredExcel.length === 0 && (
-                      <tr>
-                        <td colSpan={8} className="text-center text-muted text-uppercase py-5">
-                          <i className="bi bi-file-earmark-excel fs-2 d-block mb-2 text-muted"></i>
-                          NO EXCEL FILES SAVED IN CLOUD YET
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                  {excelFiles.length === 0 && (
+                    <tr>
+                      <td colSpan={7} className="text-center text-muted text-uppercase py-5">
+                        <i className="bi bi-file-earmark-excel fs-2 d-block mb-2 text-muted"></i>
+                        NO EXCEL FILES SAVED IN CLOUD YET
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
-          );
-        })()}
+          </div>
+        )}
 
         {/* ── 3. USER MANAGEMENT (CREATE USERS & PASSWORDS) ── */}
         {activeSection === 'users' && (
@@ -1549,22 +986,6 @@ export default function AdminPanel() {
                         onChange={(e) => setNewUserForm({ ...newUserForm, password: e.target.value })}
                         required
                       />
-                    </div>
-                    <div className="col-12 col-md-3">
-                      <label className="form-label extra-small fw-bold text-uppercase text-secondary mb-1">
-                        ASSIGN COMPANY
-                      </label>
-                      <select
-                        className="form-select form-select-sm text-uppercase fw-bold"
-                        value={newUserForm.companySlug || 'mts-decor'}
-                        onChange={(e) => setNewUserForm({ ...newUserForm, companySlug: e.target.value })}
-                      >
-                        {companiesList.map(c => (
-                          <option key={c._id} value={c.slug}>
-                            {c.name} ({c.slug})
-                          </option>
-                        ))}
-                      </select>
                     </div>
                     <div className="col-12 col-md-2">
                       <label className="form-label extra-small fw-bold text-uppercase text-secondary mb-1">
@@ -1620,7 +1041,6 @@ export default function AdminPanel() {
                       <th>#</th>
                       <th>NAME</th>
                       <th>USERNAME</th>
-                      <th>COMPANY &amp; PORTAL</th>
                       <th>ROLE</th>
                       <th>CREATED</th>
                       <th className="text-end">MANAGE PASSWORD &amp; ACTIONS</th>
@@ -1632,12 +1052,6 @@ export default function AdminPanel() {
                         <td className="text-muted">{i + 1}</td>
                         <td className="fw-bold text-uppercase">{u.name}</td>
                         <td className="fw-bold font-monospace text-primary">{u.username}</td>
-                        <td>
-                          <span className="badge bg-light text-dark border text-uppercase extra-small font-monospace">
-                            <i className="bi bi-building me-1 text-primary"></i>
-                            {u.companyId?.name || (companiesList.find(c => c.slug === u.companySlug)?.name) || u.companySlug || 'MTS DECOR'}
-                          </span>
-                        </td>
                         <td>
                           <span className={`badge text-uppercase ${u.role === 'ADMIN' ? 'bg-danger' : 'bg-primary'}`}>
                             {u.role}
@@ -1669,7 +1083,7 @@ export default function AdminPanel() {
                       </tr>
                     ))}
                     {usersList.length === 0 && (
-                      <tr><td colSpan={7} className="text-center text-muted text-uppercase py-4">LOADING USERS...</td></tr>
+                      <tr><td colSpan={6} className="text-center text-muted text-uppercase py-4">LOADING USERS...</td></tr>
                     )}
                   </tbody>
                 </table>

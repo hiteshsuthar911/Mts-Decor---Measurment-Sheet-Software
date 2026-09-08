@@ -6,6 +6,7 @@ import AdminPanel from './pages/AdminPanel';
 import ProjectsPage from './pages/ProjectsPage';
 import MeasurementSheet from './pages/MeasurementSheet';
 import ProfilePage from './pages/ProfilePage';
+import UnderConstructionPage from './pages/UnderConstructionPage';
 import { getSession, isLoggedIn } from './utils/auth';
 
 const isFileProtocol = typeof window !== 'undefined' && (window.location.protocol === 'file:' || window.isElectron);
@@ -39,7 +40,8 @@ export default function App() {
       <Routes>
         {/* Public */}
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/c/:companySlug" element={<LoginPage />} />
+        <Route path="/c/:companySlug" element={<UnderConstructionPage />} />
+        <Route path="/construction" element={<UnderConstructionPage />} />
         <Route path="/download" element={<DownloadPage />} />
         <Route path="/apps" element={<DownloadPage />} />
 
