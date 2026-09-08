@@ -3,6 +3,7 @@ import { WORK_CATEGORIES, CATEGORIZED_WORK_TYPES, COMMON_ROOM_AREAS } from '../d
 import LineItemRow from './LineItemRow';
 import { calculateAreaTotals, formatNumber, formatCurrency } from '../utils/calculations';
 import { createEmptyItem } from '../data/sampleData';
+import MultiFloorReplicateModal, { parseFloorNumber, formatFloorName } from './MultiFloorReplicateModal';
 
 export default function AreaBlock({
   area = {},
@@ -18,6 +19,7 @@ export default function AreaBlock({
   readOnly
 }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [showReplicateModal, setShowReplicateModal] = useState(false);
   const [customCategories, setCustomCategories] = useState(() => {
     try {
       const saved = localStorage.getItem('mts_custom_work_categories');
@@ -96,6 +98,59 @@ export default function AreaBlock({
   const handleFieldChange = (field, value) => {
     const updated = { ...area, [field]: value };
     onChangeArea(area.id, updated);
+  };
+
+  // Next floor auto-detection for 1-click duplication
+  const nextFloorInfo = useMemo(() => {
+    const items = area.items || [];
+    const floorMarkers = [];
+    items.forEach((it, idx) => {
+      const fNum = parseFloorNumber(it.remark);
+      if (fNum !== null) floorMarkers.push({ floorNum: fNum, index: idx, remark: it.remark });
+    });
+
+    if (floorMarkers.length === 0) return null;
+
+    const highestFloor = Math.max(...floorMarkers.map((m) => m.floorNum));
+    const nextFloorNum = highestFloor + 1;
+    if (nextFloorNum > 18) return null;
+
+    let template = [];
+    if (floorMarkers.length >= 2) {
+      const lastMarker = floorMarkers[floorMarkers.length - 1];
+      template = items.slice(lastMarker.index);
+    } else {
+      template = items.slice(floorMarkers[0].index);
+    }
+
+    if (template.length === 0) return null;
+
+    return {
+      highestFloor,
+      nextFloorNum,
+      nextFloorName: formatFloorName(nextFloorNum),
+      template
+    };
+  }, [area.items]);
+
+  const handleQuickAddNextFloor = () => {
+    if (!nextFloorInfo || !nextFloorInfo.template.length) return;
+    const newItems = nextFloorInfo.template.map((orig, idx) => ({
+      ...orig,
+      id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+      remark: idx === 0 ? nextFloorInfo.nextFloorName : (parseFloorNumber(orig.remark) ? '' : (orig.remark || ''))
+    }));
+    onChangeArea(area.id, {
+      ...area,
+      items: [...(area.items || []), ...newItems]
+    });
+  };
+
+  const handleApplyReplication = (newGeneratedItems) => {
+    onChangeArea(area.id, {
+      ...area,
+      items: [...(area.items || []), ...newGeneratedItems]
+    });
   };
 
   // Line item handlers
@@ -502,6 +557,31 @@ export default function AreaBlock({
               >
                 <i className="bi bi-dash-lg me-1"></i> ADD DEDUCTION (LESS)
               </button>
+
+              <div className="vr d-none d-md-block mx-1"></div>
+
+              {/* Multi-Floor Fast Replicate Tool */}
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-success fw-bold text-uppercase flex-grow-1 flex-md-grow-0"
+                onClick={() => setShowReplicateModal(true)}
+                title="Fast auto-replicate repeating measurements across 1st to 18th floor"
+              >
+                <i className="bi bi-layers-fill me-1"></i> REPLICATE TO FLOORS...
+              </button>
+
+              {/* 1-Click Duplicate to Next Floor button */}
+              {nextFloorInfo && (
+                <button
+                  type="button"
+                  className="btn btn-sm btn-success fw-bold text-uppercase flex-grow-1 flex-md-grow-0 shadow-sm d-flex align-items-center gap-1"
+                  onClick={handleQuickAddNextFloor}
+                  title={`1-Click: duplicate ${nextFloorInfo.template.length} items to ${nextFloorInfo.nextFloorName}`}
+                >
+                  <i className="bi bi-lightning-charge-fill"></i>
+                  <span>+ ADD {nextFloorInfo.nextFloorName.toUpperCase()}</span>
+                </button>
+              )}
             </div>
 
             {/* Area Subtotals */}
@@ -533,6 +613,13 @@ export default function AreaBlock({
           </div>
         </div>
       )}
+      {/* Multi-Floor Replicate Modal */}
+      <MultiFloorReplicateModal
+        show={showReplicateModal}
+        onClose={() => setShowReplicateModal(false)}
+        area={area}
+        onApplyReplication={handleApplyReplication}
+      />
     </div>
   );
 }
