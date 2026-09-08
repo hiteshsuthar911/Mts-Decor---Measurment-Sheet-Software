@@ -46,15 +46,54 @@ export default function LineItemRow({
         </button>
       </td>
 
-      {/* Remark / Location Description */}
-      <td className="align-middle">
-        <input
-          type="text"
-          className="form-control form-control-sm"
-          placeholder={item.isLess ? 'e.g. Door Opening, Window Cut' : 'Custom remark / note'}
-          value={item.remark || ''}
-          onChange={(e) => handleFieldChange('remark', e.target.value)}
-        />
+      {/* Remark Dropdown (just like work category) */}
+      <td className="align-middle" style={{ minWidth: '175px' }}>
+        <div className="d-flex align-items-center gap-1">
+          <select
+            className="form-select form-select-sm fw-semibold"
+            value={item.remark || ''}
+            onChange={(e) => {
+              if (e.target.value === '__ADD_NEW__') {
+                const custom = window.prompt('Enter custom remark / note:', item.remark || '');
+                if (custom && custom.trim()) {
+                  handleFieldChange('remark', custom.trim());
+                }
+              } else if (e.target.value === 'Other') {
+                const custom = window.prompt('Enter custom remark for Other:', '');
+                handleFieldChange('remark', custom && custom.trim() ? custom.trim() : 'Other');
+              } else {
+                handleFieldChange('remark', e.target.value);
+              }
+            }}
+          >
+            <option value="">Select Remark...</option>
+            {item.remark && !REMARK_OPTIONS.includes(item.remark) && (
+              <option value={item.remark}>{item.remark} (Custom)</option>
+            )}
+            {REMARK_OPTIONS.map((opt) => (
+              <option key={opt} value={opt}>
+                {opt}
+              </option>
+            ))}
+            <option value="__ADD_NEW__" className="text-primary fw-bold">
+              + Custom Remark...
+            </option>
+          </select>
+          {item.remark && !REMARK_OPTIONS.includes(item.remark) && (
+            <button
+              type="button"
+              className="btn btn-outline-secondary btn-sm p-1 d-flex align-items-center"
+              style={{ fontSize: '11px', height: '30px', flexShrink: 0 }}
+              onClick={() => {
+                const edited = window.prompt('Edit remark / note:', item.remark);
+                if (edited !== null) handleFieldChange('remark', edited.trim());
+              }}
+              title="Edit custom remark"
+            >
+              <i className="bi bi-pencil-square"></i>
+            </button>
+          )}
+        </div>
       </td>
 
       {/* Unit Dropdown */}

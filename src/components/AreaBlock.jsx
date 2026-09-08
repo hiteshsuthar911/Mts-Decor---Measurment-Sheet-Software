@@ -78,7 +78,7 @@ export default function AreaBlock({
   }, [customRooms]);
 
   const handlePromptAddRoom = () => {
-    const entered = window.prompt('Enter new Room / Location Area name (e.g. Pooja Room, Study Area):');
+    const entered = window.prompt('Enter new Description (e.g. Design Wall Tiles, Italian Marble):');
     if (!entered || !entered.trim()) return;
     const trimmed = entered.trim();
     if (!allRooms.includes(trimmed)) {
@@ -169,7 +169,7 @@ export default function AreaBlock({
             )}
             <div className="d-flex align-items-center gap-2">
               <span className="fw-bold text-dark fs-6">
-                {area.floor || 'Floor'} &bull; {area.flat || 'Unit'} &bull; {area.room || 'Room'}
+                {area.floor || 'Floor'} &bull; {area.flat || 'Unit'} &bull; {area.room || 'Description'}
               </span>
               <span className="text-secondary small">
                 ({area.parentCategory === 'Other' ? (area.customParentCategory || 'Other') : (area.parentCategory || 'General Work')})
@@ -251,17 +251,17 @@ export default function AreaBlock({
             />
           </div>
 
-          {/* Room / Location Area Dropdown */}
+          {/* Description Dropdown (formerly Room / Location Area) */}
           <div className="col-12 col-md-4">
             <div className="d-flex justify-content-between align-items-center mb-1">
-              <label className="form-label extra-small text-muted fw-bold mb-0">Room / Location Area</label>
+              <label className="form-label extra-small text-muted fw-bold mb-0">Description</label>
               <button
                 type="button"
                 className="btn btn-link p-0 text-primary extra-small text-decoration-none fw-semibold"
                 onClick={handlePromptAddRoom}
-                title="Add a custom room option"
+                title="Add a custom description option"
               >
-                <i className="bi bi-plus-circle me-1"></i>+ Add Room
+                <i className="bi bi-plus-circle me-1"></i>+ Add Description
               </button>
             </div>
             <select
@@ -275,7 +275,7 @@ export default function AreaBlock({
                 }
               }}
             >
-              <option value="" disabled>Select Room / Location Area</option>
+              <option value="" disabled>Select Description</option>
               {area.room && !allRooms.includes(area.room) && (
                 <option value={area.room}>{area.room} (Custom)</option>
               )}
@@ -285,7 +285,7 @@ export default function AreaBlock({
                 </option>
               ))}
               <option value="__ADD_NEW__" className="text-primary fw-bold">
-                + Add Custom Room...
+                + Add Custom Description...
               </option>
             </select>
           </div>
@@ -374,14 +374,14 @@ export default function AreaBlock({
             </div>
           )}
 
-          {/* Sheet Location Header (e.g. LIVING ROOM, BEDROOM 1) */}
+          {/* Sheet Description Header */}
           <div className="col-12 mt-2">
             <div className="input-group input-group-sm">
-              <span className="input-group-text text-secondary fw-semibold">Sheet Location Header:</span>
+              <span className="input-group-text text-secondary fw-semibold">Sheet Description Header:</span>
               <input
                 type="text"
                 className="form-control fw-bold"
-                placeholder="e.g. LIVING ROOM, BEDROOM 1 (defaults to Room / Location Area above)"
+                placeholder="e.g. DESIGN WALL TILES, FLOOR TILES (defaults to Description above)"
                 value={area.room || area.descriptionHeader || ''}
                 onChange={(e) => {
                   handleFieldChange('room', e.target.value);

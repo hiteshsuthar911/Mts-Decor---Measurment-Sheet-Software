@@ -260,17 +260,17 @@ export default function QuickMeasureModal({
     'Column Offset Cut',
     'Plumbing Hole'
   ] : [
-    'Main Hall',
+    'Living Room',
+    'Bedroom 1',
+    'Bedroom 2',
+    'Master Bedroom 1',
+    'Kitchen',
+    'Dining Area',
+    'Common Toilet',
+    'Toilet',
     'Passage',
-    'Balcony',
-    'Toilet Dado',
-    'Skirting',
-    'Door Frame',
-    'Window Sill',
-    'Niche',
-    'Platform',
-    'Tread',
-    'Riser'
+    'Deck Area',
+    'Lobby'
   ];
 
   const currentAreaItems = activeArea.items || [];
@@ -371,14 +371,14 @@ export default function QuickMeasureModal({
             <div className="row g-2 align-items-center">
               <div className="col-12 col-md-4">
                 <label className="form-label extra-small fw-bold text-dark text-uppercase mb-1">
-                  New Room / Location Area
+                  New Description
                 </label>
                 <select
                   className="form-select form-select-sm fw-bold text-uppercase"
                   value={newRoomName}
                   onChange={(e) => setNewRoomName(e.target.value)}
                 >
-                  <option value="">Select Room Preset or Type Below...</option>
+                  <option value="">Select Description Preset or Type Below...</option>
                   {COMMON_ROOM_AREAS.map((r, i) => (
                     <option key={i} value={r}>{r}</option>
                   ))}
@@ -386,7 +386,7 @@ export default function QuickMeasureModal({
                 <input
                   type="text"
                   className="form-control form-control-sm mt-1 fw-bold text-uppercase"
-                  placeholder="Or enter custom room name..."
+                  placeholder="Or enter custom description..."
                   value={newRoomName}
                   onChange={(e) => setNewRoomName(e.target.value)}
                 />
@@ -640,13 +640,13 @@ export default function QuickMeasureModal({
                 </div>
 
                 <div className="col-6">
-                  <label className="form-label extra-small fw-bold text-muted text-uppercase mb-1">Room / Location</label>
+                  <label className="form-label extra-small fw-bold text-muted text-uppercase mb-1">Description</label>
                   <select
                     className="form-select form-select-sm fw-bold text-uppercase"
                     value={activeArea.room || ''}
                     onChange={(e) => handleUpdateActiveAreaField('room', e.target.value)}
                   >
-                    <option value="">Select Room...</option>
+                    <option value="">Select Description...</option>
                     {COMMON_ROOM_AREAS.map((r, i) => (
                       <option key={i} value={r}>{r}</option>
                     ))}
