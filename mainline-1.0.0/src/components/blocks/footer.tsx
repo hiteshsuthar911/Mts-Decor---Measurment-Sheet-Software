@@ -34,9 +34,9 @@ export function Footer() {
           MTS DECOR is the fit-for-purpose software built for civil contractors and interior designers to ensure zero calculation errors and effortless client billing.
         </p>
         <div className="pt-2">
-          <Button size="lg" asChild>
-            <Link href="/login">
-              Launch MTS DECOR Software
+          <Button size="lg" className="font-semibold shadow-md" asChild>
+            <Link href="/contact">
+              Schedule Free Site Demo
             </Link>
           </Button>
         </div>

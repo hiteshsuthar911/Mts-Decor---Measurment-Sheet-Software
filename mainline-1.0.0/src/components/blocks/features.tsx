@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 
 import { ChevronRight } from "lucide-react";
@@ -63,14 +62,88 @@ export const Features = () => {
               <div key={i} className="flex flex-1 max-md:flex-col">
                 <div className="flex-1 p-5 md:p-7 flex flex-col justify-between">
                   <div>
-                    <div className="relative aspect-[1.28/1] overflow-hidden rounded-xl bg-muted/40 mb-5">
-                      <Image
-                        src={item.image}
-                        alt={`${item.title} interface`}
-                        fill
-                        className="object-cover object-left-top ps-4 pt-2"
-                      />
-                      <div className="from-background absolute inset-0 z-10 bg-linear-to-t via-transparent to-transparent" />
+                    {/* Custom Contractor Feature Preview Card */}
+                    <div className="relative aspect-[1.28/1] overflow-hidden rounded-xl border bg-muted/30 p-3.5 mb-5 font-sans flex flex-col justify-between select-none">
+                      {i === 0 && (
+                        <div className="space-y-2 text-xs">
+                          <div className="flex items-center justify-between border-b pb-1.5 font-mono text-[10px] text-muted-foreground">
+                            <span className="font-semibold text-foreground">Room 101 — Living & Dining</span>
+                            <span className="text-emerald-600 font-bold">Auto-Deductions Active</span>
+                          </div>
+                          <div className="bg-background/80 rounded p-2 border space-y-1 font-mono text-[11px]">
+                            <div className="flex justify-between text-muted-foreground">
+                              <span>Gross Wall Plaster (4 × 24&apos;6&quot; × 11&apos;)</span>
+                              <span>1,078.00 Sq.Ft</span>
+                            </div>
+                            <div className="flex justify-between text-rose-600 dark:text-rose-400">
+                              <span>- French Window W1 & Main Door</span>
+                              <span>-168.00 Sq.Ft</span>
+                            </div>
+                            <div className="flex justify-between font-bold text-foreground border-t pt-1">
+                              <span>Net Billable Area</span>
+                              <span className="text-primary font-mono">910.00 Sq.Ft</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between text-[10px] font-mono text-muted-foreground pt-0.5">
+                            <span>Rate: ₹55/Sq.Ft</span>
+                            <span className="font-bold text-foreground">Total: ₹50,050.00</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {i === 1 && (
+                        <div className="space-y-2 text-xs">
+                          <div className="flex items-center justify-between border-b pb-1.5 font-mono text-[10px] text-muted-foreground">
+                            <span className="font-semibold text-foreground">Daily Progress Log</span>
+                            <span className="text-amber-600 font-bold">Stage 4 of 5</span>
+                          </div>
+                          <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">
+                            <div className="bg-primary h-full rounded-full w-[84%]" />
+                          </div>
+                          <div className="space-y-1 text-[11px]">
+                            <div className="flex items-center justify-between bg-background/80 p-1.5 rounded border text-muted-foreground">
+                              <span>✓ Botticino Marble Laying</span>
+                              <span className="text-emerald-600 font-mono text-[10px]">Done</span>
+                            </div>
+                            <div className="flex items-center justify-between bg-background/80 p-1.5 rounded border text-muted-foreground">
+                              <span>✓ False Ceiling Framing</span>
+                              <span className="text-emerald-600 font-mono text-[10px]">Done</span>
+                            </div>
+                            <div className="flex items-center justify-between bg-background/80 p-1.5 rounded border text-foreground">
+                              <span>⏳ Teak Veneer Paneling</span>
+                              <span className="text-amber-600 font-mono text-[10px]">80%</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {i === 2 && (
+                        <div className="space-y-2 text-xs">
+                          <div className="flex items-center justify-between border-b pb-1.5 font-mono text-[10px] text-muted-foreground">
+                            <span className="font-semibold text-foreground">Cloud Sync & Export</span>
+                            <span className="text-emerald-600 font-bold">● Connected</span>
+                          </div>
+                          <div className="bg-background/80 rounded p-2.5 border space-y-1.5 text-[11px]">
+                            <div className="flex items-center justify-between">
+                              <span className="text-muted-foreground">Field Site Sync</span>
+                              <span className="font-mono text-emerald-600 font-semibold">100% Up to Date</span>
+                            </div>
+                            <div className="flex items-center justify-between border-t pt-1.5">
+                              <span className="text-muted-foreground">Workbook Format</span>
+                              <span className="font-mono text-foreground font-semibold">Excel (.XLSX)</span>
+                            </div>
+                            <div className="flex items-center justify-between border-t pt-1.5">
+                              <span className="text-muted-foreground">Formula Preservation</span>
+                              <span className="font-mono text-primary font-semibold">Active Formulas</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between text-[10px] font-mono text-muted-foreground pt-1 border-t border-border/50">
+                        <span>IS 1200 / CPWD Standard</span>
+                        <span className="text-emerald-600 dark:text-emerald-400 font-semibold">✓ Verified</span>
+                      </div>
                     </div>
 
                     <span className="inline-block px-2.5 py-0.5 mb-2.5 rounded-full text-[11px] font-mono font-medium bg-primary/10 text-primary">
@@ -87,11 +160,11 @@ export const Features = () => {
                   </div>
 
                   <Link
-                    href={item.href}
+                    href="/contact"
                     className="group flex items-center justify-between gap-4 pt-6 mt-4 border-t border-border/60"
                   >
                     <span className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
-                      Learn more
+                      Book Site Demo
                     </span>
                     <div className="rounded-full border p-2 group-hover:bg-primary group-hover:text-primary-foreground transition-all">
                       <ChevronRight className="size-5 transition-transform group-hover:translate-x-0.5" />

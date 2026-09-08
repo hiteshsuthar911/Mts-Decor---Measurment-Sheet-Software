@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 
+import Link from "next/link";
+
 import { Check, ChevronsUpDown, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -225,8 +227,11 @@ const PlanHeaders = ({
             <Button
               variant={pricingPlans[selectedPlan].button.variant}
               className="w-fit"
+              asChild
             >
-              {pricingPlans[selectedPlan].button.text}
+              <Link href="/contact">
+                {pricingPlans[selectedPlan].button.text}
+              </Link>
             </Button>
           </div>
           <CollapsibleContent className="flex flex-col space-y-2 p-2">
@@ -257,8 +262,10 @@ const PlanHeaders = ({
         {pricingPlans.map((plan, index) => (
           <div key={index} className="">
             <h3 className="mb-3 text-2xl font-semibold">{plan.name}</h3>
-            <Button variant={plan.button.variant} className="">
-              {plan.button.text}
+            <Button variant={plan.button.variant} className="" asChild>
+              <Link href="/contact">
+                {plan.button.text}
+              </Link>
             </Button>
           </div>
         ))}

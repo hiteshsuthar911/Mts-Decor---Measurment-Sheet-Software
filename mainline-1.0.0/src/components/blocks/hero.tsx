@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 
 import {
@@ -8,6 +7,8 @@ import {
   CircleDot,
   Diamond,
 } from "lucide-react";
+
+import { MeasurementHeroUI } from "./measurement-hero-ui";
 
 import { DashedLine } from "@/components/dashed-line";
 import { Button } from "@/components/ui/button";
@@ -37,33 +38,34 @@ const features = [
 
 export const Hero = () => {
   return (
-    <section className="py-28 lg:py-32 lg:pt-44">
-      <div className="container flex flex-col justify-between gap-8 md:gap-14 lg:flex-row lg:gap-20">
+    <section className="py-24 lg:py-28 lg:pt-40">
+      <div className="container flex flex-col justify-between gap-8 md:gap-14 lg:flex-row lg:gap-16">
         {/* Left side - Main content */}
-        <div className="flex-1">
+        <div className="flex-1 max-w-2xl">
           <div className="inline-flex items-center gap-2 rounded-full border bg-muted/60 px-3.5 py-1 text-xs font-mono font-medium text-muted-foreground mb-4">
             <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
             ENGINEERED FOR CONTRACTORS & DESIGNERS
           </div>
 
-          <h1 className="text-foreground max-w-160 text-3xl font-bold tracking-tight md:text-4xl lg:text-5xl xl:whitespace-nowrap">
-            MTS DECOR Measurement System
+          <h1 className="text-foreground text-3xl font-extrabold tracking-tight sm:text-4xl md:text-5xl lg:text-5xl leading-[1.15]">
+            MTS DECOR <br />
+            <span className="text-primary">Measurement Software</span>
           </h1>
 
-          <p className="text-muted-foreground text-lg mt-5 md:text-2xl leading-relaxed">
-            Next-generation measurement sheet software and construction site progress reporting for civil contractors & interior designers.
+          <p className="text-muted-foreground text-base sm:text-lg md:text-xl mt-4 max-w-xl leading-relaxed">
+            Professional on-site measurement sheets, automated deduction calculations, and daily construction site progress reporting for civil contractors & interior designers.
           </p>
 
-          <div className="mt-8 flex flex-wrap items-center gap-4 lg:flex-nowrap">
-            <Button size="lg" asChild>
-              <Link href="/login">
-                Launch Software
+          <div className="mt-8 flex flex-wrap items-center gap-4">
+            <Button size="lg" className="shadow-md font-semibold" asChild>
+              <Link href="/contact">
+                Book Site Demo
               </Link>
             </Button>
             <Button
               variant="outline"
               size="lg"
-              className="from-background h-auto gap-2 bg-linear-to-r to-transparent shadow-md"
+              className="from-background h-auto gap-2 bg-linear-to-r to-transparent shadow-md font-medium"
               asChild
             >
               <Link
@@ -71,14 +73,14 @@ export const Hero = () => {
                 className="max-w-56 truncate text-start md:max-w-none"
               >
                 Explore Products & Features
-                <ArrowRight className="stroke-3" />
+                <ArrowRight className="size-4" />
               </Link>
             </Button>
           </div>
         </div>
 
-        {/* Right side - Features */}
-        <div className="relative flex flex-1 flex-col justify-center space-y-5 max-lg:pt-10 lg:pl-10">
+        {/* Right side - Features list */}
+        <div className="relative flex flex-1 flex-col justify-center space-y-5 max-lg:pt-8 lg:pl-10">
           <DashedLine
             orientation="vertical"
             className="absolute top-0 left-0 max-lg:hidden"
@@ -90,13 +92,15 @@ export const Hero = () => {
           {features.map((feature) => {
             const Icon = feature.icon;
             return (
-              <div key={feature.title} className="flex gap-2.5 lg:gap-5">
-                <Icon className="text-foreground mt-1 size-4 shrink-0 lg:size-5" />
+              <div key={feature.title} className="flex gap-3 lg:gap-4">
+                <div className="mt-1 flex size-7 shrink-0 items-center justify-center rounded-lg border bg-muted/50">
+                  <Icon className="text-primary size-4" />
+                </div>
                 <div>
-                  <h2 className="font-text text-foreground font-semibold">
+                  <h2 className="font-text text-foreground font-semibold text-sm sm:text-base">
                     {feature.title}
                   </h2>
-                  <p className="text-muted-foreground max-w-76 text-sm">
+                  <p className="text-muted-foreground text-xs sm:text-sm leading-relaxed mt-0.5">
                     {feature.description}
                   </p>
                 </div>
@@ -106,15 +110,9 @@ export const Hero = () => {
         </div>
       </div>
 
-      <div className="mt-12 max-lg:ml-6 max-lg:h-[550px] max-lg:overflow-hidden md:mt-20 lg:container lg:mt-24">
-        <div className="relative h-[793px] w-full">
-          <Image
-            src="/hero.webp"
-            alt="hero"
-            fill
-            className="rounded-2xl object-cover object-left-top shadow-lg max-lg:rounded-tr-none"
-          />
-        </div>
+      {/* Hero Interactive UI Preview - Replaces bug tracker */}
+      <div className="mt-12 md:mt-16 lg:container">
+        <MeasurementHeroUI />
       </div>
     </section>
   );

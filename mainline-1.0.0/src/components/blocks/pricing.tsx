@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 
+import Link from "next/link";
+
 import { Check } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -128,8 +130,15 @@ export const Pricing = ({ className }: { className?: string }) => {
                 <Button
                   className="w-fit"
                   variant={plan.name === "Pro Contractor" ? "default" : "outline"}
+                  asChild
                 >
-                  Get started
+                  <Link href="/contact">
+                    {plan.name === "Starter"
+                      ? "Start Free Trial"
+                      : plan.name === "Pro Contractor"
+                        ? "Request Pro Demo"
+                        : "Contact Sales"}
+                  </Link>
                 </Button>
               </CardContent>
             </Card>

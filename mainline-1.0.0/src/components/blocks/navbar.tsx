@@ -6,7 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { ChevronRight, Github } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -132,22 +132,14 @@ export const Navbar = () => {
           </NavigationMenuList>
         </NavigationMenu>
 
-        {/* Auth Buttons */}
+        {/* Action Buttons */}
         <div className="flex items-center gap-2.5">
           <ThemeToggle />
-          <Link href="/login" className="max-lg:hidden">
-            <Button variant="outline">
-              <span className="relative z-10">Login</span>
+          <Link href="/contact">
+            <Button size="sm" className="font-semibold shadow-xs">
+              <span className="relative z-10">Book Site Demo</span>
             </Button>
           </Link>
-          <a
-            href="#!"
-            target="_self"
-            className="text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <Github className="size-4" />
-            <span className="sr-only">GitHub</span>
-          </a>
 
           {/* Hamburger Menu Button (Mobile Only) */}
           <button
