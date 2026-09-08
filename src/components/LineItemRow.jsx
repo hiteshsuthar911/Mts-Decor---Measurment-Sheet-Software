@@ -1,5 +1,5 @@
 import React from 'react';
-import { UNIT_OPTIONS, REMARK_OPTIONS } from '../data/categories';
+import { UNIT_OPTIONS, REMARK_OPTIONS, CATEGORIZED_REMARKS } from '../data/categories';
 import { calculateLineItemTotal, calculateLineItemAmount, formatNumber, formatCurrency, isLengthUnit, isCountUnit } from '../utils/calculations';
 
 export default function LineItemRow({
@@ -70,10 +70,14 @@ export default function LineItemRow({
             {item.remark && !REMARK_OPTIONS.includes(item.remark) && (
               <option value={item.remark}>{item.remark} (Custom)</option>
             )}
-            {REMARK_OPTIONS.map((opt) => (
-              <option key={opt} value={opt}>
-                {opt}
-              </option>
+            {Object.entries(CATEGORIZED_REMARKS).map(([groupTitle, list]) => (
+              <optgroup key={groupTitle} label={groupTitle}>
+                {list.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </optgroup>
             ))}
             <option value="__ADD_NEW__" className="text-primary fw-bold">
               + Custom Remark...

@@ -197,8 +197,80 @@ export const COMMON_DESCRIPTIONS = [
 export const COMMON_ROOM_AREAS = COMMON_DESCRIPTIONS;
 export const CATEGORIZED_DESCRIPTIONS = CATEGORIZED_WORK_TYPES;
 
-// Remark dropdown options
+// Remark categorized options
+export const CATEGORIZED_REMARKS = {
+  'Floors (1 to 18)': [
+    'Ground Floor',
+    '1st Floor',
+    '2nd Floor',
+    '3rd Floor',
+    '4th Floor',
+    '5th Floor',
+    '6th Floor',
+    '7th Floor',
+    '8th Floor',
+    '9th Floor',
+    '10th Floor',
+    '11th Floor',
+    '12th Floor',
+    '13th Floor',
+    '14th Floor',
+    '15th Floor',
+    '16th Floor',
+    '17th Floor',
+    '18th Floor'
+  ],
+  'Rooms & Spaces': [
+    'Living Room',
+    'Bedroom 1',
+    'Bedroom 2',
+    'Bedroom 3',
+    'Bedroom 4',
+    'Bedroom 5',
+    'Bedroom 6',
+    'Master Bedroom 1',
+    'Master Bedroom 2',
+    'Master Bedroom 3',
+    'Master Bedroom 4',
+    'Master Bedroom 5',
+    'Master Bedroom 6',
+    'Common Bedroom',
+    'Passage',
+    'Kitchen',
+    'Dining Area',
+    'Utility',
+    'Deck Area',
+    'Toilet',
+    'Master Toilet',
+    'Common Toilet',
+    'Lobby',
+    'Terrace',
+    'Compound',
+    'Other'
+  ]
+};
+
+// Remark dropdown options flat list
 export const REMARK_OPTIONS = [
+  'Ground Floor',
+  '1st Floor',
+  '2nd Floor',
+  '3rd Floor',
+  '4th Floor',
+  '5th Floor',
+  '6th Floor',
+  '7th Floor',
+  '8th Floor',
+  '9th Floor',
+  '10th Floor',
+  '11th Floor',
+  '12th Floor',
+  '13th Floor',
+  '14th Floor',
+  '15th Floor',
+  '16th Floor',
+  '17th Floor',
+  '18th Floor',
   'Living Room',
   'Bedroom 1',
   'Bedroom 2',
