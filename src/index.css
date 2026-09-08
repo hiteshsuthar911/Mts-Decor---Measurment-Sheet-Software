@@ -1486,3 +1486,61 @@ input::placeholder {
   }
 }
 
+/* ==========================================================================
+   Enterprise Context & Action Toolbar (Measurements Section)
+   ========================================================================== */
+.enterprise-context-bar {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 6px 16px rgba(15, 23, 42, 0.02);
+  padding: 12px 18px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.enterprise-context-bar:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+}
+
+.enterprise-context-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: 0.3px;
+  line-height: 1.3;
+}
+
+.enterprise-meta-chip {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #475569;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  line-height: 1.2;
+}
+
+.shadow-2xs {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.shadow-xs {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+@media (max-width: 767.98px) {
+  .enterprise-context-bar {
+    padding: 10px 12px;
+    border-radius: 10px;
+  }
+  .enterprise-context-title {
+    font-size: 0.88rem;
+  }
+}
+
+

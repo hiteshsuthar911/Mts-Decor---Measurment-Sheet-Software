@@ -672,115 +672,128 @@ export default function MeasurementSheet() {
           {/* ══════════════════════════════════════════════════════════ */}
           {(activeSection === 'measurements' || activeSection === 'all') && (
             <div className="areas-container mb-4">
-              {/* Compact Context Banner for Page 2 */}
+              {/* Enterprise Context & Workflow Toolbar for Section 2 (Measurements) */}
               {activeSection === 'measurements' && (
-                <div className="container-fluid px-2 px-md-3 mb-3">
-                  <div className="bg-dark text-white rounded-3 p-2 px-3 d-flex flex-wrap justify-content-between align-items-center gap-2 shadow-sm">
-                    <div className="d-flex align-items-center gap-2">
-                      <span className="badge bg-primary fw-bold text-uppercase px-2 py-1">PAGE 2 OF 3</span>
-                      <span className="fw-bold text-uppercase small text-light">{projectData?.header?.projectName || 'MEASUREMENT SHEET'}</span>
-                      <span className="text-white-50 extra-small">&bull; {projectData?.header?.sheetNo || 'MS'}</span>
-                      <span className="badge bg-secondary-subtle text-secondary rounded-pill extra-small">
-                        {projectData?.areas?.length || 0} Areas
-                      </span>
+                <div className="enterprise-context-bar mb-3">
+                  <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+                    
+                    {/* Left: Project Context & Metadata Chips */}
+                    <div className="d-flex flex-column gap-1 min-w-0">
+                      <div className="d-flex align-items-center flex-wrap gap-2">
+                        <span className="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-0.5 extra-small fw-bold text-uppercase rounded-pill">
+                          <i className="bi bi-grid-3x3-gap-fill me-1"></i>PAGE 2 &bull; MEASUREMENTS
+                        </span>
+                        {projectData?.header?.sheetNo && (
+                          <span className="enterprise-meta-chip">
+                            <i className="bi bi-hash"></i>{projectData.header.sheetNo}
+                          </span>
+                        )}
+                        <span className="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill extra-small fw-bold">
+                          {projectData?.areas?.length || 0} Area{projectData?.areas?.length !== 1 ? 's' : ''}
+                        </span>
+                        {grandTotals?.totalQty > 0 && (
+                          <span className="badge bg-success-subtle text-success border border-success-subtle rounded-pill extra-small fw-bold">
+                            <i className="bi bi-calculator me-1"></i>{formatNumber(grandTotals.totalQty, 2)} Total Qty
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="d-flex align-items-center flex-wrap gap-2 pt-1">
+                        <h5 className="enterprise-context-title mb-0 text-uppercase text-truncate" title={projectData?.header?.projectName}>
+                          {projectData?.header?.projectName || 'MEASUREMENT SHEET'}
+                        </h5>
+
+                        {projectData?.header?.clientName && (
+                          <span className="enterprise-meta-chip text-truncate" style={{ maxWidth: '180px' }} title={`Client: ${projectData.header.clientName}`}>
+                            <i className="bi bi-person text-secondary"></i>
+                            <span className="text-truncate">{projectData.header.clientName}</span>
+                          </span>
+                        )}
+
+                        {projectData?.header?.location && (
+                          <span className="enterprise-meta-chip text-truncate" style={{ maxWidth: '180px' }} title={`Location: ${projectData.header.location}`}>
+                            <i className="bi bi-geo-alt text-danger"></i>
+                            <span className="text-truncate">{projectData.header.location}</span>
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <div className="d-flex align-items-center gap-2">
-                      {!readOnly && (
-                        <div className="btn-group btn-group-sm me-1" role="group">
+
+                    {/* Right: Enterprise Actions */}
+                    <div className="d-flex align-items-center flex-wrap gap-2 align-self-stretch align-self-md-auto justify-content-end">
+                      {readOnly ? (
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-warning fw-bold text-uppercase extra-small px-3 py-1.5 shadow-xs"
+                          onClick={() => setShowVerify(true)}
+                          style={{ borderRadius: '6px' }}
+                        >
+                          <i className="bi bi-unlock-fill me-1"></i>UNLOCK TO EDIT
+                        </button>
+                      ) : (
+                        <>
                           <button
                             type="button"
-                            className="btn btn-outline-light extra-small fw-bold text-uppercase py-1 px-2.5 d-flex align-items-center gap-1"
-                            onClick={handleUndo}
-                            disabled={!canUndo}
-                            title="Undo (Ctrl+Z / Cmd+Z)"
-                            style={{ opacity: canUndo ? 1 : 0.4 }}
+                            className="btn btn-sm btn-outline-secondary extra-small fw-bold text-uppercase d-flex align-items-center gap-1.5 px-2.5 py-1.5 shadow-2xs"
+                            onClick={() => setActiveSection('info')}
+                            style={{ borderRadius: '6px', backgroundColor: '#ffffff' }}
+                            title="Edit Project Details & Header"
                           >
-                            <i className="bi bi-arrow-counterclockwise"></i>
-                            <span>UNDO</span>
+                            <i className="bi bi-sliders2 text-muted"></i>
+                            <span className="d-none d-sm-inline">PROJECT DETAILS</span>
+                            <span className="d-sm-none">INFO</span>
                           </button>
+
                           <button
                             type="button"
-                            className="btn btn-outline-light extra-small fw-bold text-uppercase py-1 px-2.5 d-flex align-items-center gap-1"
-                            onClick={handleRedo}
-                            disabled={!canRedo}
-                            title="Redo (Ctrl+Y / Cmd+Y)"
-                            style={{ opacity: canRedo ? 1 : 0.4 }}
+                            className="btn btn-sm btn-outline-primary extra-small fw-bold text-uppercase d-flex align-items-center gap-1.5 px-2.5 py-1.5 shadow-2xs"
+                            onClick={() => setActiveSection('summary')}
+                            style={{ borderRadius: '6px', backgroundColor: '#ffffff' }}
+                            title="View Summary Dashboard & Grand Totals"
                           >
-                            <i className="bi bi-arrow-clockwise"></i>
-                            <span>REDO</span>
+                            <i className="bi bi-pie-chart-fill"></i>
+                            <span className="d-none d-sm-inline">SUMMARY</span>
+                            <span className="d-sm-none">SUM</span>
+                            <i className="bi bi-arrow-right extra-small"></i>
                           </button>
-                        </div>
+
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-primary extra-small fw-bold text-uppercase d-flex align-items-center gap-1.5 px-3 py-1.5 shadow-xs"
+                            onClick={handleAddNewArea}
+                            style={{ borderRadius: '6px' }}
+                            title="Add a new measurement area group"
+                          >
+                            <i className="bi bi-plus-lg"></i>
+                            <span>ADD AREA</span>
+                          </button>
+                        </>
                       )}
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-outline-light extra-small fw-bold text-uppercase py-1 px-2"
-                        onClick={() => setActiveSection('info')}
-                      >
-                        <i className="bi bi-pencil-square me-1"></i> Edit Project Details
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-outline-info extra-small fw-bold text-uppercase py-1 px-2"
-                        onClick={() => setActiveSection('summary')}
-                      >
-                        <i className="bi bi-pie-chart-fill me-1"></i> View Summary &rarr;
-                      </button>
                     </div>
+
                   </div>
                 </div>
               )}
 
-              {/* Top Bar: Section Title & Cloud Actions */}
-              <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-                <h5 className="fw-bolder text-dark mb-0 d-flex align-items-center gap-2 text-uppercase">
-                  <i className="bi bi-grid-3x3-gap-fill text-primary"></i>
-                  LOCATION &amp; WORK MEASUREMENT GROUPS ({projectData?.areas?.length || 0})
-                </h5>
-                <div className="d-flex gap-2">
+              {/* Section Header when in 'View All' mode */}
+              {activeSection === 'all' && (
+                <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 pb-2 border-bottom">
+                  <h5 className="fw-bolder text-dark mb-0 d-flex align-items-center gap-2 text-uppercase">
+                    <i className="bi bi-grid-3x3-gap-fill text-primary"></i>
+                    SECTION 2: LOCATION &amp; WORK MEASUREMENTS ({projectData?.areas?.length || 0})
+                  </h5>
                   {!readOnly && (
-                    <>
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-success d-flex align-items-center gap-1 shadow-sm fw-bold text-uppercase px-3"
-                        onClick={handleManualSave}
-                        disabled={isSaving}
-                      >
-                        {isSaving ? (
-                          <span className="spinner-border spinner-border-sm" role="status"></span>
-                        ) : (
-                          <i className="bi bi-cloud-arrow-up-fill"></i>
-                        )}
-                        <span>SAVE</span>
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-outline-primary d-flex align-items-center gap-1 shadow-sm fw-bold text-uppercase"
-                        onClick={handleAddNewSheetPage}
-                        title="Start a new sheet page with a different work category"
-                      >
-                        <i className="bi bi-file-earmark-plus"></i>
-                        <span>+ NEW SHEET PAGE</span>
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-primary d-flex align-items-center gap-1 shadow-sm fw-bold text-uppercase"
-                        onClick={() => handleAddNewArea()}
-                      >
-                        <i className="bi bi-plus-circle-fill"></i>
-                        <span>+ ADD AREA</span>
-                      </button>
-                    </>
-                  )}
-                  {readOnly && (
                     <button
-                      className="btn btn-sm btn-warning fw-bold text-uppercase"
-                      onClick={() => setShowVerify(true)}
+                      type="button"
+                      className="btn btn-sm btn-primary d-flex align-items-center gap-1 shadow-sm fw-bold text-uppercase px-3"
+                      onClick={() => handleAddNewArea()}
                     >
-                      <i className="bi bi-unlock-fill me-1"></i>UNLOCK TO EDIT
+                      <i className="bi bi-plus-lg"></i>
+                      <span>ADD AREA</span>
                     </button>
                   )}
                 </div>
-              </div>
+              )}
 
               {/* Compute Sequential Sheet Pages (1-1-2-3-1 logic) */}
               {(() => {
