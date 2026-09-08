@@ -146,10 +146,10 @@ export default function AreaBlock({
     });
   };
 
-  const handleApplyReplication = (newGeneratedItems) => {
+  const handleApplyReplication = (newGeneratedItems, replaceExisting = false) => {
     onChangeArea(area.id, {
       ...area,
-      items: [...(area.items || []), ...newGeneratedItems]
+      items: replaceExisting ? newGeneratedItems : [...(area.items || []), ...newGeneratedItems]
     });
   };
 

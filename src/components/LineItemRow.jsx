@@ -27,6 +27,30 @@ export default function LineItemRow({
     onChangeItem(item.id, { ...item, isLess: !item.isLess });
   };
 
+  const handleKeyDown = (e, fieldName) => {
+    if (e.key === 'Enter' || e.key === 'ArrowDown') {
+      const nextRow = e.target.closest('tr')?.nextElementSibling;
+      if (nextRow) {
+        const nextInput = nextRow.querySelector(`input[data-field="${fieldName}"]`);
+        if (nextInput) {
+          e.preventDefault();
+          nextInput.focus();
+          nextInput.select();
+        }
+      }
+    } else if (e.key === 'ArrowUp') {
+      const prevRow = e.target.closest('tr')?.previousElementSibling;
+      if (prevRow) {
+        const prevInput = prevRow.querySelector(`input[data-field="${fieldName}"]`);
+        if (prevInput) {
+          e.preventDefault();
+          prevInput.focus();
+          prevInput.select();
+        }
+      }
+    }
+  };
+
   return (
     <tr className={`line-item-row ${item.isLess ? 'table-danger-subtle border-danger border-opacity-25' : ''}`}>
       {/* SR Index */}
@@ -121,10 +145,12 @@ export default function LineItemRow({
           type="number"
           step="any"
           min="0"
+          data-field="quantity"
           className="form-control form-control-sm text-center"
           placeholder="Qty"
           value={item.quantity === 0 || item.quantity ? item.quantity : ''}
           onChange={(e) => handleFieldChange('quantity', e.target.value)}
+          onKeyDown={(e) => handleKeyDown(e, 'quantity')}
         />
       </td>
 
@@ -135,10 +161,12 @@ export default function LineItemRow({
           step="any"
           min="0"
           disabled={isCount}
+          data-field="length"
           className={`form-control form-control-sm text-end ${isCount ? 'bg-light text-muted' : ''}`}
           placeholder={isCount ? '-' : 'Length'}
           value={item.length === 0 || item.length ? item.length : ''}
           onChange={(e) => handleFieldChange('length', e.target.value)}
+          onKeyDown={(e) => handleKeyDown(e, 'length')}
         />
       </td>
 
@@ -153,10 +181,12 @@ export default function LineItemRow({
             type="number"
             step="any"
             min="0"
+            data-field="height"
             className="form-control form-control-sm text-end"
             placeholder="Height"
             value={item.height === 0 || item.height ? item.height : ''}
             onChange={(e) => handleFieldChange('height', e.target.value)}
+            onKeyDown={(e) => handleKeyDown(e, 'height')}
           />
         )}
       </td>
