@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { loginInit, loginVerify2FA } from '../utils/auth';
 import { getFounderSlides } from '../utils/storage';
 import AppStoreBadges from '../components/AppStoreBadges';
+import UiverseLoginButton from '../components/UiverseLoginButton';
 
 const STATIC_FOUNDER_SLIDES = [
   {
@@ -294,21 +295,19 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                {/* Submit Credentials Button */}
-                <button
-                  type="submit"
-                  className="untitled-btn-primary"
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <>
-                      <span className="spinner-border spinner-border-sm me-2" role="status"></span>
-                      Authenticating...
-                    </>
-                  ) : (
-                    'Continue with Two-Step Verification →'
+                {/* Hidden submit button for native Enter key support */}
+                <button type="submit" style={{ display: 'none' }} aria-hidden="true" tabIndex={-1} />
+
+                {/* Submit Credentials Button (Uiverse Button Mastery 13) */}
+                <div className="d-flex flex-column align-items-center my-2">
+                  <UiverseLoginButton loading={loading} disabled={loading} />
+                  {loading && (
+                    <div className="text-muted extra-small fw-bold text-uppercase mt-2 d-flex align-items-center gap-2">
+                      <span className="spinner-border spinner-border-sm text-primary" role="status"></span>
+                      <span>Authenticating...</span>
+                    </div>
                   )}
-                </button>
+                </div>
               </form>
             </>
           )}

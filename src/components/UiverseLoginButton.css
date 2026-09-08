@@ -1,0 +1,634 @@
+/* From Uiverse.io by marcelodolza */ 
+/* stackblitz.com/edit/button-mastery-13 */
+
+@keyframes turbulentSwap {
+  0% {
+    filter: url(#turbulent-displace-0);
+  }
+  6.25% {
+    filter: url(#turbulent-displace-1);
+  }
+  12.5% {
+    filter: url(#turbulent-displace-2);
+  }
+  18.75% {
+    filter: url(#turbulent-displace-3);
+  }
+  25% {
+    filter: url(#turbulent-displace-4);
+  }
+  31.25% {
+    filter: url(#turbulent-displace-5);
+  }
+  37.5% {
+    filter: url(#turbulent-displace-6);
+  }
+  43.75% {
+    filter: url(#turbulent-displace-7);
+  }
+  50% {
+    filter: url(#turbulent-displace-8);
+  }
+  56.25% {
+    filter: url(#turbulent-displace-9);
+  }
+  62.5% {
+    filter: url(#turbulent-displace-10);
+  }
+  68.75% {
+    filter: url(#turbulent-displace-11);
+  }
+  75% {
+    filter: url(#turbulent-displace-12);
+  }
+  81.25% {
+    filter: url(#turbulent-displace-13);
+  }
+  87.5% {
+    filter: url(#turbulent-displace-14);
+  }
+  93.75% {
+    filter: url(#turbulent-displace-15);
+  }
+  100% {
+    filter: url(#turbulent-displace-0);
+  }
+}
+
+.uiverse-login-btn-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  width: 100%;
+  margin: 15px 0;
+}
+
+.uiverse-login-btn-wrapper .area {
+  --radius: 50px;
+  perspective: 40px;
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+  display: inline-block;
+}
+
+.uiverse-login-btn-wrapper .area-button {
+  position: relative;
+  display: inline-block;
+}
+
+.uiverse-login-btn-wrapper .area > svg,
+.uiverse-login-btn-wrapper .area-button > svg {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  left: 50%;
+  top: 56%;
+  z-index: 9;
+  animation: splashFeedback2 0.7s cubic-bezier(0.18, 0.94, 1, 1) forwards;
+  color: #9a4df1;
+  pointer-events: none;
+  stroke-width: 2px;
+  stroke-dasharray: 0 173;
+  stroke-dashoffset: 174;
+  filter: blur(1px);
+}
+
+.uiverse-login-btn-wrapper .area input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.uiverse-login-btn-wrapper .particles {
+  --m: 1;
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  transition: opacity 0.5s ease;
+  opacity: 0;
+}
+
+.uiverse-login-btn-wrapper .particle {
+  --f: 1;
+  display: grid;
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  rotate: var(--a);
+  filter: blur(2px);
+}
+
+.uiverse-login-btn-wrapper .particle::before {
+  content: "";
+  grid-area: 1/1;
+  width: 15px;
+  height: 3px;
+  transform-origin: 0 0;
+  mix-blend-mode: overlay;
+  background: rgb(154, 77, 241);
+  animation: particleMove calc(var(--m) * 0.5s) linear
+    calc(var(--m) * var(--t, 0) * 1.2s) infinite;
+  opacity: 0;
+  transform: translateX(0) rotate(-45deg) skew(45deg, 45deg) scale(var(--f));
+}
+
+.uiverse-login-btn-wrapper .rainbow {
+  width: 100%;
+  height: 130px;
+  position: absolute;
+  z-index: 9;
+  top: 50%;
+  left: 0;
+  right: 0;
+  --stripes: repeating-linear-gradient(
+    100deg,
+    #fff 0%,
+    #fff 7%,
+    transparent 10%,
+    transparent 12%,
+    #fff 16%
+  );
+  --rainbow: repeating-linear-gradient(
+    100deg,
+    #60a5fa 10%,
+    #f9799c 15%,
+    #60a5fa 20%,
+    #5eeabd 25%,
+    #60a5fa 30%
+  );
+  background-image: var(--stripes), var(--rainbow);
+  background-size: 300%, 200%;
+  background-position:
+    50% 50%,
+    50% 50%;
+  filter: invert(100%);
+  mix-blend-mode: overlay;
+  mask-image: radial-gradient(ellipse at 50%, black 40%, transparent 70%);
+}
+
+.uiverse-login-btn-wrapper .rainbow::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--stripes), var(--rainbow);
+  background-size: 200%, 100%;
+  animation: rainbowBg 60s linear infinite;
+  background-attachment: fixed;
+  mix-blend-mode: difference;
+}
+
+.uiverse-login-btn-wrapper .svg-turbulence {
+  position: absolute;
+  pointer-events: none;
+}
+
+.uiverse-login-btn-wrapper .electric {
+  border-radius: var(--radius);
+  border: 2px solid white;
+  filter: url(#turbulent-displace-0);
+  animation: turbulentSwap 1.5s infinite;
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  top: -8px;
+  left: -8px;
+  opacity: 0;
+  transition: all 0.6s ease;
+  z-index: 10;
+  mix-blend-mode: overlay;
+  transform: scale(1.1);
+}
+
+.uiverse-login-btn-wrapper .glass {
+  position: absolute;
+  inset: 0;
+  z-index: 9;
+  pointer-events: none;
+  overflow: hidden;
+  border-radius: var(--radius);
+  transition: all 0.5s ease;
+}
+
+.uiverse-login-btn-wrapper .glass::before,
+.uiverse-login-btn-wrapper .glass::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.5s ease;
+}
+
+.uiverse-login-btn-wrapper .glass::before {
+  transform: skewX(70deg) rotate(347deg) translate(-45px, -54px);
+}
+
+.uiverse-login-btn-wrapper .glass::after {
+  transform: skewX(65deg) rotate(347deg) translate(115px, -14px);
+}
+
+.uiverse-login-btn-wrapper .area:hover .glass {
+  transform: translateX(-10px);
+}
+
+.uiverse-login-btn-wrapper .area:hover .glass::before {
+  transform: skewX(70deg) rotate(347deg) translate(-30px, -56px);
+}
+
+.uiverse-login-btn-wrapper .area:hover .glass::after {
+  transform: skewX(65deg) rotate(347deg) translate(85px, -14px);
+}
+
+.uiverse-login-btn-wrapper .button {
+  outline: none;
+  cursor: pointer;
+  border: 0;
+  font-size: 26px;
+  border-radius: var(--radius);
+  position: relative;
+  width: 290px;
+  height: 80px;
+  pointer-events: none;
+  transition:
+    background-color 0.5s linear,
+    box-shadow 0.5s ease,
+    transform 0.5s ease;
+  box-shadow:
+    0 -10px 30px rgba(57, 20, 115, 0.3),
+    0 20px 30px rgba(57, 20, 115, 0.4),
+    inset 0 0 2px 0 black;
+  background: linear-gradient(to bottom, #000000 80%, #f2f2f2 100%);
+}
+
+.uiverse-login-btn-wrapper .wrap {
+  border-radius: calc(var(--radius) * 0.85);
+  height: 100%;
+  transform: translate(0px, -4px);
+  background: linear-gradient(
+    to bottom,
+    #d0d0d05e 0%,
+    #ffffff 50%,
+    #000000 100%
+  );
+  position: relative;
+  transition: all 0.5s ease;
+}
+
+.uiverse-login-btn-wrapper .reflex {
+  position: absolute;
+  z-index: 9;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+.uiverse-login-btn-wrapper .reflex:before {
+  content: "";
+  position: absolute;
+  width: 350px;
+  background-color: rgba(255, 255, 255, 0.2);
+  background: linear-gradient(
+    to right,
+    rgba(244, 221, 255, 0.1) 10%,
+    rgba(244, 221, 255, 0.5) 60%,
+    rgba(244, 221, 255, 0.3) 60%,
+    rgba(244, 221, 255, 0.1) 90%
+  );
+  top: -40%;
+  bottom: -40%;
+  left: -140%;
+  opacity: 1;
+  transition: all 0.6s cubic-bezier(0.5, 0, 0.3, 1);
+  transform: translate(250%, 0) skew(30deg);
+}
+
+.uiverse-login-btn-wrapper .area:hover .reflex:before {
+  transform: translateX(0) skew(-30deg);
+  opacity: 0.7;
+}
+
+.uiverse-login-btn-wrapper .area input:checked + .area-button .reflex:before {
+  transform: translate(250%, 0) skew(30deg);
+  opacity: 1;
+}
+
+.uiverse-login-btn-wrapper .outline {
+  position: absolute;
+  overflow: hidden;
+  outline: none;
+  border-radius: inherit;
+  transition: all 0.4s ease;
+  inset: -2px;
+  bottom: -4px;
+  filter: blur(1px);
+}
+
+.uiverse-login-btn-wrapper .outline::before {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  width: 120px;
+  height: 300px;
+  margin: auto;
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    white 50%,
+    transparent 100%
+  );
+  animation: spin 4s linear infinite;
+}
+
+.uiverse-login-btn-wrapper .bg {
+  z-index: 1;
+  position: absolute;
+  inset: 5px;
+  transition: all 0.3s ease;
+  overflow: hidden;
+  border-radius: calc(var(--radius) * 0.85);
+}
+
+.uiverse-login-btn-wrapper .bg::before,
+.uiverse-login-btn-wrapper .bg::after {
+  content: "";
+  inset: 0;
+  position: absolute;
+  transition: all 1s ease;
+  z-index: -1;
+  filter: blur(4px);
+}
+
+.uiverse-login-btn-wrapper .bg::before {
+  background: linear-gradient(
+    6deg,
+    #000000 0%,
+    #181c40 44%,
+    #121c71 48%,
+    #bb4c8f 57%,
+    #bb4c8f 59%,
+    #c5996e 62%,
+    #badeee 79%,
+    #83cafb 90%
+  );
+}
+
+.uiverse-login-btn-wrapper .text {
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3;
+  position: relative;
+  height: 100%;
+  font-size: 23px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  overflow: hidden;
+  border-radius: calc(var(--radius) * 0.85);
+  box-shadow:
+    inset -6px -2px 2px -2px rgb(0 0 0 / 79%),
+    inset 6px -7px 2px -2px rgb(0 0 0 / 79%),
+    inset -1px 1px 4px 4px rgb(255 255 255 / 82%),
+    inset 1px 4px 5px #005880;
+}
+
+.uiverse-login-btn-wrapper .text p {
+  position: absolute;
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: -3px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.uiverse-login-btn-wrapper .text span {
+  display: inline-block;
+}
+
+.uiverse-login-btn-wrapper .text span > span {
+  animation: waveText 2.2s cubic-bezier(0.45, 0, 0.55, 1)
+    calc(var(--i) * -0.13s) infinite;
+  animation-play-state: paused;
+}
+
+.uiverse-login-btn-wrapper .area:hover .text span > span {
+  animation-play-state: running;
+}
+
+.uiverse-login-btn-wrapper .area:active .text {
+  box-shadow:
+    inset -6px -2px 2px -2px rgb(0 0 0 / 79%),
+    inset 6px -7px 2px -2px rgb(0 0 0 / 79%),
+    inset -1px 1px 4px 4px rgb(255 255 255 / 82%),
+    inset 1px 4px 5px #005880,
+    inset 1px 3px 20px rgba(13, 0, 101, 0.7),
+    inset 1px -10px 20px rgba(129, 49, 101, 0.338);
+}
+
+.uiverse-login-btn-wrapper .text p.state-1 > span {
+  opacity: 0;
+  animation: appear 1.5s ease forwards calc(var(--i) * 0.1s);
+}
+
+.uiverse-login-btn-wrapper .text p.state-2 > span {
+  opacity: 1;
+  animation: disappear 0.6s ease forwards calc(var(--i) * 0.05s);
+}
+
+.uiverse-login-btn-wrapper .liquid {
+  position: absolute;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3);
+  transition: 0.5s;
+  z-index: 2;
+  inset: 2px;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+.uiverse-login-btn-wrapper .liquid .wave {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  transition: transform 0.8s cubic-bezier(0.5, -0.5, 0.5, 1.5);
+  filter: blur(4px);
+  top: 790px;
+  left: -80px;
+}
+
+.uiverse-login-btn-wrapper .liquid .wave::before {
+  content: "";
+  width: 1000px;
+  height: 1000px;
+  position: absolute;
+  left: 50%;
+  border-radius: 48%;
+  background: radial-gradient(white 50%, #03081b 70%);
+  animation: wave 5s linear infinite;
+  opacity: 0.5;
+  filter: blur(2px);
+  top: -8px;
+}
+
+@keyframes waveText {
+  0% {
+    transform: translateX(-5px) rotate(8deg);
+    opacity: 0.7;
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(3px) translateX(2px) rotate(0);
+  }
+  100% {
+    transform: translateX(-5px) rotate(8deg);
+    opacity: 0.7;
+  }
+}
+
+@keyframes particleMove {
+  0% {
+    transform: translateX(var(--d)) rotate(-45deg) skew(0deg, 0deg)
+      scale(var(--f));
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) rotate(-45deg) skew(45deg, 45deg) scale(var(--f));
+  }
+}
+
+@keyframes rainbowBg {
+  from {
+    background-position:
+      50% 50%,
+      50% 50%;
+  }
+  to {
+    background-position:
+      350% 50%,
+      350% 50%;
+  }
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes wave {
+  0% {
+    transform: translate(-50%, -75%) rotate(0deg);
+  }
+  100% {
+    transform: translate(-50%, -75%) rotate(360deg);
+  }
+}
+
+@keyframes appear {
+  0% {
+    transform: translateY(-40px) rotate(-90deg);
+    filter: blur(10px);
+  }
+  30% {
+    transform: translateY(7px) rotate(0);
+  }
+  60% {
+    filter: blur(0);
+    transform: translateY(-5px) rotate(0);
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) rotate(0);
+  }
+}
+
+@keyframes disappear {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(40px);
+    filter: blur(6px);
+    opacity: 0;
+    color: black;
+  }
+}
+
+@keyframes splashFeedback {
+  to {
+    stroke-dasharray: 10 110;
+    stroke-dashoffset: 80;
+    opacity: 0;
+  }
+}
+
+@keyframes splashFeedback2 {
+  to {
+    stroke-dasharray: 10 110;
+    stroke-dashoffset: 80;
+    opacity: 0;
+  }
+}
+
+/** STATES */
+.uiverse-login-btn-wrapper .area .state-1 span:nth-child(3),
+.uiverse-login-btn-wrapper .area .state-2 span:nth-child(5) {
+  margin-right: 10px;
+}
+
+.uiverse-login-btn-wrapper .area input:checked + .area-button > svg {
+  animation: splashFeedback 0.7s cubic-bezier(0.18, 0.94, 1, 1) forwards;
+}
+
+.uiverse-login-btn-wrapper .area input:checked + .area-button .electric {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.uiverse-login-btn-wrapper .area:hover .particles {
+  opacity: 1;
+}
+
+.uiverse-login-btn-wrapper .area input:checked + .area-button .particles {
+  opacity: 0;
+}
+
+.uiverse-login-btn-wrapper .area:hover .button {
+  transform: translate(0px, -4px);
+}
+
+.uiverse-login-btn-wrapper .area:active .wrap {
+  transform: translate(0);
+}
+
+.uiverse-login-btn-wrapper .area:hover .outline {
+  opacity: 1;
+}
+
+.uiverse-login-btn-wrapper .area:hover .liquid .wave {
+  transform: translateY(-5px);
+}
+
+.uiverse-login-btn-wrapper .area input:checked + .area-button p.state-1 > span {
+  opacity: 1;
+  animation: disappear 0.6s ease forwards calc(var(--i) * 0.05s);
+}
+
+.uiverse-login-btn-wrapper .area input:checked + .area-button p.state-2 > span {
+  opacity: 0;
+  animation: appear 1.5s ease forwards calc(var(--i) * 0.1s);
+}
+
+@media (max-width: 768px) {
+  .uiverse-login-btn-wrapper .liquid {
+    display: none;
+  }
+}
