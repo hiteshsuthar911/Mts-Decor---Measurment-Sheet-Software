@@ -383,8 +383,8 @@
   z-index: 3;
   position: relative;
   height: 100%;
-  font-size: 23px;
-  font-weight: 500;
+  font-size: 22px;
+  font-weight: 700;
   transition: all 0.3s ease;
   overflow: hidden;
   border-radius: calc(var(--radius) * 0.85);
@@ -397,12 +397,15 @@
 
 .uiverse-login-btn-wrapper .text p {
   position: absolute;
-  color: rgba(255, 255, 255, 0.7);
-  letter-spacing: -3px;
+  color: #ffffff;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9), 0 0 3px rgba(0, 0, 0, 0.95);
   margin: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  white-space: nowrap;
 }
 
 .uiverse-login-btn-wrapper .text span {
@@ -431,7 +434,7 @@
 
 .uiverse-login-btn-wrapper .text p.state-1 > span {
   opacity: 0;
-  animation: appear 1.5s ease forwards calc(var(--i) * 0.1s);
+  animation: appear 1.2s ease forwards calc(var(--i) * 0.08s);
 }
 
 .uiverse-login-btn-wrapper .text p.state-2 > span {
@@ -475,16 +478,16 @@
 
 @keyframes waveText {
   0% {
-    transform: translateX(-5px) rotate(8deg);
-    opacity: 0.7;
+    transform: translateX(-3px) rotate(4deg);
+    opacity: 1;
   }
   60% {
     opacity: 1;
-    transform: translateY(3px) translateX(2px) rotate(0);
+    transform: translateY(2px) translateX(2px) rotate(0);
   }
   100% {
-    transform: translateX(-5px) rotate(8deg);
-    opacity: 0.7;
+    transform: translateX(-3px) rotate(4deg);
+    opacity: 1;
   }
 }
 
@@ -581,7 +584,7 @@
 /** STATES */
 .uiverse-login-btn-wrapper .area .state-1 span:nth-child(3),
 .uiverse-login-btn-wrapper .area .state-2 span:nth-child(5) {
-  margin-right: 10px;
+  margin-right: 14px;
 }
 
 .uiverse-login-btn-wrapper .area input:checked + .area-button > svg {
