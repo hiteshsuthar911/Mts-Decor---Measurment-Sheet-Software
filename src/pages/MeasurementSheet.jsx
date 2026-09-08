@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useParams, useSearchParams, Link } from 'react-router-dom';
 import Header from '../components/Header';
 import QuickStatsBar from '../components/QuickStatsBar';
@@ -24,7 +24,6 @@ export default function MeasurementSheet() {
   const [projectData, setProjectData]   = useState(null);
   const [editUnlocked, setEditUnlocked] = useState(false);
   const [showVerify, setShowVerify]     = useState(false);
-  const [isPrintView, setIsPrintView]   = useState(false);
   const [showQuickMeasure, setShowQuickMeasure] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [notFound, setNotFound]         = useState(false);
@@ -35,6 +34,15 @@ export default function MeasurementSheet() {
   const [activeSheetPage, setActiveSheetPage] = useState('ALL');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const fullscreenRef = useRef(null);
+
+  const pagesList = useMemo(() => groupAreasIntoPages(projectData?.areas || []), [projectData?.areas]);
+  const isSinglePageView = activeSheetPage !== 'ALL';
+  const currentPage = isSinglePageView
+    ? (pagesList.find(p => p.pageNumber === Number(activeSheetPage)) || pagesList[0])
+    : null;
+  const pageIdx = currentPage
+    ? pagesList.findIndex(p => p.pageNumber === currentPage.pageNumber)
+    : -1;
 
   const enterFocusFullscreen = (pageNumber) => {
     setActiveSheetPage(pageNumber);
@@ -672,10 +680,11 @@ export default function MeasurementSheet() {
           {/* ══════════════════════════════════════════════════════════ */}
           {(activeSection === 'measurements' || activeSection === 'all') && (
             <div className="areas-container mb-4">
-              {/* Enterprise Context & Workflow Toolbar for Section 2 (Measurements) */}
+              {/* Consolidated Enterprise Workspace Card for Section 2 (Measurements) */}
               {activeSection === 'measurements' && (
-                <div className="enterprise-context-bar mb-3">
-                  <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+                <div className="enterprise-workspace-card mb-3">
+                  {/* Top Deck: Project Context & Metadata Chips & Actions */}
+                  <div className="p-2.5 p-md-3 d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
                     
                     {/* Left: Project Context & Metadata Chips */}
                     <div className="d-flex flex-column gap-1 min-w-0">
@@ -759,6 +768,17 @@ export default function MeasurementSheet() {
 
                           <button
                             type="button"
+                            className="btn btn-sm btn-outline-primary extra-small fw-bold text-uppercase d-flex align-items-center gap-1 px-2.5 py-1.5 shadow-2xs"
+                            onClick={handleAddNewSheetPage}
+                            style={{ borderRadius: '6px', backgroundColor: '#ffffff' }}
+                            title="Start a new separate sheet page"
+                          >
+                            <i className="bi bi-file-earmark-plus"></i>
+                            <span>+ NEW PAGE</span>
+                          </button>
+
+                          <button
+                            type="button"
                             className="btn btn-sm btn-primary extra-small fw-bold text-uppercase d-flex align-items-center gap-1.5 px-3 py-1.5 shadow-xs"
                             onClick={handleAddNewArea}
                             style={{ borderRadius: '6px' }}
@@ -772,6 +792,46 @@ export default function MeasurementSheet() {
                     </div>
 
                   </div>
+
+                  {/* Integrated Bottom Shelf: Sheet Pages Tab Navigation Strip */}
+                  {pagesList.length > 0 && (
+                    <div className="enterprise-workspace-shelf px-3 py-2 border-top d-flex align-items-center justify-content-between gap-2 overflow-auto" style={{ scrollbarWidth: 'thin' }}>
+                      <div className="d-flex align-items-center gap-1.5 flex-nowrap">
+                        <span className="extra-small fw-bold text-uppercase text-muted d-flex align-items-center me-1 flex-shrink-0">
+                          <i className="bi bi-layers text-primary me-1"></i>PAGES ({pagesList.length}):
+                        </span>
+
+                        <button
+                          type="button"
+                          className={`sheet-page-tab-btn ${activeSheetPage === 'ALL' ? 'active' : ''}`}
+                          onClick={() => setActiveSheetPage('ALL')}
+                        >
+                          <i className="bi bi-collection"></i>
+                          <span>ALL ({pagesList.length})</span>
+                        </button>
+
+                        {pagesList.map((pg) => {
+                          const isSelected = activeSheetPage === pg.pageNumber;
+                          return (
+                            <button
+                              key={pg.pageNumber}
+                              type="button"
+                              className={`sheet-page-tab-btn ${isSelected ? 'active' : ''}`}
+                              onClick={() => setActiveSheetPage(pg.pageNumber)}
+                            >
+                              <i className="bi bi-file-earmark-text"></i>
+                              <span>P{pg.pageNumber}: {pg.category}</span>
+                              <span className="sheet-page-tab-count">{pg.areas.length}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      <div className="d-none d-lg-flex align-items-center text-muted extra-small flex-shrink-0">
+                        <i className="bi bi-info-circle me-1"></i>Sequential 1-1-2-3-1 Flow
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -795,87 +855,6 @@ export default function MeasurementSheet() {
                 </div>
               )}
 
-              {/* Compute Sequential Sheet Pages (1-1-2-3-1 logic) */}
-              {(() => {
-                const pagesList = groupAreasIntoPages(projectData?.areas || []);
-                const sheetPageMap = {};
-                pagesList.forEach(p => {
-                  (p.areas || []).forEach(a => {
-                    sheetPageMap[a.id] = p.pageNumber;
-                  });
-                });
-
-                const isSinglePageView = activeSheetPage !== 'ALL';
-                const currentPage = isSinglePageView
-                  ? (pagesList.find(p => p.pageNumber === Number(activeSheetPage)) || pagesList[0])
-                  : null;
-                const pageIdx = currentPage
-                  ? pagesList.findIndex(p => p.pageNumber === currentPage.pageNumber)
-                  : -1;
-
-                return (
-                  <>
-                    {/* Sheet Page Navigation Tabs Bar */}
-                    {pagesList.length > 0 && (
-                      <div className="sheet-page-nav-bar bg-white p-2 p-md-3 border rounded-3 mb-3 shadow-sm">
-                        <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2 pb-2 border-bottom">
-                          <div className="d-flex align-items-center flex-wrap gap-2">
-                            <span className="extra-small fw-bolder text-muted text-uppercase d-flex align-items-center">
-                              <i className="bi bi-file-earmark-spreadsheet-fill text-primary me-1 fs-6"></i>
-                              SHEET PAGES ({pagesList.length} TOTAL):
-                            </span>
-                            <span className="badge bg-primary-subtle text-primary border border-primary-subtle fw-bold extra-small text-uppercase">
-                              Sequential 1-1-2-3-1 Flow
-                            </span>
-                          </div>
-                          <div className="d-flex align-items-center gap-2">
-                            <span className="text-muted extra-small d-none d-lg-inline">
-                              Switch tabs to focus on one page without clutter, or select View All Pages
-                            </span>
-                            {!readOnly && (
-                              <button
-                                type="button"
-                                className="btn btn-sm btn-outline-primary fw-bold extra-small text-uppercase py-1"
-                                onClick={handleAddNewSheetPage}
-                                title="Start a new separate sheet page"
-                              >
-                                <i className="bi bi-file-earmark-plus me-1"></i>+ New Sheet Page
-                              </button>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Scrollable Page Tabs */}
-                        <div className="d-flex align-items-center gap-2 overflow-auto pb-1" style={{ scrollbarWidth: 'thin' }}>
-                          <button
-                            type="button"
-                            className={`btn btn-sm ${activeSheetPage === 'ALL' ? 'btn-dark shadow-sm' : 'btn-light border text-secondary'} fw-bold text-uppercase extra-small text-nowrap py-1 px-3`}
-                            onClick={() => setActiveSheetPage('ALL')}
-                          >
-                            <i className="bi bi-collection me-1"></i> View All Pages ({pagesList.length})
-                          </button>
-
-                          {pagesList.map((pg) => {
-                            const isSelected = activeSheetPage === pg.pageNumber;
-                            return (
-                              <button
-                                key={pg.pageNumber}
-                                type="button"
-                                className={`btn btn-sm ${isSelected ? 'btn-primary shadow-sm' : 'btn-light border text-dark'} fw-bold extra-small text-nowrap py-1 px-3 d-flex align-items-center gap-1`}
-                                onClick={() => setActiveSheetPage(pg.pageNumber)}
-                              >
-                                <i className="bi bi-file-earmark-text"></i>
-                                <span>Page #{pg.pageNumber}:</span>
-                                <span className={isSelected ? 'text-white' : 'text-primary'}>{pg.category}</span>
-                                <span className={`badge ${isSelected ? 'bg-white text-primary' : 'bg-secondary-subtle text-secondary'} rounded-pill ms-1`}>
-                                  {pg.areas.length}
-                                </span>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
 
                     {/* Mode 1: Single Focused Sheet Page View */}
                     {isSinglePageView && currentPage && (() => {
@@ -912,44 +891,50 @@ export default function MeasurementSheet() {
                           <div className={isFullscreen ? 'fullscreen-focus-content p-3 p-md-4' : ''}>
 
                           {/* Focused Sheet Page Card Banner */}
-                          <div className="card border-primary-subtle shadow-sm mb-3" style={{ borderLeft: '5px solid #0d6efd' }}>
-                            <div className="card-body py-3 px-3 bg-light">
-                              <div className="d-flex flex-wrap justify-content-between align-items-center gap-2">
-                                {/* Left details */}
-                                <div className="d-flex align-items-center flex-wrap gap-2">
-                                  <span className="badge bg-primary px-3 py-2 rounded-pill fw-bold text-uppercase fs-6">
-                                    <i className="bi bi-file-earmark-text-fill me-1"></i>
-                                    SHEET PAGE #{currentPage.pageNumber} OF {pagesList.length}
-                                  </span>
-                                  <h5 className="mb-0 fw-bolder text-dark text-uppercase">{currentPage.category}</h5>
-                                  <span className="text-secondary extra-small">
-                                    ({currentPage.areas.length} {currentPage.areas.length === 1 ? 'Location Area' : 'Location Areas'})
-                                  </span>
-                                </div>
+                          <div className="sheet-page-header-enterprise single-view d-flex flex-wrap justify-content-between align-items-center gap-2 px-3 py-2.5 mb-3">
+                            {/* Left details */}
+                            <div className="d-flex align-items-center flex-wrap gap-2">
+                              <span className="badge bg-primary text-white px-2.5 py-1 rounded-pill fw-bold text-uppercase extra-small">
+                                <i className="bi bi-file-earmark-text-fill me-1"></i>
+                                PAGE #{currentPage.pageNumber} OF {pagesList.length}
+                              </span>
+                              <h5 className="mb-0 fw-bold text-dark text-uppercase">{currentPage.category}</h5>
+                              <span className="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill extra-small fw-semibold">
+                                {currentPage.areas.length} {currentPage.areas.length === 1 ? 'Location Area' : 'Location Areas'}
+                              </span>
+                            </div>
 
-                                {/* Right: Totals & Quick Add */}
-                                <div className="d-flex align-items-center flex-wrap gap-2">
-                                  <span className="badge bg-white text-dark border px-3 py-2 fs-6 fw-bold shadow-sm">
-                                    PAGE TOTAL: {pageTotals.netQty} {pageTotals.dominantUnit}
-                                  </span>
-                                  {projectData?.settings?.billingMode && (
-                                    <span className="badge bg-success text-white px-3 py-2 fs-6 fw-bold shadow-sm">
-                                      ₹{formatNumber(pageTotals.netAmount)}
-                                    </span>
-                                  )}
-                                  {!readOnly && (
-                                    <button
-                                      type="button"
-                                      className="btn btn-sm btn-primary fw-bold text-uppercase d-flex align-items-center gap-1 shadow-sm px-3"
-                                      onClick={() => handleAddAreaToPage(currentPage)}
-                                      title="Add another area to this sheet page"
-                                    >
-                                      <i className="bi bi-plus-circle-fill"></i>
-                                      <span>+ Add Area to Page #{currentPage.pageNumber}</span>
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
+                            {/* Right: Totals & Quick Add */}
+                            <div className="d-flex align-items-center flex-wrap gap-2">
+                              <span className="sheet-page-total-pill">
+                                <i className="bi bi-calculator text-primary"></i>
+                                <span>PAGE TOTAL: <strong>{pageTotals.netQty}</strong> {pageTotals.dominantUnit}</span>
+                              </span>
+                              {projectData?.settings?.billingMode && (
+                                <span className="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1.5 extra-small fw-bold">
+                                  ₹{formatNumber(pageTotals.netAmount)}
+                                </span>
+                              )}
+                              {!readOnly && (
+                                <button
+                                  type="button"
+                                  className="btn btn-sm btn-primary extra-small fw-bold text-uppercase d-flex align-items-center gap-1 shadow-xs px-3 py-1.5 rounded"
+                                  onClick={() => handleAddAreaToPage(currentPage)}
+                                  title="Add another area to this sheet page"
+                                >
+                                  <i className="bi bi-plus-lg"></i>
+                                  <span>+ Add Area to Page #{currentPage.pageNumber}</span>
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-outline-secondary extra-small fw-bold text-uppercase px-2.5 py-1.5 rounded d-flex align-items-center gap-1"
+                                onClick={() => enterFocusFullscreen(currentPage.pageNumber)}
+                                title="Open in fullscreen focus mode"
+                              >
+                                <i className="bi bi-arrows-fullscreen"></i>
+                                <span className="d-none d-sm-inline">Focus</span>
+                              </button>
                             </div>
                           </div>
 
@@ -1032,41 +1017,55 @@ export default function MeasurementSheet() {
                           const pageTotals = calculateSheetPageTotals(pg);
                           return (
                             <div key={pg.pageNumber} className="sheet-page-section-block mb-4">
-                              {/* Distinct Page Break Header Banner */}
-                              <div className="sheet-page-banner bg-dark text-white py-2 px-3 rounded-top d-flex flex-wrap justify-content-between align-items-center gap-2">
-                                <div className="d-flex align-items-center gap-2">
-                                  <span className="badge bg-primary text-uppercase px-2 py-1">
-                                    <i className="bi bi-file-earmark-text me-1"></i>
-                                    SHEET PAGE #{pg.pageNumber}
+                              {/* Enterprise Page Break Header Banner */}
+                              <div className="sheet-page-header-enterprise d-flex flex-wrap justify-content-between align-items-center gap-2 px-3 py-2.5">
+                                <div className="d-flex align-items-center flex-wrap gap-2">
+                                  <span className="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1 extra-small fw-bold text-uppercase rounded-pill">
+                                    <i className="bi bi-file-earmark-text me-1"></i>PAGE #{pg.pageNumber}
                                   </span>
-                                  <span className="fs-6 fw-bold text-uppercase text-white">{pg.category}</span>
-                                  <span className="badge bg-secondary rounded-pill extra-small">
+                                  <h6 className="mb-0 fw-bold text-dark text-uppercase tracking-wide">
+                                    {pg.category}
+                                  </h6>
+                                  <span className="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill extra-small fw-semibold">
                                     {pg.areas.length} {pg.areas.length === 1 ? 'Area' : 'Areas'}
                                   </span>
                                 </div>
 
                                 <div className="d-flex align-items-center flex-wrap gap-2">
-                                  <span className="badge bg-light text-dark px-3 py-1 fw-bold">
-                                    PAGE TOTAL: {pageTotals.netQty} {pageTotals.dominantUnit}
+                                  <span className="sheet-page-total-pill">
+                                    <i className="bi bi-calculator text-primary"></i>
+                                    <span>PAGE TOTAL: <strong>{pageTotals.netQty}</strong> {pageTotals.dominantUnit}</span>
                                   </span>
                                   {projectData?.settings?.billingMode && (
-                                    <span className="badge bg-success text-white px-3 py-1 fw-bold">
+                                    <span className="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1.5 extra-small fw-bold">
                                       ₹{formatNumber(pageTotals.netAmount)}
                                     </span>
                                   )}
+                                  {!readOnly && (
+                                    <button
+                                      type="button"
+                                      className="btn btn-xs btn-outline-primary extra-small fw-bold text-uppercase px-2.5 py-1 rounded d-flex align-items-center gap-1"
+                                      onClick={() => handleAddAreaToPage(pg)}
+                                      title="Add area to this sheet page"
+                                    >
+                                      <i className="bi bi-plus-lg"></i>
+                                      <span>Area</span>
+                                    </button>
+                                  )}
                                   <button
                                     type="button"
-                                    className="btn btn-sm btn-warning text-dark extra-small fw-bold text-uppercase py-1 px-2 d-flex align-items-center gap-1"
+                                    className="btn btn-xs btn-outline-secondary extra-small fw-bold text-uppercase px-2.5 py-1 rounded d-flex align-items-center gap-1"
                                     onClick={() => enterFocusFullscreen(pg.pageNumber)}
                                     title="Open this page in fullscreen focus mode"
                                   >
-                                    <i className="bi bi-fullscreen"></i> Fullscreen
+                                    <i className="bi bi-arrows-fullscreen"></i>
+                                    <span className="d-none d-sm-inline">Focus</span>
                                   </button>
                                 </div>
                               </div>
 
                               {/* Areas in this Page */}
-                              <div className="border border-top-0 rounded-bottom p-2 p-md-3 bg-light-subtle">
+                              <div className="sheet-page-body p-2 p-md-3">
                                 {(pg.areas || []).map((area) => {
                                   const originalIndex = (projectData?.areas || []).findIndex(a => a.id === area.id);
                                   return (
@@ -1123,11 +1122,8 @@ export default function MeasurementSheet() {
                         )}
                       </div>
                     )}
-                  </>
-                );
-              })()}
 
-              {/* Page 2 Bottom Navigation */}
+               {/* Page 2 Bottom Navigation */}
               {activeSection === 'measurements' && (
                 <div className="container-fluid px-2 px-md-3 my-4">
                   <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 p-3 bg-white border rounded-3 shadow-sm">
