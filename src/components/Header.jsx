@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 export default function Header({
   headerData = {},
   onChangeHeader,
   settings = {},
   onToggleBillingMode,
-  onLoadSample,
   onResetSheet,
   onExportExcel,
   onOpenPrintView,
@@ -15,7 +15,16 @@ export default function Header({
   isSaving,
   lastSavedAt,
   isPrintView,
-  readOnly
+  readOnly,
+  activeSection = 'measurements',
+  onChangeSection = () => {},
+  areasCount = 0,
+  grandTotals = {},
+  showMetadataForm = true,
+  session = {},
+  isOwn = true,
+  ownerName = '',
+  onLogout = () => {},
 }) {
   const [showDetails, setShowDetails] = useState(true);
 
@@ -25,271 +34,287 @@ export default function Header({
 
   const formatSavedTime = (date) => {
     if (!date) return null;
-    return new Date(date).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    return new Date(date).toLocaleTimeString('en-IN', {
+      hour: '2-digit', minute: '2-digit', second: '2-digit'
+    });
   };
 
   return (
-    <header className="contractor-header bg-white border-bottom shadow-sm mb-4">
-      {/* Top Action Ribbon */}
-      <div className="bg-dark text-white py-2 px-3">
-        <div className="container-fluid d-flex flex-wrap justify-content-between align-items-center gap-2">
-          {/* Brand & Project Name preview */}
-          <div className="d-flex align-items-center flex-wrap gap-2">
-            <div className="d-flex align-items-center gap-2">
-              <img
-                src="/mtsdecor.png"
-                alt="MTS Decor"
-                style={{ height: '24px', maxWidth: '110px', objectFit: 'contain' }}
-                onError={(e) => { e.target.onerror = null; e.target.src = '/logo.png'; }}
-              />
-              <span className="badge bg-primary px-2 py-1 fs-6 text-uppercase">
-                MS Pro
-              </span>
-            </div>
-            <span className="fw-bold text-light small text-uppercase d-none d-sm-inline">
+    <header className="ms-header no-print">
+
+      {/* ══════════════════════════════════════════════════
+          ROW 1 — SINGLE UNIFIED TOOLBAR
+      ══════════════════════════════════════════════════ */}
+      <div className="ms-toolbar">
+
+        {/* LEFT: Brand → Divider → Project + Save Pill */}
+        <div className="ms-tl">
+          {/* Logo / Brand */}
+          <Link to="/projects" className="ms-brand" title="Back to Projects">
+            <img
+              src="/mtsdecor.png"
+              alt="MTS"
+              className="ms-brand-logo"
+              onError={(e) => { e.target.style.display = 'none'; }}
+            />
+            <span className="ms-brand-pill">MS PRO</span>
+          </Link>
+
+          <div className="ms-vsep" />
+
+          {/* Project name + owner context */}
+          <div className="ms-proj-info">
+            <span className="ms-proj-name">
               {headerData.projectName || 'MEASUREMENT SHEET'}
             </span>
-            {lastSavedAt && (
-              <span className="badge bg-success bg-opacity-75 text-white extra-small text-uppercase d-none d-md-inline-block">
-                <i className="bi bi-cloud-check me-1"></i>SAVED {formatSavedTime(lastSavedAt)}
+            {!isOwn && (
+              <span className="ms-owner-chip">
+                <i className="bi bi-eye-fill" />
+                {ownerName?.toUpperCase()}
+              </span>
+            )}
+            {isOwn && (
+              <span className="ms-mine-chip">
+                <i className="bi bi-folder-fill" /> MINE
               </span>
             )}
           </div>
 
-          {/* Action Buttons Group */}
-          <div className="d-flex align-items-center flex-wrap gap-2">
-            {/* Billing Mode Toggle */}
-            <div className="form-check form-switch text-white me-1 mb-0 d-flex align-items-center">
-              <input
-                className="form-check-input me-2"
-                type="checkbox"
-                role="switch"
-                id="billingModeSwitch"
-                checked={settings.billingMode}
-                disabled={readOnly}
-                onChange={(e) => onToggleBillingMode(e.target.checked)}
-              />
-              <label className="form-check-label extra-small fw-bold text-uppercase" htmlFor="billingModeSwitch">
-                <i className="bi bi-cash-stack me-1 text-warning"></i>
-                <span className="d-none d-sm-inline">RA BILL / </span>RATES
-              </label>
+          {/* Save status pill */}
+          {(lastSavedAt || isSaving) && (
+            <div className={`ms-save-pill ${isSaving ? 'ms-save-pill--saving' : ''}`}>
+              {isSaving ? (
+                <><span className="ms-spin" /> Saving…</>
+              ) : (
+                <><i className="bi bi-cloud-check-fill" /> {formatSavedTime(lastSavedAt)}</>
+              )}
             </div>
+          )}
+        </div>
 
-            {/* SAVE BUTTON */}
-            {!readOnly && (
-              <button
-                type="button"
-                className="btn btn-sm btn-success fw-bold text-uppercase d-flex align-items-center gap-1 shadow-sm px-2 px-sm-3"
-                onClick={onSave}
-                disabled={isSaving}
-                title="Save changes to MongoDB Atlas Cloud"
-              >
-                {isSaving ? (
-                  <>
-                    <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                    <span>SAVING...</span>
-                  </>
-                ) : (
-                  <>
-                    <i className="bi bi-cloud-arrow-up-fill"></i>
-                    <span>SAVE</span>
-                  </>
-                )}
-              </button>
-            )}
+        {/* RIGHT: All action buttons */}
+        <div className="ms-tr">
 
-            {/* + Add Area */}
-            {!readOnly && (
-              <button 
-                type="button" 
-                className="btn btn-sm btn-primary fw-bold text-uppercase d-flex align-items-center gap-1 px-2 px-sm-3"
-                onClick={onAddNewArea}
-                title="Add a new room or area group"
-              >
-                <i className="bi bi-plus-circle-fill"></i>
-                <span className="d-none d-sm-inline">+ ADD AREA</span>
-                <span className="d-sm-none">+ AREA</span>
-              </button>
-            )}
+          {/* RA Bill Toggle */}
+          <label className="ms-toggle" title="Toggle RA Bill / Rate mode">
+            <input
+              type="checkbox"
+              checked={settings.billingMode}
+              disabled={readOnly}
+              onChange={(e) => onToggleBillingMode(e.target.checked)}
+            />
+            <span className="ms-track"><span className="ms-thumb" /></span>
+            <span className="ms-tlbl">
+              <i className="bi bi-cash-stack" />
+              <span className="d-none d-lg-inline"> RA BILL</span>
+            </span>
+          </label>
 
-            {/* Quick Measure / Field Mode */}
-            {!readOnly && (
-              <button 
-                type="button" 
-                className="btn btn-sm btn-outline-warning text-warning fw-bold text-uppercase d-flex align-items-center gap-1 shadow-sm px-2 px-sm-2"
-                onClick={onOpenQuickMeasure}
-                title="Open one-handed mobile field measurement mode"
-              >
-                <i className="bi bi-phone-fill"></i>
-                <span className="d-none d-sm-inline">FIELD MODE</span>
-                <span className="d-sm-none">FIELD</span>
-              </button>
-            )}
+          <div className="ms-vsep" />
 
-            {/* Print / PDF View */}
-            <button 
-              type="button" 
-              className="btn btn-sm btn-warning text-dark fw-bold text-uppercase d-flex align-items-center gap-1 px-2 px-sm-3"
-              onClick={onOpenPrintView}
-              title="Switch to Contractor Print / PDF Sheet view"
-            >
-              <i className="bi bi-printer-fill"></i>
-              <span className="d-none d-sm-inline">{isPrintView ? 'EDIT VIEW' : 'PRINT / PDF'}</span>
-              <span className="d-sm-none">{isPrintView ? 'EDIT' : 'PRINT'}</span>
+          {/* Save */}
+          {!readOnly && (
+            <button className="ms-btn ms-btn-save" onClick={onSave} disabled={isSaving} title="Save to Cloud">
+              {isSaving ? <span className="ms-spin ms-spin-sm" /> : <i className="bi bi-cloud-arrow-up-fill" />}
+              <span>SAVE</span>
             </button>
+          )}
 
-            {/* Export Excel */}
-            <button 
-              type="button" 
-              className="btn btn-sm btn-outline-light text-white fw-bold text-uppercase d-flex align-items-center gap-1 px-2"
-              onClick={onExportExcel}
-              title="Download Excel spreadsheet (.xlsx)"
-            >
-              <i className="bi bi-file-earmark-excel-fill text-success"></i>
-              <span className="d-none d-md-inline">EXCEL</span>
+          {/* Add Area */}
+          {!readOnly && (
+            <button className="ms-btn ms-btn-add" onClick={onAddNewArea} title="Add new area">
+              <i className="bi bi-plus-lg" />
+              <span className="d-none d-sm-inline">ADD AREA</span>
             </button>
+          )}
 
-            {/* Clear All */}
-            {!readOnly && (
-              <button 
-                type="button" 
-                className="btn btn-sm btn-outline-danger fw-bold text-uppercase d-flex align-items-center gap-1"
-                onClick={onResetSheet}
-                title="Clear all inputs and reset to empty/null values"
-              >
-                <i className="bi bi-trash3"></i>
-                <span className="d-none d-lg-inline">CLEAR</span>
-              </button>
-            )}
-
-            {/* Mobile Project Info Toggle */}
-            <button
-              type="button"
-              className="btn btn-sm btn-outline-secondary text-white d-md-none fw-bold text-uppercase px-2"
-              onClick={() => setShowDetails(!showDetails)}
-              title={showDetails ? 'Hide Project Details' : 'Show Project Details'}
-            >
-              <i className={`bi ${showDetails ? 'bi-chevron-up' : 'bi-chevron-down'}`}></i>
+          {/* Field Mode */}
+          {!readOnly && (
+            <button className="ms-btn ms-btn-field" onClick={onOpenQuickMeasure} title="Mobile field mode">
+              <i className="bi bi-phone-fill" />
+              <span className="d-none d-xl-inline">FIELD</span>
             </button>
-          </div>
+          )}
+
+          <div className="ms-vsep" />
+
+          {/* Print */}
+          <button className="ms-btn ms-btn-ghost" onClick={onOpenPrintView} title={isPrintView ? 'Back to Edit' : 'Print / PDF'}>
+            <i className={`bi ${isPrintView ? 'bi-pencil-square' : 'bi-printer-fill'}`} />
+            <span className="d-none d-lg-inline">{isPrintView ? 'EDIT' : 'PRINT'}</span>
+          </button>
+
+          {/* Excel */}
+          <button className="ms-btn ms-btn-ghost" onClick={onExportExcel} title="Export Excel">
+            <i className="bi bi-file-earmark-excel-fill" style={{ color: '#4ade80' }} />
+            <span className="d-none d-xl-inline">EXCEL</span>
+          </button>
+
+          {/* Clear */}
+          {!readOnly && (
+            <button className="ms-btn ms-btn-danger" onClick={onResetSheet} title="Clear all data">
+              <i className="bi bi-trash3" />
+            </button>
+          )}
+
+          <div className="ms-vsep" />
+
+          {/* Profile */}
+          <Link to="/profile" className="ms-btn ms-btn-ghost" title="Profile">
+            <i className="bi bi-person-circle" />
+            <span className="d-none d-xl-inline">{session?.name?.split(' ')[0] || 'PROFILE'}</span>
+          </Link>
+
+          {/* Projects */}
+          <Link to="/projects" className="ms-btn ms-btn-ghost" title="My Projects">
+            <i className="bi bi-grid-3x3-gap-fill" />
+          </Link>
+
+          {/* Logout */}
+          <button className="ms-btn ms-btn-logout" onClick={onLogout} title="Logout">
+            <i className="bi bi-box-arrow-right" />
+          </button>
+
+          {/* Mobile details toggle (only when metadata form shown) */}
+          {showMetadataForm && (
+            <button className="ms-btn ms-btn-ghost d-md-none" onClick={() => setShowDetails(!showDetails)}>
+              <i className={`bi bi-chevron-${showDetails ? 'up' : 'down'}`} />
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Global Metadata Form (Responsive Collapsible on Mobile) */}
-      {showDetails && (
-        <div className="container-fluid py-3 px-3 px-md-4 bg-light-subtle">
-          <div className="row g-2 g-md-3 align-items-center">
-          {/* Contractor Name */}
-          <div className="col-12 col-md-3 col-lg-2">
-            <label className="form-label text-secondary small fw-bold mb-1">
-              <i className="bi bi-building me-1"></i> Contractor / Agency
-            </label>
-            <input
-              type="text"
-              className="form-control form-control-sm fw-bold border-secondary-subtle"
-              placeholder="e.g. MTS DECOR"
-              value={headerData.contractorName || ''}
-              onChange={(e) => handleChange('contractorName', e.target.value)}
-            />
-          </div>
+      {/* ══════════════════════════════════════════════════
+          ROW 2 — SECTION TAB BAR
+      ══════════════════════════════════════════════════ */}
+      <div className="ms-tabbar">
+        <div className="ms-tabs">
 
-          {/* Project Name */}
-          <div className="col-12 col-md-3 col-lg-3">
-            <label className="form-label text-secondary small fw-bold mb-1">
-              <i className="bi bi-geo-alt-fill me-1 text-danger"></i> Project Name
-            </label>
-            <input
-              type="text"
-              className="form-control form-control-sm fw-semibold"
-              placeholder="e.g. PARK CREST"
-              value={headerData.projectName || ''}
-              onChange={(e) => handleChange('projectName', e.target.value)}
-            />
-          </div>
+          <button
+            className={`ms-tab ${activeSection === 'info' ? 'ms-tab-on ms-tab-info' : ''}`}
+            onClick={() => onChangeSection('info')}
+          >
+            <span className="ms-tnum">1</span>
+            <i className="bi bi-card-heading" />
+            <span className="ms-ttext">Project Info</span>
+          </button>
 
-          {/* Measurement Sheet No. */}
-          <div className="col-6 col-md-2 col-lg-2">
-            <label className="form-label text-secondary small fw-bold mb-1">
-              <i className="bi bi-hash me-1"></i> Sheet / RA No.
-            </label>
-            <input
-              type="text"
-              className="form-control form-control-sm"
-              placeholder="e.g. MS/PC-08/2025"
-              value={headerData.sheetNo || ''}
-              onChange={(e) => handleChange('sheetNo', e.target.value)}
-            />
-          </div>
+          <button
+            className={`ms-tab ${activeSection === 'measurements' ? 'ms-tab-on ms-tab-sheet' : ''}`}
+            onClick={() => onChangeSection('measurements')}
+          >
+            <span className="ms-tnum">2</span>
+            <i className="bi bi-grid-3x3-gap-fill" />
+            <span className="ms-ttext">Measurements</span>
+            {areasCount > 0 && <span className="ms-tcount">{areasCount}</span>}
+          </button>
 
+          <button
+            className={`ms-tab ${activeSection === 'summary' ? 'ms-tab-on ms-tab-sum' : ''}`}
+            onClick={() => onChangeSection('summary')}
+          >
+            <span className="ms-tnum">3</span>
+            <i className="bi bi-pie-chart-fill" />
+            <span className="ms-ttext">Summary</span>
+          </button>
 
-          {/* Date */}
-          <div className="col-6 col-md-2 col-lg-2">
-            <label className="form-label text-secondary small fw-bold mb-1">
-              <i className="bi bi-calendar3 me-1"></i> Date
-            </label>
-            <input
-              type="date"
-              className="form-control form-control-sm"
-              value={headerData.date || ''}
-              onChange={(e) => handleChange('date', e.target.value)}
-            />
-          </div>
+          <button
+            className={`ms-tab ms-tab-all ${activeSection === 'all' ? 'ms-tab-on ms-tab-all-on' : ''}`}
+            onClick={() => onChangeSection('all')}
+            title="View all 3 sections"
+          >
+            <i className="bi bi-layout-split" />
+            <span className="ms-ttext d-none d-sm-inline">All</span>
+          </button>
+        </div>
 
-          {/* Client / Owner Name */}
-          <div className="col-12 col-md-2 col-lg-3">
-            <label className="form-label text-secondary small fw-bold mb-1">
-              <i className="bi bi-person-check me-1"></i> Client / Employer
-            </label>
-            <input
-              type="text"
-              className="form-control form-control-sm"
-              placeholder="Client / PMC Name"
-              value={headerData.clientName || ''}
-              onChange={(e) => handleChange('clientName', e.target.value)}
-            />
-          </div>
+        <div className="ms-tabbar-end d-none d-md-flex align-items-center">
+          <span className="ms-page-pill">
+            {activeSection === 'info' && <><i className="bi bi-1-circle-fill" /> PROJECT INFO</>}
+            {activeSection === 'measurements' && <><i className="bi bi-2-circle-fill" /> MEASUREMENTS</>}
+            {activeSection === 'summary' && <><i className="bi bi-3-circle-fill" /> SUMMARY</>}
+            {activeSection === 'all' && <><i className="bi bi-layout-split" /> ALL SECTIONS</>}
+          </span>
+        </div>
+      </div>
 
-          {/* Checked and Approved By */}
-          <div className="col-12 col-md-4 col-lg-3">
-            <label className="form-label text-secondary small fw-bold mb-1">
-              <i className="bi bi-shield-check me-1 text-success"></i> Checked & Approved By
-            </label>
-            <input
-              type="text"
-              className="form-control form-control-sm"
-              placeholder="e.g. BALAN SIR"
-              value={headerData.checkedBy || ''}
-              onChange={(e) => handleChange('checkedBy', e.target.value)}
-            />
-          </div>
+      {/* ══════════════════════════════════════════════════
+          ROW 3 — METADATA FORM (Page 1 / View All only)
+      ══════════════════════════════════════════════════ */}
+      {showMetadataForm && showDetails && (
+        <div className="ms-meta-panel">
+          <div className="row g-2 g-md-3 align-items-end">
 
-          {/* Tax % if billing mode */}
-          {settings.billingMode && (
-            <div className="col-12 col-md-6 col-lg-6">
-              <div className="d-flex align-items-center gap-3 bg-white p-2 rounded border border-warning-subtle">
-                <span className="small fw-bold text-dark">
-                  <i className="bi bi-percent text-warning me-1"></i> RA Bill Tax / GST:
-                </span>
-                <div className="input-group input-group-sm w-auto">
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    className="form-control"
+            <div className="col-6 col-md-3 col-lg-2">
+              <label className="ms-flabel"><i className="bi bi-building me-1" />Contractor</label>
+              <input className="ms-finput" type="text" placeholder="e.g. MTS DECOR"
+                value={headerData.contractorName || ''}
+                onChange={(e) => handleChange('contractorName', e.target.value)}
+                readOnly={readOnly}
+              />
+            </div>
+
+            <div className="col-6 col-md-3 col-lg-3">
+              <label className="ms-flabel"><i className="bi bi-geo-alt-fill me-1" style={{color:'#f87171'}} />Project Name</label>
+              <input className="ms-finput ms-finput-bold" type="text" placeholder="e.g. PARK CREST TOWER A"
+                value={headerData.projectName || ''}
+                onChange={(e) => handleChange('projectName', e.target.value)}
+                readOnly={readOnly}
+              />
+            </div>
+
+            <div className="col-6 col-md-2 col-lg-2">
+              <label className="ms-flabel"><i className="bi bi-hash me-1" />Sheet / RA No.</label>
+              <input className="ms-finput" type="text" placeholder="MS/01/2025"
+                value={headerData.sheetNo || ''}
+                onChange={(e) => handleChange('sheetNo', e.target.value)}
+                readOnly={readOnly}
+              />
+            </div>
+
+            <div className="col-6 col-md-2 col-lg-2">
+              <label className="ms-flabel"><i className="bi bi-calendar3 me-1" />Date</label>
+              <input className="ms-finput" type="date"
+                value={headerData.date || ''}
+                onChange={(e) => handleChange('date', e.target.value)}
+                readOnly={readOnly}
+              />
+            </div>
+
+            <div className="col-6 col-md-3 col-lg-2">
+              <label className="ms-flabel"><i className="bi bi-person-check me-1" />Client / Employer</label>
+              <input className="ms-finput" type="text" placeholder="Client / PMC"
+                value={headerData.clientName || ''}
+                onChange={(e) => handleChange('clientName', e.target.value)}
+                readOnly={readOnly}
+              />
+            </div>
+
+            <div className="col-6 col-md-3 col-lg-2">
+              <label className="ms-flabel"><i className="bi bi-shield-check me-1" style={{color:'#4ade80'}} />Checked & Approved By</label>
+              <input className="ms-finput" type="text" placeholder="e.g. BALAN SIR"
+                value={headerData.checkedBy || ''}
+                onChange={(e) => handleChange('checkedBy', e.target.value)}
+                readOnly={readOnly}
+              />
+            </div>
+
+            {settings.billingMode && (
+              <div className="col-12 col-md-4 col-lg-3">
+                <label className="ms-flabel"><i className="bi bi-percent me-1" style={{color:'#fbbf24'}} />GST / Tax %</label>
+                <div className="d-flex align-items-center gap-2">
+                  <input className="ms-finput" type="number" min="0" max="100"
                     style={{ maxWidth: '80px' }}
                     value={settings.taxPercent || 0}
                     onChange={(e) => onToggleBillingMode(true, parseFloat(e.target.value) || 0)}
                   />
-                  <span className="input-group-text">%</span>
+                  <span className="ms-addon">%</span>
+                  <span className="ms-hint">applied to net</span>
                 </div>
-                <span className="text-muted small">
-                  Auto-applies to net payable amount
-                </span>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
-      </div>
       )}
     </header>
   );
