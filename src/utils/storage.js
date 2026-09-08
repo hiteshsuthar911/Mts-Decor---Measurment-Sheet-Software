@@ -86,3 +86,47 @@ export async function triggerDriveBackup() {
   return api.post('/backup/trigger');
 }
 
+// ── SAVED EXCEL WORKBOOKS & DASHBOARD EXPORTS ──
+export async function getAllExcelFiles() {
+  return api.get('/excel-files');
+}
+
+export async function getExcelFile(id) {
+  return api.get(`/excel-files/${id}`);
+}
+
+export async function saveExcelFile(data) {
+  return api.post('/excel-files', data);
+}
+
+export async function deleteExcelFile(id) {
+  return api.delete(`/excel-files/${id}`);
+}
+
+// Helper: Download .xlsx from Base64 string directly in browser
+export function downloadExcelFromBase64(fileName, base64) {
+  try {
+    const byteCharacters = atob(base64);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName.endsWith('.xlsx') ? fileName : `${fileName}.xlsx`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  } catch (err) {
+    console.error('Download base64 excel failed:', err);
+    alert('DOWNLOAD FAILED: ' + err.message);
+  }
+}
+
+

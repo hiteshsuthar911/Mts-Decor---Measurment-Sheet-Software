@@ -1,7 +1,7 @@
 import * as XLSX from 'xlsx';
 import { calculateLineItemTotal, calculateLineItemAmount, calculateAreaTotals, calculateProjectGrandTotals } from './calculations';
 
-export function exportToExcel(projectData, billingMode = false) {
+export function exportToExcel(projectData, billingMode = false, options = {}) {
   const { header, areas } = projectData;
   const grandTotals = calculateProjectGrandTotals(areas, billingMode, projectData.settings?.taxPercent || 0);
 
@@ -177,7 +177,40 @@ export function exportToExcel(projectData, billingMode = false) {
   ];
   XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary Roll-Up');
 
-  // Download file
+  // Download file if not explicitly skipped
   const fileName = `${(header.projectName || 'Measurement_Sheet').replace(/[^a-z0-9]/gi, '_')}_${header.sheetNo || 'MTS'}.xlsx`;
-  XLSX.writeFile(wb, fileName);
+  if (options?.download !== false) {
+    XLSX.writeFile(wb, fileName);
+  }
+
+  // Generate Base64 string for cloud saving and instant viewer preview
+  const base64 = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+
+  // Extract tabular rows for fast browser rendering
+  const sheetsData = wb.SheetNames.map(name => {
+    const sheet = wb.Sheets[name];
+    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+    return {
+      sheetName: name,
+      rows,
+    };
+  });
+
+  return {
+    wb,
+    fileName,
+    base64,
+    sheetsData,
+    fileSize: Math.round((base64.length * 3) / 4),
+    metadata: {
+      projectName: header.projectName || 'UNTITLED PROJECT',
+      sheetNo: header.sheetNo || 'MTS',
+      date: header.date || new Date().toISOString().split('T')[0],
+      clientName: header.clientName || '',
+      totalNetQty: grandTotals.totalNetQty,
+      totalNetAmount: grandTotals.totalNetAmount || 0,
+      grandTotalPayable: grandTotals.grandTotalPayable || 0,
+    }
+  };
 }
+

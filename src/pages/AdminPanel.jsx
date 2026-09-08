@@ -15,14 +15,20 @@ import {
   updateUserPassword,
   deleteUser,
   getBackupStatus,
-  triggerDriveBackup
+  triggerDriveBackup,
+  getAllExcelFiles,
+  deleteExcelFile,
+  downloadExcelFromBase64
 } from '../utils/storage';
+import ExcelViewerModal from '../components/ExcelViewerModal';
 
 export default function AdminPanel() {
   const navigate = useNavigate();
   const session = getSession();
   const [activeSection, setActiveSection] = useState('dashboard');
   const [projects, setProjects] = useState([]);
+  const [excelFiles, setExcelFiles] = useState([]);
+  const [selectedExcelId, setSelectedExcelId] = useState(null);
   const [stats, setStats] = useState({});
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState('');
@@ -68,11 +74,13 @@ export default function AdminPanel() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [projList, statsData] = await Promise.all([
+      const [projList, statsData, excelList] = await Promise.all([
         getAllProjects().catch(() => []),
         getProjectStats().catch(() => []),
+        getAllExcelFiles().catch(() => []),
       ]);
       setProjects(projList || []);
+      setExcelFiles(excelList || []);
       const statsMap = {};
       if (Array.isArray(statsData)) {
         statsData.forEach(item => {
@@ -182,6 +190,7 @@ export default function AdminPanel() {
   const navItems = [
     { key: 'dashboard',   label: 'DASHBOARD',           icon: 'bi-speedometer2' },
     { key: 'projects',    label: 'ALL PROJECTS',         icon: 'bi-folder2-open' },
+    { key: 'excel',       label: 'EXCEL SPREADSHEETS',   icon: 'bi-file-earmark-excel-fill' },
     { key: 'users',       label: 'USER MANAGEMENT',      icon: 'bi-people-fill'  },
     { key: 'slides',      label: 'FOUNDER SLIDES',       icon: 'bi-images'       },
     { key: 'backup',      label: 'GOOGLE DRIVE BACKUP',  icon: 'bi-google'       },
@@ -519,10 +528,10 @@ export default function AdminPanel() {
           <div>
             <div className="row g-3 mb-4">
               {[
-                { label: 'TOTAL PROJECTS',   value: projects.length,                icon: 'bi-folder2-open',    color: 'primary'   },
-                { label: 'SYSTEM USERS',     value: usersList.length || 3,          icon: 'bi-people-fill',     color: 'success'   },
-                { label: 'JAGDISH PROJECTS', value: stats['jagdish']?.count  || 0,   icon: 'bi-person-fill',     color: 'info'      },
-                { label: 'MADANLAL PROJECTS',value: stats['madanlal']?.count || 0,   icon: 'bi-person-fill',     color: 'warning'   },
+                { label: 'TOTAL PROJECTS',     value: projects.length,                icon: 'bi-folder2-open',             color: 'primary'   },
+                { label: 'SAVED EXCEL FILES',  value: excelFiles.length,              icon: 'bi-file-earmark-excel-fill',  color: 'success'   },
+                { label: 'SYSTEM USERS',       value: usersList.length || 3,          icon: 'bi-people-fill',              color: 'info'      },
+                { label: 'ACTIVE DATABASE',    value: 'ONLINE',                       icon: 'bi-cloud-check-fill',         color: 'warning'   },
               ].map((kpi, i) => (
                 <div key={i} className="col-6 col-md-3">
                   <div className={`card border-0 border-start border-${kpi.color} border-4 shadow-sm position-relative overflow-hidden h-100`}>
@@ -648,6 +657,123 @@ export default function AdminPanel() {
                   ))}
                   {projects.length === 0 && (
                     <tr><td colSpan={7} className="text-center text-muted text-uppercase py-4">NO PROJECTS FOUND</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* ── 2B. SAVED EXCEL SPREADSHEETS ── */}
+        {activeSection === 'excel' && (
+          <div className="card border-0 shadow-sm">
+            <div className="card-header bg-white border-bottom d-flex align-items-center justify-content-between py-3">
+              <span className="fw-bolder text-uppercase small text-success">
+                <i className="bi bi-file-earmark-excel-fill me-2"></i>
+                ALL SAVED EXCEL WORKBOOKS ({excelFiles.length})
+              </span>
+              <button
+                className="btn btn-sm btn-outline-secondary extra-small fw-bold text-uppercase"
+                onClick={loadData}
+              >
+                <i className="bi bi-arrow-clockwise me-1"></i> REFRESH
+              </button>
+            </div>
+            <div className="table-responsive">
+              <table className="table table-hover align-middle mb-0 extra-small">
+                <thead className="table-light text-uppercase">
+                  <tr>
+                    <th style={{ width: '40px' }}>#</th>
+                    <th>WORKBOOK FILE</th>
+                    <th>PROJECT</th>
+                    <th>SAVED BY</th>
+                    <th>DATE &amp; TIME</th>
+                    <th>SIZE</th>
+                    <th className="text-end" style={{ width: '220px' }}>ACTIONS</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {excelFiles.map((file, i) => (
+                    <tr key={file._id}>
+                      <td className="text-muted fw-bold">{i + 1}</td>
+                      <td>
+                        <div className="fw-bolder text-uppercase text-dark d-flex align-items-center gap-2">
+                          <i className="bi bi-file-earmark-excel-fill text-success fs-6"></i>
+                          <span>{file.fileName}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <span className="badge bg-light text-dark border text-uppercase">
+                          {file.projectName || 'MEASUREMENT SHEET'}
+                        </span>
+                      </td>
+                      <td>
+                        <span className="badge bg-dark text-white text-uppercase">
+                          {file.ownerName || file.ownerUsername}
+                        </span>
+                      </td>
+                      <td className="text-muted">
+                        {new Date(file.createdAt).toLocaleString('en-IN', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </td>
+                      <td className="fw-semibold text-muted">
+                        {file.fileSize ? `${(file.fileSize / 1024).toFixed(1)} KB` : '-'}
+                      </td>
+                      <td className="text-end">
+                        <div className="d-flex align-items-center justify-content-end gap-1">
+                          <button
+                            className="btn btn-success btn-sm extra-small fw-bold text-uppercase d-flex align-items-center gap-1"
+                            onClick={() => setSelectedExcelId(file._id)}
+                            title="Open in-browser Excel Spreadsheet Viewer"
+                          >
+                            <i className="bi bi-eye-fill"></i>
+                            <span>VIEW</span>
+                          </button>
+                          <button
+                            className="btn btn-outline-success btn-sm extra-small fw-bold"
+                            onClick={() => {
+                              if (file.fileBase64) {
+                                downloadExcelFromBase64(file.fileName, file.fileBase64);
+                              } else {
+                                window.open(`/api/excel-files/${file._id}/download`, '_blank');
+                              }
+                            }}
+                            title="Download .xlsx file"
+                          >
+                            <i className="bi bi-download"></i>
+                          </button>
+                          <button
+                            className="btn btn-outline-danger btn-sm extra-small"
+                            onClick={async () => {
+                              if (!confirm(`DELETE "${file.fileName}"?`)) return;
+                              try {
+                                await deleteExcelFile(file._id);
+                                setExcelFiles(prev => prev.filter(f => f._id !== file._id));
+                                showToast('EXCEL FILE DELETED');
+                              } catch (err) {
+                                alert('DELETE FAILED: ' + err.message);
+                              }
+                            }}
+                            title="Delete File"
+                          >
+                            <i className="bi bi-trash3-fill"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {excelFiles.length === 0 && (
+                    <tr>
+                      <td colSpan={7} className="text-center text-muted text-uppercase py-5">
+                        <i className="bi bi-file-earmark-excel fs-2 d-block mb-2 text-muted"></i>
+                        NO EXCEL FILES SAVED IN CLOUD YET
+                      </td>
+                    </tr>
                   )}
                 </tbody>
               </table>
@@ -1395,6 +1521,14 @@ export default function AdminPanel() {
           </div>
         )}
       </main>
+
+      {/* In-Browser Excel Viewer Modal */}
+      {selectedExcelId && (
+        <ExcelViewerModal
+          fileId={selectedExcelId}
+          onClose={() => setSelectedExcelId(null)}
+        />
+      )}
     </div>
   );
 }

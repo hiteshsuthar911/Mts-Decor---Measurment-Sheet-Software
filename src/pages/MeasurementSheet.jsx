@@ -11,7 +11,7 @@ import { getSession, logout } from '../utils/auth';
 import { calculateProjectGrandTotals, groupAreasIntoPages, calculateSheetPageTotals, formatNumber } from '../utils/calculations';
 import { exportToExcel } from '../utils/exportUtils';
 import { createEmptyArea } from '../data/sampleData';
-import { getProject, saveProject } from '../utils/storage';
+import { getProject, saveProject, saveExcelFile } from '../utils/storage';
 
 export default function MeasurementSheet() {
   const { projectId } = useParams();
@@ -329,9 +329,36 @@ export default function MeasurementSheet() {
     showToast('SHEET CLEARED');
   };
 
-  const handleExportExcel = () => {
-    exportToExcel(projectData, projectData.settings?.billingMode);
-    showToast('EXPORTED TO EXCEL (.XLSX)');
+  const handleExportExcel = async () => {
+    try {
+      showToast('EXPORTING EXCEL (.XLSX)...');
+      const exportResult = exportToExcel(projectData, projectData.settings?.billingMode);
+
+      // Auto-save generated workbook to user dashboard in database
+      if (exportResult && exportResult.base64) {
+        try {
+          await saveExcelFile({
+            projectId: projectData._id || projectId,
+            projectName: projectData.header?.projectName || 'MEASUREMENT SHEET',
+            fileName: exportResult.fileName,
+            fileBase64: exportResult.base64,
+            sheetsData: exportResult.sheetsData,
+            fileSize: exportResult.fileSize,
+            billingMode: Boolean(projectData.settings?.billingMode),
+            metadata: exportResult.metadata,
+          });
+          showToast('EXCEL EXPORTED & SAVED TO DASHBOARD!');
+        } catch (saveErr) {
+          console.warn('Auto-save excel to cloud failed:', saveErr);
+          showToast('EXPORTED TO EXCEL (.XLSX)');
+        }
+      } else {
+        showToast('EXPORTED TO EXCEL (.XLSX)');
+      }
+    } catch (err) {
+      console.error('Export excel error:', err);
+      alert('EXPORT FAILED: ' + err.message);
+    }
   };
 
   // ── Render States ───────────────────────────────────────────
