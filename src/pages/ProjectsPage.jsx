@@ -420,20 +420,20 @@ export default function ProjectsPage() {
         <div className="d-flex align-items-center gap-3">
           <div className="d-flex align-items-center gap-2">
             <img
-              src="/mtsdecor.png"
-              alt="MTS Decor"
+              src={session.company?.logo || '/mtsdecor.png'}
+              alt={session.company?.name || 'MTS Decor'}
               style={{ height: '28px', maxWidth: '120px', objectFit: 'contain' }}
               onError={(e) => { e.target.onerror = null; e.target.src = '/logo.png'; }}
             />
             <span className="fw-bolder fs-5 text-dark text-uppercase mb-0" style={{ letterSpacing: '0.5px' }}>
-              MS PRO
+              {session.company?.name || 'MS PRO'}
             </span>
           </div>
           <span
             className="d-none d-md-inline extra-small text-uppercase fw-semibold px-2 py-1 rounded"
             style={{ backgroundColor: '#f1f5f9', color: '#64748b' }}
           >
-            CIVIL &amp; INTERIOR CONTRACTOR SYSTEM
+            {session.company?.tagline || 'CIVIL & INTERIOR CONTRACTOR SYSTEM'}
           </span>
         </div>
 

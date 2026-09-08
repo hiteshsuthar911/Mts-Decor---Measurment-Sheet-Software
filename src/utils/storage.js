@@ -129,4 +129,30 @@ export function downloadExcelFromBase64(fileName, base64) {
   }
 }
 
+// ── CLIENT COMPANIES & BRANDED PORTALS ──
+export async function getAllCompanies() {
+  return api.get('/companies');
+}
+
+export async function getCompany(id) {
+  return api.get(`/companies/${id}`);
+}
+
+export async function getCompanyPortal(slug) {
+  return api.get(`/companies/portal/${slug}`);
+}
+
+export async function createCompany(data) {
+  return api.post('/companies', data);
+}
+
+export async function updateCompany(id, data) {
+  return api.put(`/companies/${id}`, data);
+}
+
+export async function deleteCompany(id) {
+  return api.delete(`/companies/${id}`);
+}
+
+
 

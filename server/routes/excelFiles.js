@@ -2,10 +2,28 @@ const router = require('express').Router();
 const auth = require('../middleware/authMiddleware');
 const ExcelFile = require('../models/ExcelFile');
 
-// GET /api/excel-files — list all saved excel files (excluding heavy base64 for fast loading)
+// GET /api/excel-files — list all saved excel files (partitioned by company)
 router.get('/', auth, async (req, res) => {
   try {
-    const files = await ExcelFile.find({})
+    let filter = {};
+    if (req.user.role === 'ADMIN') {
+      if (req.query.companySlug) {
+        filter.companySlug = req.query.companySlug;
+      } else if (req.query.companyId) {
+        filter.companyId = req.query.companyId;
+      }
+    } else {
+      const slug = req.user.companySlug || 'mts-decor';
+      filter = {
+        $or: [
+          { companySlug: slug },
+          { companyId: req.user.companyId },
+          ...(slug === 'mts-decor' ? [{ companySlug: { $exists: false } }, { companySlug: null }] : []),
+        ]
+      };
+    }
+
+    const files = await ExcelFile.find(filter)
       .select('-fileBase64')
       .sort({ createdAt: -1 });
     res.json(files);
@@ -52,6 +70,8 @@ router.post('/', auth, async (req, res) => {
       fileBase64,
       sheetsData: Array.isArray(sheetsData) ? sheetsData : [],
       fileSize: fileSize || Math.round((fileBase64.length * 3) / 4),
+      companyId: req.user.companyId || null,
+      companySlug: req.user.companySlug || 'mts-decor',
       ownerUsername: req.user.username,
       ownerName: req.user.name,
       billingMode: Boolean(billingMode),

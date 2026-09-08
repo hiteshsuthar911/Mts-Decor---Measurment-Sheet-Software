@@ -2,6 +2,7 @@ const router = require('express').Router();
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const User = require('../models/User');
+const Company = require('../models/Company');
 const logger = require('../utils/logger');
 
 // In-memory 2FA pending challenges (expires after 5 minutes)
@@ -86,6 +87,8 @@ router.post('/login-init', async (req, res, next) => {
       username: user.username,
       name: user.name,
       role: user.role,
+      companyId: user.companyId,
+      companySlug: user.companySlug || 'mts-decor',
       code,
       expiresAt: Date.now() + 5 * 60 * 1000, // 5 minutes
     });
@@ -133,8 +136,20 @@ router.post('/verify-2fa', async (req, res, next) => {
     // Code matches: remove challenge and generate JWT token
     pending2FA.delete(challengeId);
 
+    // Fetch company info
+    const company = challenge.companyId
+      ? await Company.findById(challenge.companyId)
+      : await Company.findOne({ slug: challenge.companySlug || 'mts-decor' });
+
     const token = jwt.sign(
-      { id: challenge.userId, username: challenge.username, name: challenge.name, role: challenge.role },
+      {
+        id: challenge.userId,
+        username: challenge.username,
+        name: challenge.name,
+        role: challenge.role,
+        companyId: company ? company._id : null,
+        companySlug: company ? company.slug : 'mts-decor',
+      },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -149,6 +164,20 @@ router.post('/verify-2fa', async (req, res, next) => {
         username: challenge.username,
         name: challenge.name,
         role: challenge.role,
+        companyId: company ? company._id : null,
+        companySlug: company ? company.slug : 'mts-decor',
+        company: company ? {
+          id: company._id,
+          name: company.name,
+          slug: company.slug,
+          logo: company.logo,
+          tagline: company.tagline,
+          address: company.address,
+          phone: company.phone,
+          email: company.email,
+          gstin: company.gstin,
+          subscriptionStatus: company.subscriptionStatus,
+        } : null,
       }
     });
   } catch (err) {
@@ -178,8 +207,19 @@ router.post('/login', async (req, res, next) => {
       return res.status(401).json({ message: 'INVALID USERNAME OR PASSWORD' });
     }
 
+    const company = user.companyId
+      ? await Company.findById(user.companyId)
+      : await Company.findOne({ slug: user.companySlug || 'mts-decor' });
+
     const token = jwt.sign(
-      { id: user._id, username: user.username, name: user.name, role: user.role },
+      {
+        id: user._id,
+        username: user.username,
+        name: user.name,
+        role: user.role,
+        companyId: company ? company._id : null,
+        companySlug: company ? company.slug : 'mts-decor',
+      },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -188,7 +228,26 @@ router.post('/login', async (req, res, next) => {
 
     res.json({
       token,
-      user: { id: user._id, username: user.username, name: user.name, role: user.role }
+      user: {
+        id: user._id,
+        username: user.username,
+        name: user.name,
+        role: user.role,
+        companyId: company ? company._id : null,
+        companySlug: company ? company.slug : 'mts-decor',
+        company: company ? {
+          id: company._id,
+          name: company.name,
+          slug: company.slug,
+          logo: company.logo,
+          tagline: company.tagline,
+          address: company.address,
+          phone: company.phone,
+          email: company.email,
+          gstin: company.gstin,
+          subscriptionStatus: company.subscriptionStatus,
+        } : null,
+      }
     });
   } catch (err) {
     next(err);

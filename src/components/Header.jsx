@@ -52,12 +52,12 @@ export default function Header({
           {/* Logo / Brand */}
           <Link to="/projects" className="ms-brand" title="Back to Projects">
             <img
-              src="/mtsdecor.png"
-              alt="MTS"
+              src={session.company?.logo || '/mtsdecor.png'}
+              alt={session.company?.name || 'MTS'}
               className="ms-brand-logo"
               onError={(e) => { e.target.style.display = 'none'; }}
             />
-            <span className="ms-brand-pill">MS PRO</span>
+            <span className="ms-brand-pill">{session.company?.name || 'MS PRO'}</span>
           </Link>
 
           <div className="ms-vsep" />

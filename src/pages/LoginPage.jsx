@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useParams } from 'react-router-dom';
 import { loginInit, loginVerify2FA } from '../utils/auth';
-import { getFounderSlides } from '../utils/storage';
+import { getFounderSlides, getCompanyPortal } from '../utils/storage';
 import AppStoreBadges from '../components/AppStoreBadges';
 
 const STATIC_FOUNDER_SLIDES = [
@@ -23,6 +23,21 @@ const STATIC_FOUNDER_SLIDES = [
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const { companySlug } = useParams();
+
+  // Branded Client Company Portal State
+  const [portalCompany, setPortalCompany] = useState(null);
+
+  useEffect(() => {
+    if (!companySlug) return;
+    getCompanyPortal(companySlug)
+      .then((comp) => {
+        if (comp && comp.slug) {
+          setPortalCompany(comp);
+        }
+      })
+      .catch(() => {});
+  }, [companySlug]);
 
   // Step 1: Credentials | Step 2: Two-Step 6-Digit Verification
   const [step, setStep] = useState(1);
@@ -189,12 +204,51 @@ export default function LoginPage() {
       <div className="untitled-form-side">
         {/* Top Brand Logo */}
         <div className="untitled-brand-logo mb-4">
-          <img
-            src="/mtsdecor.png"
-            alt="MTS Decor"
-            style={{ height: '44px', maxWidth: '170px', objectFit: 'contain' }}
-            onError={(e) => { e.target.onerror = null; e.target.src = '/logo.png'; }}
-          />
+          {portalCompany ? (
+            <div className="d-flex align-items-center gap-3">
+              {portalCompany.logo ? (
+                <img
+                  src={portalCompany.logo}
+                  alt={portalCompany.name}
+                  style={{ height: '48px', maxWidth: '180px', objectFit: 'contain' }}
+                  onError={(e) => { e.target.onerror = null; e.target.src = '/mtsdecor.png'; }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: '44px',
+                    height: '44px',
+                    borderRadius: '10px',
+                    background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                    color: '#fff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 900,
+                    fontSize: '20px',
+                    boxShadow: '0 4px 12px rgba(2,132,199,0.25)',
+                  }}
+                >
+                  {portalCompany.name.charAt(0).toUpperCase()}
+                </div>
+              )}
+              <div>
+                <h5 className="fw-bolder mb-0 text-dark text-uppercase tracking-wider">
+                  {portalCompany.name}
+                </h5>
+                <div className="text-muted extra-small text-uppercase fw-semibold" style={{ fontSize: '10px' }}>
+                  {portalCompany.tagline || 'Contractor Portal'}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <img
+              src="/mtsdecor.png"
+              alt="MTS Decor"
+              style={{ height: '44px', maxWidth: '170px', objectFit: 'contain' }}
+              onError={(e) => { e.target.onerror = null; e.target.src = '/logo.png'; }}
+            />
+          )}
         </div>
 
         {/* Form Container */}
@@ -209,8 +263,25 @@ export default function LoginPage() {
           {/* STEP 1: Enter Username & Password */}
           {step === 1 && (
             <>
-              <h1>Welcome back</h1>
-              <p className="subtitle">Please enter your credentials to proceed.</p>
+              {portalCompany ? (
+                <div className="mb-3">
+                  <div className="d-flex align-items-center gap-2 mb-2">
+                    <span className="badge bg-primary-subtle text-primary border border-primary-subtle extra-small text-uppercase fw-bold">
+                      <i className="bi bi-building-check me-1"></i>CLIENT PORTAL
+                    </span>
+                    <span className="badge bg-light text-secondary border extra-small text-uppercase font-monospace">
+                      /c/{portalCompany.slug}
+                    </span>
+                  </div>
+                  <h1 className="fs-3 fw-bold mb-1">Sign In to {portalCompany.name}</h1>
+                  <p className="subtitle mb-0">Enter your assigned credentials to access measurement sheets.</p>
+                </div>
+              ) : (
+                <>
+                  <h1>Welcome back</h1>
+                  <p className="subtitle">Please enter your credentials to proceed.</p>
+                </>
+              )}
 
               <form onSubmit={handleStep1Submit} autoComplete="off">
                 {/* Email / Username Input */}

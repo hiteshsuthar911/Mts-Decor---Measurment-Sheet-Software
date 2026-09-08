@@ -5,7 +5,9 @@ const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true, lowercase: true, trim: true },
   password: { type: String, required: true },
   name:     { type: String, required: true },
-  role:     { type: String, enum: ['ADMIN', 'USER'], default: 'USER' },
+  role:        { type: String, enum: ['ADMIN', 'USER'], default: 'USER' },
+  companyId:   { type: mongoose.Schema.Types.ObjectId, ref: 'Company', default: null },
+  companySlug: { type: String, default: 'mts-decor' },
 }, { timestamps: true });
 
 // Hash password before save

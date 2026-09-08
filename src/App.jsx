@@ -39,6 +39,7 @@ export default function App() {
       <Routes>
         {/* Public */}
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/c/:companySlug" element={<LoginPage />} />
         <Route path="/download" element={<DownloadPage />} />
         <Route path="/apps" element={<DownloadPage />} />
 

@@ -3,11 +3,29 @@ const auth = require('../middleware/authMiddleware');
 const Project = require('../models/Project');
 const { triggerAutoBackup } = require('../utils/googleDrive');
 
-// GET /api/projects — all projects (both users see all)
+// GET /api/projects — all projects (partitioned by company for normal users)
 router.get('/', auth, async (req, res) => {
   try {
-    const projects = await Project.find({})
-      .select('-data')          // Don't send full data in list (performance)
+    let filter = {};
+    if (req.user.role === 'ADMIN') {
+      if (req.query.companySlug) {
+        filter.companySlug = req.query.companySlug;
+      } else if (req.query.companyId) {
+        filter.companyId = req.query.companyId;
+      }
+    } else {
+      const slug = req.user.companySlug || 'mts-decor';
+      filter = {
+        $or: [
+          { companySlug: slug },
+          { companyId: req.user.companyId },
+          ...(slug === 'mts-decor' ? [{ companySlug: { $exists: false } }, { companySlug: null }] : []),
+        ]
+      };
+    }
+
+    const projects = await Project.find(filter)
+      .select('-data') // Don't send full data in list (performance)
       .sort({ updatedAt: -1 });
     res.json(projects);
   } catch (err) {
@@ -34,6 +52,8 @@ router.post('/', auth, async (req, res) => {
       name: data?.header?.projectName || 'NEW PROJECT',
       ownerUsername: req.user.username,
       ownerName: req.user.name,
+      companyId: req.user.companyId || null,
+      companySlug: req.user.companySlug || 'mts-decor',
       lastEditedBy: req.user.name,
       lastEditedAt: new Date(),
       data: data || {},

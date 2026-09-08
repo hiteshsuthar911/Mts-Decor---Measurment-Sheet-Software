@@ -129,7 +129,9 @@ router.put('/change-password', auth, async (req, res, next) => {
 // GET /api/users (List all users)
 router.get('/', auth, requireAdmin, async (req, res, next) => {
   try {
-    const users = await User.find({}, 'username name role createdAt updatedAt').sort({ createdAt: -1 });
+    const users = await User.find({}, 'username name role companyId companySlug createdAt updatedAt')
+      .populate('companyId', 'name slug')
+      .sort({ createdAt: -1 });
     res.json(users);
   } catch (err) {
     next(err);
@@ -139,7 +141,7 @@ router.get('/', auth, requireAdmin, async (req, res, next) => {
 // POST /api/users (Create new user)
 router.post('/', auth, requireAdmin, async (req, res, next) => {
   try {
-    const { username, name, password, role } = req.body;
+    const { username, name, password, role, companyId, companySlug } = req.body;
     if (!username || !password || !name) {
       return res.status(400).json({ message: 'USERNAME, NAME, AND PASSWORD ARE REQUIRED' });
     }
@@ -156,9 +158,11 @@ router.post('/', auth, requireAdmin, async (req, res, next) => {
       name: name.trim().toUpperCase(),
       password: hashedPassword,
       role: role === 'ADMIN' ? 'ADMIN' : 'USER',
+      companyId: companyId || null,
+      companySlug: companySlug || 'mts-decor',
     });
 
-    logger.logAdminAction(req.user.username, 'CREATE_USER', `Created user: "${newUser.username}" (${newUser.role})`, req);
+    logger.logAdminAction(req.user.username, 'CREATE_USER', `Created user: "${newUser.username}" (${newUser.role}) for company: "${newUser.companySlug}"`, req);
 
     res.status(201).json({
       _id: newUser._id,

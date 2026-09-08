@@ -9,6 +9,8 @@ const excelFileSchema = new mongoose.Schema({
   fileSize:      { type: Number, default: 0 },
   ownerUsername: { type: String, required: true },
   ownerName:     { type: String, required: true },
+  companyId:     { type: mongoose.Schema.Types.ObjectId, ref: 'Company', default: null },
+  companySlug:   { type: String, default: 'mts-decor' },
   billingMode:   { type: Boolean, default: false },
   metadata:      { type: mongoose.Schema.Types.Mixed, default: {} },
 }, { timestamps: true });

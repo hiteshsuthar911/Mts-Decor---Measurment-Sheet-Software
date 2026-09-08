@@ -8,6 +8,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const bcrypt = require('bcryptjs');
 const User = require('./models/User');
+const Company = require('./models/Company');
 const { 
   enforceHttps, 
   detectSuspiciousProbes, 
@@ -66,6 +67,7 @@ app.use('/api/auth', authRateLimiter);
 // ── API Routes ────────────────────────────────────────────
 app.use('/api/auth',           require('./routes/auth'));
 app.use('/api/users',          require('./routes/users'));
+app.use('/api/companies',      require('./routes/companies'));
 app.use('/api/projects',       require('./routes/projects'));
 app.use('/api/excel-files',    require('./routes/excelFiles'));
 app.use('/api/founder-slides', require('./routes/founderSlides'));
@@ -119,8 +121,30 @@ app.use((req, res, next) => {
 // ── Centralized Error Handling Middleware ─────────────────
 app.use(errorHandler);
 
-// ── Database Seed (Default System Users on first run) ─────
+// ── Database Seed (Default System Users & Master Company on first run) ─────
 async function seedUsers() {
+  // 1. Seed Master Company (MTS Decor)
+  let masterCompany = await Company.findOne({ slug: 'mts-decor' });
+  if (!masterCompany) {
+    masterCompany = await Company.create({
+      name: 'MTS DECOR',
+      slug: 'mts-decor',
+      logo: '/mtsdecor.png',
+      tagline: 'Civil & Interior Contractor Measurement System',
+      address: '',
+      phone: '',
+      email: '',
+      gstin: '',
+      subscriptionStatus: 'ACTIVE',
+      plan: 'ENTERPRISE',
+      annualFee: 0,
+      ownerName: 'HITESH SUTHAR',
+      active: true,
+    });
+    console.log('✅ Seeded master company: MTS DECOR');
+  }
+
+  // 2. Seed Default System Users
   const users = [
     { username: 'admin',    password: 'admin@123',    name: 'ADMINISTRATOR', role: 'ADMIN' },
     { username: 'jagdish',  password: 'jagdish@123',  name: 'JAGDISH',       role: 'USER'  },
@@ -135,10 +159,17 @@ async function seedUsers() {
         password: hashed,
         name: u.name,
         role: u.role,
+        companyId: masterCompany._id,
+        companySlug: masterCompany.slug,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
       console.log(`✅ Seeded user: ${u.username}`);
+    } else if (!exists.companyId) {
+      await User.updateOne({ _id: exists._id }, {
+        companyId: masterCompany._id,
+        companySlug: masterCompany.slug
+      });
     }
   }
 }
