@@ -23,6 +23,7 @@ import { BLANK_PROJECT } from '../data/sampleData';
 import AppStoreBadges from '../components/AppStoreBadges';
 import ExcelViewerModal from '../components/ExcelViewerModal';
 import PdfViewerModal from '../components/PdfViewerModal';
+import ThemeToggle from '../components/ThemeToggle';
 import AppLoader from '../components/AppLoader';
 
 export default function ProjectsPage() {
@@ -712,6 +713,8 @@ export default function ProjectsPage() {
         </div>
 
         <div className="d-flex align-items-center gap-2">
+          <ThemeToggle className="d-none d-sm-inline-flex me-1" />
+
           <Link
             to="/profile"
             className="btn btn-light btn-sm extra-small fw-bold text-uppercase d-flex align-items-center gap-2 px-3 border"

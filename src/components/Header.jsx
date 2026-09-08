@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import ThemeToggle from './ThemeToggle';
 
 export default function Header({
   headerData = {},
@@ -201,6 +202,13 @@ export default function Header({
               <i className="bi bi-trash3" />
             </button>
           )}
+
+          <div className="ms-vsep" />
+
+          {/* Theme Toggle */}
+          <div className="d-none d-sm-inline-flex align-items-center">
+            <ThemeToggle />
+          </div>
 
           <div className="ms-vsep" />
 

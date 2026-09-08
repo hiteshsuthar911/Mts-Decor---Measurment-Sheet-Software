@@ -4,6 +4,7 @@ import { loginInit, loginVerify2FA } from '../utils/auth';
 import { getFounderSlides } from '../utils/storage';
 import AppStoreBadges from '../components/AppStoreBadges';
 import UiverseLoginButton from '../components/UiverseLoginButton';
+import ThemeToggle from '../components/ThemeToggle';
 
 const STATIC_FOUNDER_SLIDES = [
   {
@@ -190,14 +191,15 @@ export default function LoginPage() {
     <div className="untitled-login-wrapper">
       {/* ── LEFT FORM SIDE ── */}
       <div className="untitled-form-side">
-        {/* Top Brand Logo */}
-        <div className="untitled-brand-logo mb-4">
+        {/* Top Brand Logo & Theme Toggle */}
+        <div className="untitled-brand-logo mb-4 d-flex justify-content-between align-items-center">
           <img
             src="/mtsdecor.png"
             alt="MTS Decor"
             style={{ height: '44px', maxWidth: '170px', objectFit: 'contain' }}
             onError={(e) => { e.target.onerror = null; e.target.src = '/logo.png'; }}
           />
+          <ThemeToggle />
         </div>
 
         {/* Form Container */}
