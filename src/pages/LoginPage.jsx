@@ -24,6 +24,11 @@ const STATIC_FOUNDER_SLIDES = [
 export default function LoginPage() {
   const navigate = useNavigate();
 
+  // Dynamic official website URL (local dev vs Render production)
+  const websiteUrl = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+    ? 'http://localhost:3003'
+    : (import.meta.env.VITE_WEBSITE_URL || 'https://mts-decor-website.onrender.com');
+
   // Step 1: Credentials | Step 2: Two-Step 6-Digit Verification
   const [step, setStep] = useState(1);
   const [emailOrUser, setEmailOrUser] = useState('');
@@ -410,7 +415,7 @@ export default function LoginPage() {
         <div className="untitled-footer-text mt-3 text-center">
           <div className="mb-2">
             <a
-              href="https://mtsdecor.com"
+              href={websiteUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="badge bg-light text-dark border border-secondary border-opacity-25 px-3 py-1.5 text-decoration-none extra-small fw-bold d-inline-flex align-items-center gap-1 shadow-xs"
@@ -552,9 +557,9 @@ export default function LoginPage() {
             {/* Bottom Footer Note (Uniform across all states) */}
             <div className="position-relative pt-3 border-top border-light border-opacity-25" style={{ zIndex: 3 }}>
               <div className="text-light opacity-75 extra-small text-uppercase d-flex flex-wrap justify-content-between align-items-center gap-2">
-                <a href="https://mtsdecor.com" target="_blank" rel="noopener noreferrer" className="text-light text-decoration-none fw-bold d-inline-flex align-items-center gap-1">
+                <a href={websiteUrl} target="_blank" rel="noopener noreferrer" className="text-light text-decoration-none fw-bold d-inline-flex align-items-center gap-1">
                   <i className="bi bi-globe2"></i>
-                  <span>MTSDECOR.COM</span>
+                  <span>OFFICIAL WEBSITE</span>
                   <i className="bi bi-arrow-up-right"></i>
                 </a>
                 <span className="fw-bold text-white">BUILT BY HITESH JAGDISH SUTHAR</span>
@@ -605,9 +610,9 @@ export default function LoginPage() {
             {/* Bottom Footer Note */}
             <div className="position-relative pt-3 border-top border-secondary border-opacity-25" style={{ zIndex: 2 }}>
               <div className="text-light opacity-75 extra-small text-uppercase d-flex flex-wrap justify-content-between align-items-center gap-2">
-                <a href="https://mtsdecor.com" target="_blank" rel="noopener noreferrer" className="text-light text-decoration-none fw-bold d-inline-flex align-items-center gap-1">
+                <a href={websiteUrl} target="_blank" rel="noopener noreferrer" className="text-light text-decoration-none fw-bold d-inline-flex align-items-center gap-1">
                   <i className="bi bi-globe2"></i>
-                  <span>MTSDECOR.COM</span>
+                  <span>OFFICIAL WEBSITE</span>
                   <i className="bi bi-arrow-up-right"></i>
                 </a>
                 <span className="fw-bold text-light opacity-75">BUILT BY HITESH JAGDISH SUTHAR</span>

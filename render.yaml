@@ -12,3 +12,17 @@ services:
         generateValue: true
       - key: NODE_ENV
         value: production
+
+  - type: web
+    name: mts-decor-website
+    env: node
+    plan: free
+    rootDir: mainline-1.0.0
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+
