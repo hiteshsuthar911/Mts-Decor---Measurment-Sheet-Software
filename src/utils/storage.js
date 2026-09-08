@@ -154,6 +154,51 @@ export function downloadExcelFromBase64(fileName, base64) {
   }
 }
 
+// ── SAVED PDF DOCUMENTS & DASHBOARD EXPORTS ──
+export async function getAllPdfFiles() {
+  return api.get('/pdf-files');
+}
+
+export async function getPdfFile(id) {
+  return api.get(`/pdf-files/${id}`);
+}
+
+export async function savePdfFile(data) {
+  return api.post('/pdf-files', data);
+}
+
+export async function deletePdfFile(id) {
+  return api.delete(`/pdf-files/${id}`);
+}
+
+// Helper: Download .pdf from Base64 string directly in browser
+export function downloadPdfFromBase64(fileName, base64) {
+  try {
+    const cleanBase64 = base64.replace(/^data:application\/pdf;base64,/, '');
+    const byteCharacters = atob(cleanBase64);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], {
+      type: 'application/pdf'
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName.endsWith('.pdf') ? fileName : `${fileName}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  } catch (err) {
+    console.error('Download base64 pdf failed:', err);
+    alert('DOWNLOAD FAILED: ' + err.message);
+  }
+}
+
+
 // ── CLIENT COMPANIES & BRANDED PORTALS ──
 export async function getAllCompanies() {
   return api.get('/companies');

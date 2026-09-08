@@ -57,8 +57,8 @@ app.use(detectSuspiciousProbes);
 
 // ── Core Middleware ───────────────────────────────────────
 app.use(cors({ origin: true, credentials: true }));
-app.use(express.json({ limit: '10mb' })); // Large limit for measurement data
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: '25mb' })); // Large limit for measurement & PDF data
+app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 
 // ── Rate Limiting (Brute-force & Burst Protection) ─────────
 app.use('/api', apiRateLimiter);
@@ -70,6 +70,7 @@ app.use('/api/users',          require('./routes/users'));
 app.use('/api/companies',      require('./routes/companies'));
 app.use('/api/projects',       require('./routes/projects'));
 app.use('/api/excel-files',    require('./routes/excelFiles'));
+app.use('/api/pdf-files',      require('./routes/pdfFiles'));
 app.use('/api/founder-slides', require('./routes/founderSlides'));
 app.use('/api/backup',         require('./routes/backup'));
 

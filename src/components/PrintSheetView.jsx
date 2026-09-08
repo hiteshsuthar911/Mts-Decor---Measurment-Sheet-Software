@@ -10,6 +10,8 @@ import {
   formatCurrency,
   roundNumber
 } from '../utils/calculations';
+import { generatePdfBase64FromPages } from '../utils/pdfExport';
+import { savePdfFile } from '../utils/storage';
 
 // ── Signature Block Component ─────────────────────────────────────────────────
 function SignatureBlock({ signatories }) {
@@ -31,6 +33,7 @@ function SignatureBlock({ signatories }) {
 
 export default function PrintSheetView({
   projectData,
+  projectId,
   billingMode,
   currencySymbol = '₹',
   onClose
@@ -51,7 +54,59 @@ export default function PrintSheetView({
   const [showSigEditor, setShowSigEditor] = useState(false);
   const [showAbstract, setShowAbstract] = useState(false);
 
+  const [savingPdf, setSavingPdf] = useState(false);
+  const [savePdfProgress, setSavePdfProgress] = useState('');
+  const [saveSuccessMsg, setSaveSuccessMsg] = useState('');
+
   const handlePrint = () => window.print();
+
+  const handleSavePdfToDashboard = async () => {
+    try {
+      setSavingPdf(true);
+      setSavePdfProgress('Preparing pages...');
+      setSaveSuccessMsg('');
+
+      const pageEls = document.querySelectorAll('.contractor-sheet-page');
+      if (!pageEls || pageEls.length === 0) {
+        throw new Error('No sheet pages found to export');
+      }
+
+      const cleanProjectName = (header.projectName || 'MEASUREMENT_SHEET').trim().replace(/[^a-zA-Z0-9_\- ]/g, '_');
+      const dateStr = new Date().toISOString().split('T')[0];
+      const fileName = `${cleanProjectName}_${dateStr}.pdf`;
+
+      const result = await generatePdfBase64FromPages(Array.from(pageEls), (cur, total) => {
+        setSavePdfProgress(`Rendering page ${cur} of ${total}...`);
+      });
+
+      setSavePdfProgress('Saving PDF to dashboard...');
+
+      await savePdfFile({
+        projectId: projectId || null,
+        projectName: header.projectName || 'MEASUREMENT SHEET',
+        fileName,
+        fileBase64: result.base64,
+        pageCount: result.pageCount,
+        fileSize: result.fileSize,
+        billingMode: Boolean(billingMode),
+        metadata: {
+          clientName: header.clientName || '',
+          location: header.location || '',
+          date: header.date || '',
+          pageCount: result.pageCount,
+        }
+      });
+
+      setSaveSuccessMsg(`PDF successfully saved to dashboard! (${(result.fileSize / 1024).toFixed(1)} KB)`);
+      setTimeout(() => setSaveSuccessMsg(''), 6000);
+    } catch (err) {
+      console.error('Failed to save PDF to dashboard:', err);
+      alert('FAILED TO SAVE PDF: ' + (err.message || 'Unknown error'));
+    } finally {
+      setSavingPdf(false);
+      setSavePdfProgress('');
+    }
+  };
 
   const formatDateDisplay = (dateStr) => {
     if (!dateStr) return '';
@@ -114,11 +169,41 @@ export default function PrintSheetView({
           <button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => setShowSigEditor(v => !v)}>
             <i className="bi bi-pen me-1"></i> Signatures
           </button>
+          <button
+            type="button"
+            className="btn btn-danger btn-sm px-3 fw-bold shadow-sm text-uppercase d-flex align-items-center gap-1"
+            onClick={handleSavePdfToDashboard}
+            disabled={savingPdf}
+            title="Render and save clean PDF document to user dashboard"
+          >
+            {savingPdf ? (
+              <>
+                <span className="spinner-border spinner-border-sm" role="status"></span>
+                <span>{savePdfProgress || 'SAVING PDF...'}</span>
+              </>
+            ) : (
+              <>
+                <i className="bi bi-file-earmark-pdf-fill"></i>
+                <span>SAVE PDF TO DASHBOARD</span>
+              </>
+            )}
+          </button>
           <button type="button" className="btn btn-primary btn-sm px-3 fw-bold shadow-sm" onClick={handlePrint}>
-            <i className="bi bi-printer-fill me-1"></i> Print / Save as PDF
+            <i className="bi bi-printer-fill me-1"></i> Print / Browser PDF
           </button>
         </div>
       </div>
+
+      {/* SAVE PDF SUCCESS NOTIFICATION */}
+      {saveSuccessMsg && (
+        <div className="no-print alert alert-success d-flex align-items-center justify-content-between py-2 px-3 mb-3 shadow-sm border-0">
+          <div className="d-flex align-items-center gap-2">
+            <i className="bi bi-check-circle-fill fs-5 text-success"></i>
+            <span className="fw-bold extra-small text-uppercase">{saveSuccessMsg}</span>
+          </div>
+          <button type="button" className="btn-close btn-sm" onClick={() => setSaveSuccessMsg('')}></button>
+        </div>
+      )}
 
       {/* SIGNATURE EDITOR */}
       {showSigEditor && (

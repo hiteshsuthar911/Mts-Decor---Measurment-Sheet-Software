@@ -25,6 +25,16 @@ function buildCompanyFilter(user, query = {}) {
   return filter;
 }
 
+// Helper to verify if user can access a project
+function canUserAccessProject(user, project) {
+  if (user.role === 'ADMIN') return true;
+  const userSlug = user.companySlug || 'mts-decor';
+  const projSlug = project.companySlug || 'mts-decor';
+  if (projSlug === userSlug) return true;
+  if (user.companyId && project.companyId && String(user.companyId) === String(project.companyId)) return true;
+  return false;
+}
+
 // GET /api/projects — all active projects (excluding soft-deleted)
 router.get('/', auth, async (req, res) => {
   try {
@@ -81,6 +91,9 @@ router.get('/:id', auth, async (req, res) => {
   try {
     const project = await Project.findById(req.params.id);
     if (!project) return res.status(404).json({ message: 'PROJECT NOT FOUND' });
+    if (!canUserAccessProject(req.user, project)) {
+      return res.status(403).json({ message: 'FORBIDDEN: CANNOT ACCESS PROJECT FROM ANOTHER COMPANY' });
+    }
     res.json(project);
   } catch (err) {
     res.status(500).json({ message: 'SERVER ERROR' });
@@ -113,19 +126,20 @@ router.post('/', auth, async (req, res) => {
 // PUT /api/projects/:id — update project data
 router.put('/:id', auth, async (req, res) => {
   try {
+    const existing = await Project.findById(req.params.id);
+    if (!existing) return res.status(404).json({ message: 'PROJECT NOT FOUND' });
+    if (!canUserAccessProject(req.user, existing)) {
+      return res.status(403).json({ message: 'FORBIDDEN: CANNOT ACCESS PROJECT FROM ANOTHER COMPANY' });
+    }
+
     const { data } = req.body;
-    const project = await Project.findByIdAndUpdate(
-      req.params.id,
-      {
-        name: data?.header?.projectName || 'UNTITLED PROJECT',
-        lastEditedBy: req.user.name,
-        lastEditedAt: new Date(),
-        data,
-      },
-      { returnDocument: 'after' }
-    );
-    if (!project) return res.status(404).json({ message: 'PROJECT NOT FOUND' });
-    res.json(project);
+    existing.name = data?.header?.projectName || 'UNTITLED PROJECT';
+    existing.lastEditedBy = req.user.name;
+    existing.lastEditedAt = new Date();
+    existing.data = data;
+    await existing.save();
+
+    res.json(existing);
     triggerAutoBackup();
   } catch (err) {
     res.status(500).json({ message: 'SERVER ERROR' });
@@ -137,6 +151,9 @@ router.post('/:id/duplicate', auth, async (req, res) => {
   try {
     const original = await Project.findById(req.params.id);
     if (!original) return res.status(404).json({ message: 'PROJECT NOT FOUND' });
+    if (!canUserAccessProject(req.user, original)) {
+      return res.status(403).json({ message: 'FORBIDDEN: CANNOT ACCESS PROJECT FROM ANOTHER COMPANY' });
+    }
 
     // Deep clone original data
     const clonedData = original.data ? JSON.parse(JSON.stringify(original.data)) : {};
@@ -174,6 +191,9 @@ router.post('/:id/restore', auth, async (req, res) => {
   try {
     const project = await Project.findById(req.params.id);
     if (!project) return res.status(404).json({ message: 'PROJECT NOT FOUND' });
+    if (!canUserAccessProject(req.user, project)) {
+      return res.status(403).json({ message: 'FORBIDDEN: CANNOT ACCESS PROJECT FROM ANOTHER COMPANY' });
+    }
     if (project.ownerUsername !== req.user.username && req.user.role !== 'ADMIN')
       return res.status(403).json({ message: 'FORBIDDEN: ONLY OWNER OR ADMIN CAN RESTORE' });
 
@@ -194,6 +214,9 @@ router.delete('/:id/permanent', auth, async (req, res) => {
   try {
     const project = await Project.findById(req.params.id);
     if (!project) return res.status(404).json({ message: 'PROJECT NOT FOUND' });
+    if (!canUserAccessProject(req.user, project)) {
+      return res.status(403).json({ message: 'FORBIDDEN: CANNOT ACCESS PROJECT FROM ANOTHER COMPANY' });
+    }
     if (project.ownerUsername !== req.user.username && req.user.role !== 'ADMIN')
       return res.status(403).json({ message: 'FORBIDDEN: ONLY OWNER OR ADMIN CAN DELETE' });
 
@@ -210,6 +233,9 @@ router.delete('/:id', auth, async (req, res) => {
   try {
     const project = await Project.findById(req.params.id);
     if (!project) return res.status(404).json({ message: 'PROJECT NOT FOUND' });
+    if (!canUserAccessProject(req.user, project)) {
+      return res.status(403).json({ message: 'FORBIDDEN: CANNOT ACCESS PROJECT FROM ANOTHER COMPANY' });
+    }
     if (project.ownerUsername !== req.user.username && req.user.role !== 'ADMIN')
       return res.status(403).json({ message: 'FORBIDDEN: ONLY OWNER OR ADMIN CAN DELETE' });
 

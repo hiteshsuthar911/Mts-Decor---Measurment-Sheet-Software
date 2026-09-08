@@ -66,13 +66,13 @@ export default function App() {
           }
         />
 
-        {/* USER only — Project picker */}
+        {/* Project picker — Accessible to all logged-in users & admins */}
         <Route
           path="/projects"
           element={
-            <RoleRoute allowedRole="USER">
+            <AuthRoute>
               <ProjectsPage />
-            </RoleRoute>
+            </AuthRoute>
           }
         />
 

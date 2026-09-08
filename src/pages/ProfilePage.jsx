@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { getSession, updateSession, logout } from '../utils/auth';
 import { getUserProfile, updateUserProfile, changeUserPassword } from '../utils/storage';
+import AppLoader from '../components/AppLoader';
 
 export default function ProfilePage() {
   const navigate = useNavigate();
@@ -199,8 +200,7 @@ export default function ProfilePage() {
       <main className="container-fluid container-xl py-4 px-3 px-md-4 flex-grow-1">
         {loading && !profile ? (
           <div className="text-center py-5">
-            <div className="spinner-border text-dark mb-3" role="status"></div>
-            <div className="text-muted text-uppercase fw-semibold small">LOADING USER PROFILE...</div>
+            <AppLoader text="LOADING USER PROFILE..." />
           </div>
         ) : (
           <>

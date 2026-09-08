@@ -14,18 +14,23 @@ import {
   getAllExcelFiles,
   deleteExcelFile,
   saveExcelFile,
-  downloadExcelFromBase64
+  downloadExcelFromBase64,
+  getAllPdfFiles,
+  deletePdfFile,
+  downloadPdfFromBase64
 } from '../utils/storage';
 import { BLANK_PROJECT } from '../data/sampleData';
 import AppStoreBadges from '../components/AppStoreBadges';
 import ExcelViewerModal from '../components/ExcelViewerModal';
+import PdfViewerModal from '../components/PdfViewerModal';
+import AppLoader from '../components/AppLoader';
 
 export default function ProjectsPage() {
   const navigate = useNavigate();
   const session = getSession();
   const fileInputRef = useRef(null);
 
-  // Active Tab: 'projects' or 'excel'
+  // Active Tab: 'projects', 'excel', or 'pdf'
   const [activeTab, setActiveTab] = useState('projects');
 
   // Projects State
@@ -47,11 +52,17 @@ export default function ProjectsPage() {
   const [viewerInitialFile, setViewerInitialFile] = useState(null);
   const [uploadingExcel, setUploadingExcel] = useState(false);
 
+  // PDF Files State
+  const [pdfFiles, setPdfFiles] = useState([]);
+  const [loadingPdf, setLoadingPdf] = useState(false);
+  const [selectedPdfId, setSelectedPdfId] = useState(null);
+  const [pdfViewerInitialFile, setPdfViewerInitialFile] = useState(null);
+
   useEffect(() => {
     if (!session) { navigate('/login'); return; }
-    if (session.role === 'ADMIN') { navigate('/admin'); return; }
     fetchProjects();
     fetchExcelFiles();
+    fetchPdfFiles();
     fetchDeletedProjects();
   }, []);
 
@@ -76,6 +87,18 @@ export default function ProjectsPage() {
       console.warn('Failed to load excel files:', err);
     } finally {
       setLoadingExcel(false);
+    }
+  };
+
+  const fetchPdfFiles = async () => {
+    try {
+      setLoadingPdf(true);
+      const data = await getAllPdfFiles();
+      setPdfFiles(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.warn('Failed to load pdf files:', err);
+    } finally {
+      setLoadingPdf(false);
     }
   };
 
@@ -262,6 +285,51 @@ export default function ProjectsPage() {
     }
   };
 
+  const handleDeletePdf = async (id, ownerUsername) => {
+    if (ownerUsername !== session.username && session.role !== 'ADMIN') {
+      alert('YOU CAN ONLY DELETE YOUR OWN PDF FILES.');
+      return;
+    }
+    if (!confirm('DELETE THIS SAVED PDF DOCUMENT?')) return;
+    try {
+      await deletePdfFile(id);
+      setPdfFiles(prev => prev.filter(f => f._id !== id));
+      showToast('PDF DOCUMENT DELETED');
+    } catch (err) {
+      alert('DELETE FAILED: ' + err.message);
+    }
+  };
+
+  const handleDownloadPdfCard = async (pdfDoc) => {
+    try {
+      if (pdfDoc.fileBase64) {
+        downloadPdfFromBase64(pdfDoc.fileName, pdfDoc.fileBase64);
+        showToast('DOWNLOADING ' + pdfDoc.fileName);
+      } else {
+        showToast('FETCHING PDF DOCUMENT...');
+        const res = await fetch(`/api/pdf-files/${pdfDoc._id}/download`, {
+          headers: {
+            Authorization: `Bearer ${JSON.parse(localStorage.getItem('MS_PRO_AUTH_V1') || '{}').token || ''}`
+          }
+        });
+        if (!res.ok) throw new Error('DOWNLOAD FAILED');
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = pdfDoc.fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('DOWNLOAD COMPLETE');
+      }
+    } catch (err) {
+      console.error('Download PDF error:', err);
+      alert('DOWNLOAD FAILED: ' + err.message);
+    }
+  };
+
   // Filtered lists
   const safeProjects = Array.isArray(projects) ? projects : [];
   const filteredProjects = safeProjects.filter(p =>
@@ -274,6 +342,14 @@ export default function ProjectsPage() {
 
   const safeExcelFiles = Array.isArray(excelFiles) ? excelFiles : [];
   const filteredExcelFiles = safeExcelFiles.filter(f =>
+    !search ||
+    (f.fileName || '').toUpperCase().includes(search.toUpperCase()) ||
+    (f.projectName || '').toUpperCase().includes(search.toUpperCase()) ||
+    (f.ownerName || '').toUpperCase().includes(search.toUpperCase())
+  );
+
+  const safePdfFiles = Array.isArray(pdfFiles) ? pdfFiles : [];
+  const filteredPdfFiles = safePdfFiles.filter(f =>
     !search ||
     (f.fileName || '').toUpperCase().includes(search.toUpperCase()) ||
     (f.projectName || '').toUpperCase().includes(search.toUpperCase()) ||
@@ -479,7 +555,113 @@ export default function ProjectsPage() {
     );
   };
 
-  if (!session || session.role === 'ADMIN') return null;
+  const PdfCard = ({ file }) => {
+    const isOwn = file.ownerUsername === session?.username;
+    return (
+      <div
+        className="card h-100 bg-white border shadow-sm"
+        style={{
+          borderRadius: '12px',
+          borderColor: '#e2e8f0',
+          transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+        }}
+      >
+        <div
+          className="px-3 py-2 border-bottom d-flex align-items-center justify-content-between"
+          style={{
+            backgroundColor: '#fef2f2',
+            borderTopLeftRadius: '12px',
+            borderTopRightRadius: '12px',
+            borderBottomColor: '#fee2e2',
+          }}
+        >
+          <span className="fw-bolder text-uppercase extra-small text-danger d-flex align-items-center gap-1">
+            <i className="bi bi-file-earmark-pdf-fill"></i> PDF DOCUMENT
+          </span>
+          {file.billingMode && (
+            <span className="badge bg-warning text-dark extra-small fw-bold">
+              BILLING
+            </span>
+          )}
+        </div>
+
+        <div className="card-body p-3 d-flex flex-column justify-content-between">
+          <div>
+            <h6
+              className="fw-bolder text-dark text-uppercase mb-1 text-truncate"
+              title={file.fileName}
+              style={{ fontSize: '14px' }}
+            >
+              {file.fileName}
+            </h6>
+
+            <div className="text-muted extra-small text-uppercase mb-2 text-truncate">
+              <i className="bi bi-folder2 text-danger me-1"></i>
+              PROJECT: <strong className="text-dark">{file.projectName || 'MEASUREMENT SHEET'}</strong>
+            </div>
+
+            <div className="d-flex flex-wrap gap-1 mb-3">
+              <span className="badge bg-light text-dark border extra-small">
+                <i className="bi bi-calendar3 me-1"></i>
+                {new Date(file.createdAt).toLocaleDateString('en-IN', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric'
+                })}
+              </span>
+              {file.pageCount && (
+                <span className="badge bg-light text-dark border extra-small">
+                  <i className="bi bi-files me-1"></i>
+                  {file.pageCount} PAGE{file.pageCount > 1 ? 'S' : ''}
+                </span>
+              )}
+              <span className="badge bg-light text-dark border extra-small">
+                <i className="bi bi-hdd me-1"></i>
+                {formatFileSize(file.fileSize)}
+              </span>
+              <span className="badge bg-light text-dark border extra-small">
+                <i className="bi bi-person me-1"></i>
+                {(file.ownerName || 'USER').toUpperCase()}
+              </span>
+            </div>
+          </div>
+
+          <div className="d-flex gap-2 pt-2 border-top" style={{ borderColor: '#f1f5f9' }}>
+            <button
+              className="btn btn-danger btn-sm fw-bold text-uppercase flex-grow-1 d-flex align-items-center justify-content-center gap-1 shadow-sm"
+              style={{ borderRadius: '8px', padding: '7px 12px', fontSize: '12px' }}
+              onClick={() => setSelectedPdfId(file._id)}
+            >
+              <i className="bi bi-eye-fill"></i>
+              <span>VIEW PDF</span>
+            </button>
+
+            <button
+              className="btn btn-outline-danger btn-sm fw-bold px-2"
+              style={{ borderRadius: '8px' }}
+              title="Download .pdf Document"
+              onClick={() => handleDownloadPdfCard(file)}
+            >
+              <i className="bi bi-download"></i>
+            </button>
+
+            {(isOwn || session.role === 'ADMIN') && (
+              <button
+                className="btn btn-outline-secondary btn-sm px-2"
+                style={{ borderRadius: '8px' }}
+                title="Delete PDF Document"
+                onClick={() => handleDeletePdf(file._id, file.ownerUsername)}
+              >
+                <i className="bi bi-trash3"></i>
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  if (!session) return null;
 
   return (
     <div className="min-vh-100 d-flex flex-column" style={{ backgroundColor: '#f8fafc' }}>
@@ -569,24 +751,36 @@ export default function ProjectsPage() {
         <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
           <div>
             <h5 className="fw-bolder text-dark text-uppercase mb-1" style={{ letterSpacing: '0.5px' }}>
-              {activeTab === 'projects' ? (
+              {activeTab === 'projects' && (
                 <span>
                   <i className="bi bi-folder2-open text-primary me-2"></i>PROJECT WORKSPACE
                 </span>
-              ) : (
+              )}
+              {activeTab === 'excel' && (
                 <span>
                   <i className="bi bi-file-earmark-excel-fill text-success me-2"></i>SAVED EXCEL SPREADSHEETS
                 </span>
               )}
+              {activeTab === 'pdf' && (
+                <span>
+                  <i className="bi bi-file-earmark-pdf-fill text-danger me-2"></i>SAVED PDF DOCUMENTS
+                </span>
+              )}
             </h5>
             <div className="text-muted extra-small text-uppercase">
-              {activeTab === 'projects' ? (
+              {activeTab === 'projects' && (
                 <>
                   {safeProjects.length} PROJECT{safeProjects.length !== 1 ? 'S' : ''} TOTAL &bull; LOGGED IN AS <strong className="text-dark">{session.name}</strong>
                 </>
-              ) : (
+              )}
+              {activeTab === 'excel' && (
                 <>
                   {safeExcelFiles.length} EXCEL WORKBOOK{safeExcelFiles.length !== 1 ? 'S' : ''} SAVED &bull; OPEN IN BROWSER OR DOWNLOAD ANYTIME
+                </>
+              )}
+              {activeTab === 'pdf' && (
+                <>
+                  {safePdfFiles.length} PDF DOCUMENT{safePdfFiles.length !== 1 ? 'S' : ''} SAVED &bull; HIGH-RESOLUTION A4 PRINTS ARCHIVED TO CLOUD
                 </>
               )}
             </div>
@@ -602,7 +796,7 @@ export default function ProjectsPage() {
                 type="text"
                 className="form-control border-start-0 text-uppercase fw-semibold"
                 style={{ borderColor: '#cbd5e1' }}
-                placeholder={activeTab === 'projects' ? 'SEARCH PROJECTS...' : 'SEARCH SPREADSHEETS...'}
+                placeholder={activeTab === 'projects' ? 'SEARCH PROJECTS...' : activeTab === 'excel' ? 'SEARCH SPREADSHEETS...' : 'SEARCH PDF DOCUMENTS...'}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
@@ -682,6 +876,35 @@ export default function ProjectsPage() {
                 {safeExcelFiles.length}
               </span>
             </button>
+
+            <button
+              onClick={() => setActiveTab('pdf')}
+              className="btn btn-sm d-flex align-items-center gap-2 fw-bold text-uppercase"
+              style={{
+                backgroundColor: activeTab === 'pdf' ? '#ffffff' : 'transparent',
+                color: activeTab === 'pdf' ? '#0f172a' : '#64748b',
+                boxShadow: activeTab === 'pdf' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                borderRadius: '6px',
+                padding: '6px 16px',
+                fontSize: '12px',
+                border: 'none',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <i className="bi bi-file-earmark-pdf-fill text-danger"></i>
+              <span>SAVED PDF DOCUMENTS</span>
+              <span
+                className="badge"
+                style={{
+                  backgroundColor: activeTab === 'pdf' ? '#fef2f2' : '#e2e8f0',
+                  color: activeTab === 'pdf' ? '#b91c1c' : '#475569',
+                  fontSize: '10px',
+                  padding: '2px 6px',
+                }}
+              >
+                {safePdfFiles.length}
+              </span>
+            </button>
           </div>
 
           {/* Action buttons on the right */}
@@ -739,8 +962,7 @@ export default function ProjectsPage() {
           <>
             {loading && (
               <div className="text-center py-5">
-                <div className="spinner-border text-primary mb-3" role="status"></div>
-                <div className="text-muted text-uppercase fw-semibold small">LOADING PROJECTS FROM CLOUD...</div>
+                <AppLoader text="LOADING PROJECTS FROM CLOUD..." />
               </div>
             )}
 
@@ -789,16 +1011,17 @@ export default function ProjectsPage() {
                             borderRadius: '12px',
                             cursor: 'pointer',
                             minHeight: '170px',
-                            border: '2px dashed #cbd5e1',
+                            border: '2px dashed #93c5fd',
+                            backgroundColor: '#f8fafc',
                             transition: 'all 0.2s ease',
                           }}
                           onMouseEnter={(e) => {
-                            e.currentTarget.style.borderColor = '#3b82f6';
+                            e.currentTarget.style.borderColor = '#2563eb';
                             e.currentTarget.style.backgroundColor = '#eff6ff';
                           }}
                           onMouseLeave={(e) => {
-                            e.currentTarget.style.borderColor = '#cbd5e1';
-                            e.currentTarget.style.backgroundColor = '#ffffff';
+                            e.currentTarget.style.borderColor = '#93c5fd';
+                            e.currentTarget.style.backgroundColor = '#f8fafc';
                           }}
                           onClick={handleNewProject}
                         >
@@ -817,8 +1040,8 @@ export default function ProjectsPage() {
                           >
                             <i className="bi bi-plus-lg fs-5"></i>
                           </div>
-                          <div className="fw-bold text-dark text-uppercase small">CREATE NEW PROJECT</div>
-                          <div className="text-muted extra-small text-uppercase mt-1">Start fresh measurement sheet</div>
+                          <div className="fw-bold text-primary text-uppercase small">START NEW PROJECT</div>
+                          <div className="text-muted extra-small text-uppercase mt-1">Empty Measurement Sheet</div>
                         </div>
                       </div>
                     </div>
@@ -829,10 +1052,9 @@ export default function ProjectsPage() {
                   <div className="mb-4">
                     <div className="d-flex align-items-center justify-content-between mb-3">
                       <h6 className="fw-bolder text-uppercase text-dark mb-0 d-flex align-items-center gap-2">
-                        <span className="badge bg-white text-warning-emphasis border border-warning-subtle px-3 py-2 shadow-2xs">
-                          OTHER USERS' PROJECTS ({otherProjects.length})
+                        <span className="badge bg-white text-secondary border px-3 py-2 shadow-2xs">
+                          OTHER TEAM MEMBERS ({otherProjects.length})
                         </span>
-                        <span className="extra-small text-muted fw-normal">— CREDENTIAL VERIFICATION REQUIRED TO EDIT</span>
                       </h6>
                     </div>
 
@@ -855,8 +1077,7 @@ export default function ProjectsPage() {
           <>
             {loadingExcel && (
               <div className="text-center py-5">
-                <div className="spinner-border text-success mb-3" role="status"></div>
-                <div className="text-muted text-uppercase fw-semibold small">LOADING SAVED EXCEL WORKBOOKS...</div>
+                <AppLoader text="LOADING SAVED EXCEL WORKBOOKS..." />
               </div>
             )}
 
@@ -948,6 +1169,61 @@ export default function ProjectsPage() {
                       <div className="text-muted extra-small text-uppercase mt-1">Add spreadsheet to cloud</div>
                     </div>
                   </div>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ── TAB 3: SAVED PDF DOCUMENTS VIEW ── */}
+        {activeTab === 'pdf' && (
+          <>
+            {loadingPdf && (
+              <div className="text-center py-5">
+                <AppLoader text="LOADING SAVED PDF DOCUMENTS..." />
+              </div>
+            )}
+
+            {!loadingPdf && safePdfFiles.length === 0 && (
+              <div className="text-center py-5 my-5 bg-white border rounded-3 shadow-sm p-4">
+                <div className="display-1 mb-3 text-danger">📄</div>
+                <h5 className="fw-bolder text-uppercase text-dark">NO PDF DOCUMENTS SAVED YET</h5>
+                <p className="text-muted text-uppercase small mx-auto" style={{ maxWidth: '520px' }}>
+                  When you open any project sheet, click <strong>PRINT / BROWSER PDF</strong>, and choose <strong>SAVE PDF TO DASHBOARD</strong>, the rendered multi-page PDF will be permanently saved here in your dashboard for quick viewing, printing, and downloading.
+                </p>
+                <div className="d-flex justify-content-center gap-2 mt-3">
+                  <button
+                    className="btn btn-primary fw-bold text-uppercase px-3 shadow-sm"
+                    onClick={() => setActiveTab('projects')}
+                  >
+                    <i className="bi bi-folder2-open me-1"></i> GO TO PROJECTS
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {!loadingPdf && filteredPdfFiles.length > 0 && (
+              <div>
+                <div className="d-flex align-items-center justify-content-between mb-3">
+                  <h6 className="fw-bolder text-uppercase text-dark mb-0">
+                    <span className="badge bg-white text-danger border border-danger-subtle px-3 py-2 shadow-2xs">
+                      SAVED PDF DOCUMENTS ({filteredPdfFiles.length})
+                    </span>
+                  </h6>
+                  <button
+                    className="btn btn-sm btn-outline-secondary extra-small fw-bold text-uppercase bg-white"
+                    onClick={fetchPdfFiles}
+                  >
+                    <i className="bi bi-arrow-clockwise me-1"></i> REFRESH
+                  </button>
+                </div>
+
+                <div className="row g-3">
+                  {filteredPdfFiles.map(file => (
+                    <div key={file._id} className="col-12 col-sm-6 col-lg-4 col-xl-3">
+                      <PdfCard file={file} />
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
@@ -1126,6 +1402,18 @@ export default function ProjectsPage() {
           onClose={() => {
             setSelectedExcelId(null);
             setViewerInitialFile(null);
+          }}
+        />
+      )}
+
+      {/* ── IN-BROWSER PDF VIEWER MODAL ── */}
+      {(selectedPdfId || pdfViewerInitialFile) && (
+        <PdfViewerModal
+          fileId={selectedPdfId}
+          initialFile={pdfViewerInitialFile}
+          onClose={() => {
+            setSelectedPdfId(null);
+            setPdfViewerInitialFile(null);
           }}
         />
       )}

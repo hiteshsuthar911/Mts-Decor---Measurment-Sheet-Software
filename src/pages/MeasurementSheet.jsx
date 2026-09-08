@@ -12,6 +12,7 @@ import { calculateProjectGrandTotals, groupAreasIntoPages, calculateSheetPageTot
 import { exportToExcel } from '../utils/exportUtils';
 import { createEmptyArea } from '../data/sampleData';
 import { getProject, saveProject, duplicateProject, saveExcelFile } from '../utils/storage';
+import AppLoader from '../components/AppLoader';
 
 export default function MeasurementSheet() {
   const { projectId } = useParams();
@@ -477,9 +478,8 @@ export default function MeasurementSheet() {
   if (!session) return null;
 
   if (pageLoading) return (
-    <div className="d-flex flex-column align-items-center justify-content-center min-vh-100">
-      <div className="spinner-border text-dark mb-3" role="status"></div>
-      <div className="text-muted text-uppercase fw-semibold small">LOADING PROJECT FROM CLOUD...</div>
+    <div className="d-flex flex-column align-items-center justify-content-center min-vh-100 bg-light">
+      <AppLoader text="LOADING PROJECT..." subtext="FETCHING DATA FROM CLOUD" />
     </div>
   );
 
@@ -511,8 +511,8 @@ export default function MeasurementSheet() {
   );
 
   if (!projectData) return (
-    <div className="d-flex align-items-center justify-content-center min-vh-100">
-      <div className="spinner-border text-dark" role="status"></div>
+    <div className="d-flex align-items-center justify-content-center min-vh-100 bg-light">
+      <AppLoader text="INITIALIZING PROJECT..." />
     </div>
   );
 
@@ -605,6 +605,7 @@ export default function MeasurementSheet() {
       {isPrintView ? (
         <PrintSheetView
           projectData={projectData}
+          projectId={projectId}
           billingMode={projectData.settings?.billingMode}
           currencySymbol={projectData.settings?.currencySymbol}
           onClose={() => setIsPrintView(false)}
