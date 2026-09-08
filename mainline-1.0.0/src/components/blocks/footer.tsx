@@ -6,11 +6,16 @@ import { Button } from "@/components/ui/button";
 
 export function Footer() {
   const navigation = [
-    { name: "Product", href: "/#feature-modern-teams" },
+    { name: "Features", href: "/#features" },
     { name: "About Us", href: "/about" },
     { name: "Pricing", href: "/pricing" },
     { name: "FAQ", href: "/faq" },
     { name: "Contact", href: "/contact" },
+    {
+      name: "Software App (Render)",
+      href: "https://mts-decor-measurment-sheet-software.onrender.com",
+      external: true,
+    },
   ];
 
   const social = [
@@ -21,7 +26,7 @@ export function Footer() {
   const legal = [{ name: "Privacy Policy", href: "/privacy" }];
 
   return (
-    <footer className="flex flex-col items-center gap-14 pt-28 lg:pt-32">
+    <footer className="flex flex-col items-center gap-12 pt-28 lg:pt-32">
       <div className="container space-y-3 text-center">
         <h2 className="text-2xl font-bold tracking-tight md:text-4xl lg:text-5xl text-foreground">
           Ready to Modernize Your Site Measurements?
@@ -29,25 +34,60 @@ export function Footer() {
         <p className="text-muted-foreground mx-auto max-w-xl leading-relaxed text-balance">
           MTS DECOR is the fit-for-purpose software built for civil contractors and interior designers to ensure zero calculation errors and effortless client billing.
         </p>
-        <div className="pt-2">
+        <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
           <Button size="lg" className="font-semibold shadow-md" asChild>
             <Link href="/contact">
               Schedule Free Site Demo
             </Link>
           </Button>
+          <Button size="lg" variant="outline" className="font-semibold shadow-md border-primary/30 text-primary gap-2" asChild>
+            <a
+              href="https://mts-decor-measurment-sheet-software.onrender.com"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <span>Launch Software App</span>
+              <ArrowUpRight className="size-4" />
+            </a>
+          </Button>
         </div>
       </div>
 
       <nav className="container flex flex-col items-center gap-4">
+        {/* Render Live Portal Pill */}
+        <div className="pb-1">
+          <a
+            href="https://mts-decor-measurment-sheet-software.onrender.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 hover:bg-primary/20 text-primary px-4 py-1.5 text-xs font-bold transition-all shadow-xs group"
+          >
+            <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>Live Software Portal on Render</span>
+            <ArrowUpRight className="size-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+          </a>
+        </div>
+
         <ul className="flex flex-wrap items-center justify-center gap-6">
           {navigation.map((item) => (
             <li key={item.name}>
-              <Link
-                href={item.href}
-                className="font-medium transition-opacity hover:opacity-75"
-              >
-                {item.name}
-              </Link>
+              {item.external ? (
+                <a
+                  href={item.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium transition-opacity hover:opacity-75 inline-flex items-center gap-1 text-primary"
+                >
+                  {item.name} <ArrowUpRight className="size-3.5" />
+                </a>
+              ) : (
+                <Link
+                  href={item.href}
+                  className="font-medium transition-opacity hover:opacity-75"
+                >
+                  {item.name}
+                </Link>
+              )}
             </li>
           ))}
           {social.map((item) => (

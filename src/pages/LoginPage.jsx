@@ -406,8 +406,21 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Bottom Copyright */}
+        {/* Bottom Copyright & Official Website Link */}
         <div className="untitled-footer-text mt-3 text-center">
+          <div className="mb-2">
+            <a
+              href="https://mtsdecor.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="badge bg-light text-dark border border-secondary border-opacity-25 px-3 py-1.5 text-decoration-none extra-small fw-bold d-inline-flex align-items-center gap-1 shadow-xs"
+              style={{ transition: 'all 0.2s ease' }}
+            >
+              <i className="bi bi-globe2 text-primary"></i>
+              <span>Official MTS DECOR Website</span>
+              <i className="bi bi-box-arrow-up-right text-muted"></i>
+            </a>
+          </div>
           <div className="text-secondary extra-small text-uppercase fw-semibold">
             &copy; {new Date().getFullYear()} MTS Decor &bull; All Rights Reserved
           </div>
@@ -539,7 +552,11 @@ export default function LoginPage() {
             {/* Bottom Footer Note (Uniform across all states) */}
             <div className="position-relative pt-3 border-top border-light border-opacity-25" style={{ zIndex: 3 }}>
               <div className="text-light opacity-75 extra-small text-uppercase d-flex flex-wrap justify-content-between align-items-center gap-2">
-                <span>MTS DECOR &bull; CIVIL &amp; INTERIOR MEASUREMENT SYSTEM</span>
+                <a href="https://mtsdecor.com" target="_blank" rel="noopener noreferrer" className="text-light text-decoration-none fw-bold d-inline-flex align-items-center gap-1">
+                  <i className="bi bi-globe2"></i>
+                  <span>MTSDECOR.COM</span>
+                  <i className="bi bi-arrow-up-right"></i>
+                </a>
                 <span className="fw-bold text-white">BUILT BY HITESH JAGDISH SUTHAR</span>
               </div>
             </div>
@@ -587,8 +604,12 @@ export default function LoginPage() {
 
             {/* Bottom Footer Note */}
             <div className="position-relative pt-3 border-top border-secondary border-opacity-25" style={{ zIndex: 2 }}>
-              <div className="text-light opacity-50 extra-small text-uppercase d-flex flex-wrap justify-content-between align-items-center gap-2">
-                <span>MTS DECOR &bull; CIVIL &amp; INTERIOR MEASUREMENT SYSTEM</span>
+              <div className="text-light opacity-75 extra-small text-uppercase d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <a href="https://mtsdecor.com" target="_blank" rel="noopener noreferrer" className="text-light text-decoration-none fw-bold d-inline-flex align-items-center gap-1">
+                  <i className="bi bi-globe2"></i>
+                  <span>MTSDECOR.COM</span>
+                  <i className="bi bi-arrow-up-right"></i>
+                </a>
                 <span className="fw-bold text-light opacity-75">BUILT BY HITESH JAGDISH SUTHAR</span>
               </div>
             </div>
