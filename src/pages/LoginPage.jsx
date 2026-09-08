@@ -24,10 +24,8 @@ const STATIC_FOUNDER_SLIDES = [
 export default function LoginPage() {
   const navigate = useNavigate();
 
-  // Dynamic official website URL (local dev vs Render production)
-  const websiteUrl = typeof window !== 'undefined' && window.location.hostname === 'localhost'
-    ? 'http://localhost:3003'
-    : (import.meta.env.VITE_WEBSITE_URL || 'https://mts-decor-website.onrender.com');
+  // Official MTS DECOR Website URL
+  const websiteUrl = 'https://mts-decor-website.onrender.com';
 
   // Step 1: Credentials | Step 2: Two-Step 6-Digit Verification
   const [step, setStep] = useState(1);
