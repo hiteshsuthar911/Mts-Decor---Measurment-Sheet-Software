@@ -64,19 +64,19 @@ export const Navbar = () => {
       )}
     >
       <div className="flex items-center justify-between px-3.5 py-2 sm:px-6 sm:py-3">
-        <Link href="/" className="flex shrink-0 items-center gap-2 sm:gap-2.5">
+        <Link href="/" className="flex shrink-0 items-center gap-2.5 sm:gap-3">
           <Image
             src="/mtsdecor.png"
             alt="MTS DECOR Logo"
-            width={32}
-            height={32}
-            className="size-7 sm:size-8.5 rounded-md object-contain"
+            width={38}
+            height={38}
+            className="size-8 sm:size-10 rounded-lg object-contain"
           />
           <div className="flex flex-col">
-            <span className="font-display font-bold tracking-tight text-foreground leading-none text-sm sm:text-lg">
+            <span className="font-display font-black tracking-tight text-foreground leading-none text-base sm:text-xl">
               MTS DECOR
             </span>
-            <span className="text-[9px] sm:text-[10px] font-mono font-medium tracking-wider text-muted-foreground uppercase">
+            <span className="text-[9px] sm:text-[11px] font-mono font-semibold tracking-wider text-primary uppercase mt-0.5">
               Measurement Software
             </span>
           </div>

@@ -20,10 +20,6 @@ export const ResourceAllocation = () => {
     >
       <div className="">
         <div className="container text-center space-y-3 max-w-3xl">
-          <div className="inline-flex items-center gap-2 rounded-full border bg-muted/60 px-3.5 py-1 text-xs font-mono font-medium text-muted-foreground">
-            <span className="size-1.5 rounded-full bg-emerald-500" />
-            END-TO-END CONTRACTOR WORKFLOW
-          </div>
           <h2 className="text-3xl font-bold tracking-tight text-balance sm:text-4xl md:text-5xl text-foreground">
             Built for Real Construction Sites and Turnkey Interiors
           </h2>

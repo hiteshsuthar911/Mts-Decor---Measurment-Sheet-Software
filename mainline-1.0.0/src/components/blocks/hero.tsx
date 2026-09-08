@@ -42,14 +42,9 @@ export const Hero = () => {
       <div className="container flex flex-col justify-between gap-8 md:gap-14 lg:flex-row lg:gap-16">
         {/* Left side - Main content */}
         <div className="flex-1 max-w-2xl">
-          <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3.5 py-1 text-[11px] sm:text-xs font-mono font-semibold text-primary mb-4 shadow-2xs">
-            <span className="size-1.5 rounded-full bg-primary animate-pulse" />
-            ENGINEERED FOR CONTRACTORS & DESIGNERS
-          </div>
-
-          <h1 className="text-foreground text-2xl sm:text-4xl md:text-5xl lg:text-5xl font-extrabold tracking-tight leading-[1.2] sm:leading-[1.15]">
-            MTS DECOR <br />
-            <span className="text-primary">Measurement Software</span>
+          <h1 className="text-foreground text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight leading-[1.1]">
+            <span className="text-foreground block mb-1">MTS DECOR</span>
+            <span className="text-primary text-2xl sm:text-4xl md:text-5xl lg:text-5xl font-extrabold tracking-tight">Measurement Software</span>
           </h1>
 
           <p className="text-muted-foreground text-sm sm:text-lg md:text-xl mt-3 sm:mt-4 max-w-xl leading-relaxed">

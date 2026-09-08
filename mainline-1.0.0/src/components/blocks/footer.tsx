@@ -23,10 +23,6 @@ export function Footer() {
   return (
     <footer className="flex flex-col items-center gap-14 pt-28 lg:pt-32">
       <div className="container space-y-3 text-center">
-        <div className="inline-flex items-center gap-2 rounded-full border bg-muted/60 px-3.5 py-1 text-xs font-mono font-medium text-muted-foreground mb-1">
-          <span className="size-1.5 rounded-full bg-emerald-500" />
-          MASTER CRAFTSMANSHIP • DIGITAL EFFICIENCY
-        </div>
         <h2 className="text-2xl font-bold tracking-tight md:text-4xl lg:text-5xl text-foreground">
           Ready to Modernize Your Site Measurements?
         </h2>
@@ -82,9 +78,9 @@ export function Footer() {
         </p>
       </nav>
 
-      <div className="mt-8 w-full border-t border-border/40 pt-10 pb-6 text-center select-none">
-        <div className="container">
-          <span className="font-display font-black tracking-tighter text-4xl sm:text-6xl md:text-8xl lg:text-9xl text-transparent bg-clip-text bg-gradient-to-b from-primary/35 to-primary/5 dark:from-primary/30 dark:to-transparent block">
+      <div className="mt-8 w-full border-t border-border/40 pt-10 pb-6 text-center select-none overflow-hidden">
+        <div className="w-full px-2">
+          <span className="font-display font-black tracking-tighter text-6xl sm:text-8xl md:text-9xl lg:text-[13rem] xl:text-[16rem] 2xl:text-[19rem] leading-none text-transparent bg-clip-text bg-gradient-to-b from-primary/50 to-primary/10 dark:from-primary/45 dark:to-primary/5 block whitespace-nowrap">
             MTS DECOR
           </span>
         </div>
