@@ -35,13 +35,13 @@ export const ResourceAllocation = () => {
         <div className="mt-8 md:mt-12 lg:mt-16">
           <DashedLine
             orientation="horizontal"
-            className="container scale-x-105"
+            className="container"
           />
 
           {/* Top Features Grid - 2 items */}
           <div className="relative container flex max-md:flex-col">
             {/* Top Item 1 */}
-            <div className="flex-1 p-6 md:p-8 flex flex-col justify-between relative border-b md:border-b-0 md:border-r border-border/70">
+            <div className="flex-1 p-4 sm:p-6 md:p-8 flex flex-col justify-between relative border-b md:border-b-0 md:border-r border-border/70">
               <div className="mb-6">
                 <h3 className="font-bold text-lg text-foreground inline">Civil & Interior BoQ Templates. </h3>
                 <span className="text-muted-foreground text-sm">
@@ -73,7 +73,7 @@ export const ResourceAllocation = () => {
             </div>
 
             {/* Top Item 2 */}
-            <div className="flex-1 p-6 md:p-8 flex flex-col justify-between relative">
+            <div className="flex-1 p-4 sm:p-6 md:p-8 flex flex-col justify-between relative">
               <div className="mb-6">
                 <h3 className="font-bold text-lg text-foreground inline">Replace Fragmented Site Diaries. </h3>
                 <span className="text-muted-foreground text-sm">
@@ -119,13 +119,13 @@ export const ResourceAllocation = () => {
 
           <DashedLine
             orientation="horizontal"
-            className="container max-w-7xl scale-x-110"
+            className="container max-w-7xl"
           />
 
           {/* Bottom Features Grid - 3 items */}
           <div className="relative container grid max-w-7xl md:grid-cols-3">
             {/* Bottom Item 1 */}
-            <div className="p-6 md:p-8 flex flex-col justify-between relative border-b md:border-b-0 md:border-r border-border/70">
+            <div className="p-4 sm:p-6 md:p-8 flex flex-col justify-between relative border-b md:border-b-0 md:border-r border-border/70">
               <div className="mb-5">
                 <h3 className="font-bold text-base text-foreground inline">Automated Deduction Engine. </h3>
                 <span className="text-muted-foreground text-sm">
@@ -149,7 +149,7 @@ export const ResourceAllocation = () => {
             </div>
 
             {/* Bottom Item 2 */}
-            <div className="p-6 md:p-8 flex flex-col justify-between relative border-b md:border-b-0 md:border-r border-border/70">
+            <div className="p-4 sm:p-6 md:p-8 flex flex-col justify-between relative border-b md:border-b-0 md:border-r border-border/70">
               <div className="mb-5">
                 <h3 className="font-bold text-base text-foreground inline">Site Audit & Sign-offs. </h3>
                 <span className="text-muted-foreground text-sm">
@@ -173,7 +173,7 @@ export const ResourceAllocation = () => {
             </div>
 
             {/* Bottom Item 3 */}
-            <div className="p-6 md:p-8 flex flex-col justify-between relative">
+            <div className="p-4 sm:p-6 md:p-8 flex flex-col justify-between relative">
               <div className="mb-5">
                 <h3 className="font-bold text-base text-foreground inline">Instant Billing Alerts. </h3>
                 <span className="text-muted-foreground text-sm">
@@ -202,7 +202,7 @@ export const ResourceAllocation = () => {
 
         <DashedLine
           orientation="horizontal"
-          className="container max-w-7xl scale-x-110"
+          className="container max-w-7xl"
         />
       </div>
     </section>

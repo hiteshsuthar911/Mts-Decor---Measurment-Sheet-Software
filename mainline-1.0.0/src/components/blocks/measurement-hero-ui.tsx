@@ -24,65 +24,65 @@ export const MeasurementHeroUI = () => {
   return (
     <div className="w-full rounded-2xl border border-border/80 bg-background/95 shadow-2xl backdrop-blur-xl overflow-hidden text-start font-sans">
       {/* Window Header Bar */}
-      <div className="flex flex-wrap items-center justify-between border-b border-border/70 bg-muted/40 px-4 py-3 gap-3">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between border-b border-border/70 bg-muted/40 px-3 py-2.5 sm:px-4 sm:py-3 gap-2">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           {/* macOS window dots */}
-          <div className="flex items-center gap-1.5">
-            <span className="size-3 rounded-full bg-rose-500/80 inline-block" />
-            <span className="size-3 rounded-full bg-amber-500/80 inline-block" />
-            <span className="size-3 rounded-full bg-emerald-500/80 inline-block" />
+          <div className="flex items-center gap-1 sm:gap-1.5">
+            <span className="size-2.5 sm:size-3 rounded-full bg-rose-500/80 inline-block" />
+            <span className="size-2.5 sm:size-3 rounded-full bg-amber-500/80 inline-block" />
+            <span className="size-2.5 sm:size-3 rounded-full bg-emerald-500/80 inline-block" />
           </div>
 
-          <div className="hidden sm:flex items-center gap-2 pl-2 border-l border-border/60">
-            <div className="flex size-6 items-center justify-center rounded-md bg-primary text-primary-foreground font-bold text-xs">
+          <div className="flex items-center gap-1.5 pl-1.5 sm:pl-2 border-l border-border/60">
+            <div className="flex size-5 sm:size-6 items-center justify-center rounded-md bg-primary text-primary-foreground font-bold text-[10px] sm:text-xs">
               M
             </div>
-            <span className="font-semibold text-xs text-foreground tracking-tight">
-              MTS DECOR PRO v2.5
+            <span className="font-semibold text-[11px] sm:text-xs text-foreground tracking-tight hidden xs:inline">
+              MTS DECOR
             </span>
-            <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-mono font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+            <span className="rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[9px] sm:text-[10px] font-mono font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
               <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Live Site Sync
+              <span className="hidden sm:inline">Live Site Sync</span>
+              <span className="sm:hidden">Live</span>
             </span>
           </div>
         </div>
 
         {/* Active Project Breadcrumb */}
-        <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground bg-background/80 border px-3 py-1 rounded-lg">
-          <Building2 className="size-3.5 text-primary" />
-          <span className="text-foreground font-semibold truncate max-w-[180px] sm:max-w-[260px]">
+        <div className="flex items-center gap-1.5 text-[11px] sm:text-xs font-medium text-muted-foreground bg-background/80 border px-2 sm:px-3 py-1 rounded-lg max-w-[140px] xs:max-w-[200px] sm:max-w-[280px]">
+          <Building2 className="size-3 text-primary shrink-0" />
+          <span className="text-foreground font-semibold truncate">
             The Grand Oberoi Penthouse
           </span>
-          <span className="text-muted-foreground hidden md:inline">• Flat 2402 (Duplex)</span>
-          <ChevronDown className="size-3 text-muted-foreground ml-1" />
+          <ChevronDown className="size-3 text-muted-foreground ml-0.5 shrink-0 hidden sm:inline" />
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           <button className="hidden sm:inline-flex items-center gap-1.5 rounded-md bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-700 dark:text-emerald-400 px-2.5 py-1 text-xs font-medium border border-emerald-500/20 transition-colors">
             <FileSpreadsheet className="size-3.5" />
             <span>Export .XLSX</span>
           </button>
-          <button className="inline-flex items-center gap-1.5 rounded-md bg-primary text-primary-foreground px-3 py-1 text-xs font-semibold shadow-xs hover:bg-primary/90 transition-colors">
-            <Download className="size-3.5" />
-            <span className="hidden sm:inline">Download</span> PDF
+          <button className="inline-flex items-center gap-1 rounded-md bg-primary text-primary-foreground px-2.5 sm:px-3 py-1 text-xs font-semibold shadow-xs hover:bg-primary/90 transition-colors">
+            <Download className="size-3" />
+            <span>PDF</span>
           </button>
         </div>
       </div>
 
       {/* Mode Navigation Tabs */}
-      <div className="flex border-b border-border/70 bg-muted/20 px-4 pt-2 gap-1 overflow-x-auto scrollbar-none">
+      <div className="flex border-b border-border/70 bg-muted/20 px-2.5 sm:px-4 pt-1.5 sm:pt-2 gap-1 overflow-x-auto scrollbar-none">
         <button
           onClick={() => setActiveTab("sheets")}
           className={cn(
-            "flex items-center gap-2 px-3.5 py-2 text-xs font-semibold border-b-2 transition-all shrink-0",
+            "flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-2 text-xs font-semibold border-b-2 transition-all shrink-0",
             activeTab === "sheets"
               ? "border-primary text-foreground bg-background/60 rounded-t-md"
               : "border-transparent text-muted-foreground hover:text-foreground"
           )}
         >
           <Calculator className="size-3.5 text-primary" />
-          <span>Measurement Sheets (L×W×H)</span>
+          <span><span className="sm:hidden">Sheets</span><span className="hidden sm:inline">Measurement Sheets (L×W×H)</span></span>
           <span className="rounded-full bg-primary/15 text-primary px-1.5 py-0.2 text-[10px] font-mono">
             4 Areas
           </span>
@@ -91,14 +91,14 @@ export const MeasurementHeroUI = () => {
         <button
           onClick={() => setActiveTab("progress")}
           className={cn(
-            "flex items-center gap-2 px-3.5 py-2 text-xs font-semibold border-b-2 transition-all shrink-0",
+            "flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-2 text-xs font-semibold border-b-2 transition-all shrink-0",
             activeTab === "progress"
               ? "border-primary text-foreground bg-background/60 rounded-t-md"
               : "border-transparent text-muted-foreground hover:text-foreground"
           )}
         >
           <Camera className="size-3.5 text-amber-500" />
-          <span>Construction Site Progress Report</span>
+          <span><span className="sm:hidden">Progress</span><span className="hidden sm:inline">Construction Site Progress Report</span></span>
           <span className="rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 px-1.5 py-0.2 text-[10px] font-mono">
             18 Photos
           </span>
@@ -107,82 +107,86 @@ export const MeasurementHeroUI = () => {
         <button
           onClick={() => setActiveTab("billing")}
           className={cn(
-            "flex items-center gap-2 px-3.5 py-2 text-xs font-semibold border-b-2 transition-all shrink-0",
+            "flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-2 text-xs font-semibold border-b-2 transition-all shrink-0",
             activeTab === "billing"
               ? "border-primary text-foreground bg-background/60 rounded-t-md"
               : "border-transparent text-muted-foreground hover:text-foreground"
           )}
         >
           <Layers className="size-3.5 text-emerald-500" />
-          <span>Running Account (RA) Bill #03</span>
+          <span><span className="sm:hidden">RA Bill #03</span><span className="hidden sm:inline">Running Account (RA) Bill #03</span></span>
         </button>
       </div>
 
       {/* Summary KPI Cards Bar */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-4 bg-muted/15 border-b border-border/60 text-xs">
-        <div className="bg-background/90 rounded-xl p-3 border shadow-2xs">
-          <span className="text-muted-foreground block text-[11px] font-medium">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 p-2.5 sm:p-4 bg-muted/15 border-b border-border/60 text-xs">
+        <div className="bg-background/90 rounded-xl p-2.5 sm:p-3 border shadow-2xs">
+          <span className="text-muted-foreground block text-[10px] sm:text-[11px] font-medium">
             Total Net Measured Area
           </span>
-          <div className="flex items-baseline gap-1 mt-1">
-            <span className="text-lg md:text-xl font-bold tracking-tight text-foreground font-mono">
+          <div className="flex items-baseline gap-1 mt-0.5 sm:mt-1">
+            <span className="text-base sm:text-xl font-bold tracking-tight text-foreground font-mono">
               18,420.50
             </span>
-            <span className="text-[11px] text-muted-foreground">Sq.Ft</span>
+            <span className="text-[10px] sm:text-[11px] text-muted-foreground">Sq.Ft</span>
           </div>
-          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono mt-0.5 block">
-            -1,729.50 Sq.Ft Auto-Deducted
+          <span className="text-[9px] sm:text-[10px] text-emerald-600 dark:text-emerald-400 font-mono mt-0.5 block truncate">
+            -1,729.50 Auto-Deducted
           </span>
         </div>
 
-        <div className="bg-background/90 rounded-xl p-3 border shadow-2xs">
-          <span className="text-muted-foreground block text-[11px] font-medium">
+        <div className="bg-background/90 rounded-xl p-2.5 sm:p-3 border shadow-2xs">
+          <span className="text-muted-foreground block text-[10px] sm:text-[11px] font-medium">
             Gross Estimated Bill
           </span>
-          <div className="flex items-baseline gap-1 mt-1">
-            <span className="text-lg md:text-xl font-bold tracking-tight text-foreground font-mono">
+          <div className="flex items-baseline gap-1 mt-0.5 sm:mt-1">
+            <span className="text-base sm:text-xl font-bold tracking-tight text-foreground font-mono">
               ₹38,95,400
             </span>
           </div>
-          <span className="text-[10px] text-muted-foreground font-mono mt-0.5 block">
+          <span className="text-[9px] sm:text-[10px] text-muted-foreground font-mono mt-0.5 block truncate">
             Verified with Client Rates
           </span>
         </div>
 
-        <div className="bg-background/90 rounded-xl p-3 border shadow-2xs">
-          <span className="text-muted-foreground block text-[11px] font-medium">
+        <div className="bg-background/90 rounded-xl p-2.5 sm:p-3 border shadow-2xs">
+          <span className="text-muted-foreground block text-[10px] sm:text-[11px] font-medium">
             Site Progress Status
           </span>
-          <div className="flex items-baseline gap-1 mt-1">
-            <span className="text-lg md:text-xl font-bold tracking-tight text-foreground font-mono">
+          <div className="flex items-baseline gap-1 mt-0.5 sm:mt-1">
+            <span className="text-base sm:text-xl font-bold tracking-tight text-foreground font-mono">
               84% Done
             </span>
           </div>
-          <span className="text-[10px] text-amber-600 dark:text-amber-400 font-mono mt-0.5 block">
-            Stage 4: False Ceiling & Veneer
+          <span className="text-[9px] sm:text-[10px] text-amber-600 dark:text-amber-400 font-mono mt-0.5 block truncate">
+            Stage 4: False Ceiling
           </span>
         </div>
 
-        <div className="bg-background/90 rounded-xl p-3 border shadow-2xs">
-          <span className="text-muted-foreground block text-[11px] font-medium">
+        <div className="bg-background/90 rounded-xl p-2.5 sm:p-3 border shadow-2xs">
+          <span className="text-muted-foreground block text-[10px] sm:text-[11px] font-medium">
             Site Supervision Lead
           </span>
-          <div className="flex items-center gap-1.5 mt-1">
-            <HardHat className="size-4 text-primary shrink-0" />
-            <span className="text-sm font-semibold tracking-tight text-foreground truncate">
+          <div className="flex items-center gap-1.5 mt-0.5 sm:mt-1">
+            <HardHat className="size-3.5 sm:size-4 text-primary shrink-0" />
+            <span className="text-xs sm:text-sm font-semibold tracking-tight text-foreground truncate">
               Jagdish Suthar
             </span>
           </div>
-          <span className="text-[10px] text-muted-foreground font-mono mt-0.5 block">
-            Co-Founder / Field Operations
+          <span className="text-[9px] sm:text-[10px] text-muted-foreground font-mono mt-0.5 block truncate">
+            Field Operations
           </span>
         </div>
       </div>
 
       {/* Dynamic Content Body based on activeTab */}
       {activeTab === "sheets" && (
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs text-left border-collapse">
+        <div className="w-full">
+          <div className="sm:hidden flex items-center justify-between px-3 py-1.5 bg-muted/40 text-[10px] text-muted-foreground border-b font-mono">
+            <span>↔ Swipe horizontally for all 14 measurement columns</span>
+          </div>
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-xs text-left border-collapse whitespace-nowrap">
             <thead>
               <tr className="bg-muted/50 border-b border-border text-muted-foreground font-mono text-[11px] uppercase tracking-wider">
                 <th className="py-2.5 px-3 w-8">#</th>
@@ -321,6 +325,7 @@ export const MeasurementHeroUI = () => {
             </tbody>
           </table>
         </div>
+      </div>
       )}
 
       {activeTab === "progress" && (

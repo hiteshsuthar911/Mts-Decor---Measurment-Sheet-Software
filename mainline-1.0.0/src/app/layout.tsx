@@ -123,8 +123,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${dmSans.variable} ${inter.variable} antialiased`}>
+    <html lang="en" suppressHydrationWarning className="overflow-x-hidden">
+      <body className={`${dmSans.variable} ${inter.variable} antialiased overflow-x-hidden w-full relative min-h-screen`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="light"
@@ -133,7 +133,7 @@ export default function RootLayout({
         >
           <StyleGlideProvider />
           <Navbar />
-          <main className="">{children}</main>
+          <main className="w-full overflow-x-hidden">{children}</main>
           <Footer />
         </ThemeProvider>
       </body>

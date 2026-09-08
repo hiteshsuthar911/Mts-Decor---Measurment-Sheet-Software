@@ -59,24 +59,24 @@ export const Navbar = () => {
   return (
     <section
       className={cn(
-        "bg-background/80 absolute left-1/2 z-50 w-[min(92%,760px)] -translate-x-1/2 rounded-4xl border backdrop-blur-md shadow-sm transition-all duration-300",
-        "top-5 lg:top-10",
+        "bg-background/85 absolute left-1/2 z-50 w-[min(94%,760px)] -translate-x-1/2 rounded-4xl border backdrop-blur-md shadow-sm transition-all duration-300",
+        "top-3 sm:top-5 lg:top-10",
       )}
     >
-      <div className="flex items-center justify-between px-5 py-2.5 sm:px-6 sm:py-3">
-        <Link href="/" className="flex shrink-0 items-center gap-2.5">
+      <div className="flex items-center justify-between px-3.5 py-2 sm:px-6 sm:py-3">
+        <Link href="/" className="flex shrink-0 items-center gap-2 sm:gap-2.5">
           <Image
             src="/mtsdecor.png"
             alt="MTS DECOR Logo"
-            width={34}
-            height={34}
-            className="rounded-md object-contain"
+            width={32}
+            height={32}
+            className="size-7 sm:size-8.5 rounded-md object-contain"
           />
           <div className="flex flex-col">
-            <span className="font-display font-bold tracking-tight text-foreground leading-none text-base sm:text-lg">
+            <span className="font-display font-bold tracking-tight text-foreground leading-none text-sm sm:text-lg">
               MTS DECOR
             </span>
-            <span className="text-[10px] font-mono font-medium tracking-wider text-muted-foreground uppercase">
+            <span className="text-[9px] sm:text-[10px] font-mono font-medium tracking-wider text-muted-foreground uppercase">
               Measurement Software
             </span>
           </div>
@@ -133,9 +133,9 @@ export const Navbar = () => {
         </NavigationMenu>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-1.5 sm:gap-2.5">
           <ThemeToggle />
-          <Link href="/contact">
+          <Link href="/contact" className="hidden sm:inline-flex">
             <Button size="sm" className="font-semibold shadow-xs">
               <span className="relative z-10">Book Site Demo</span>
             </Button>
@@ -143,23 +143,24 @@ export const Navbar = () => {
 
           {/* Hamburger Menu Button (Mobile Only) */}
           <button
-            className="text-muted-foreground relative flex size-8 lg:hidden"
+            className="text-muted-foreground relative flex size-8 items-center justify-center rounded-lg hover:bg-muted/60 transition-colors lg:hidden"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
+            aria-label="Toggle navigation menu"
           >
             <span className="sr-only">Open main menu</span>
-            <div className="absolute top-1/2 left-1/2 block w-[18px] -translate-x-1/2 -translate-y-1/2">
+            <div className="relative w-[18px] h-[14px]">
               <span
                 aria-hidden="true"
-                className={`absolute block h-0.5 w-full rounded-full bg-current transition duration-500 ease-in-out ${isMenuOpen ? "rotate-45" : "-translate-y-1.5"}`}
-              ></span>
+                className={`absolute left-0 block h-0.5 w-full rounded-full bg-current transition duration-300 ease-in-out ${isMenuOpen ? "top-[6px] rotate-45" : "top-0"}`}
+              />
               <span
                 aria-hidden="true"
-                className={`absolute block h-0.5 w-full rounded-full bg-current transition duration-500 ease-in-out ${isMenuOpen ? "opacity-0" : ""}`}
-              ></span>
+                className={`absolute left-0 top-[6px] block h-0.5 w-full rounded-full bg-current transition duration-300 ease-in-out ${isMenuOpen ? "opacity-0" : ""}`}
+              />
               <span
                 aria-hidden="true"
-                className={`absolute block h-0.5 w-full rounded-full bg-current transition duration-500 ease-in-out ${isMenuOpen ? "-rotate-45" : "translate-y-1.5"}`}
-              ></span>
+                className={`absolute left-0 block h-0.5 w-full rounded-full bg-current transition duration-300 ease-in-out ${isMenuOpen ? "top-[6px] -rotate-45" : "top-[12px]"}`}
+              />
             </div>
           </button>
         </div>
@@ -168,29 +169,29 @@ export const Navbar = () => {
       {/*  Mobile Menu Navigation */}
       <div
         className={cn(
-          "bg-background fixed inset-x-0 top-[calc(100%+1rem)] flex flex-col rounded-2xl border p-6 transition-all duration-300 ease-in-out lg:hidden",
+          "bg-background/95 fixed inset-x-2 sm:inset-x-0 top-[calc(100%+0.75rem)] flex flex-col rounded-2xl border p-5 shadow-xl backdrop-blur-xl transition-all duration-300 ease-in-out lg:hidden max-h-[82vh] overflow-y-auto",
           isMenuOpen
-            ? "visible translate-y-0 opacity-100"
-            : "invisible -translate-y-4 opacity-0",
+            ? "visible translate-y-0 opacity-100 pointer-events-auto"
+            : "invisible -translate-y-4 opacity-0 pointer-events-none",
         )}
       >
         <nav className="divide-border flex flex-1 flex-col divide-y">
           {ITEMS.map((link) =>
             link.dropdownItems ? (
-              <div key={link.label} className="py-4 first:pt-0 last:pb-0">
+              <div key={link.label} className="py-3.5 first:pt-0 last:pb-0">
                 <button
                   onClick={() =>
                     setOpenDropdown(
                       openDropdown === link.label ? null : link.label,
                     )
                   }
-                  className="text-primary flex w-full items-center justify-between text-base font-medium"
+                  className="text-foreground hover:text-primary flex w-full items-center justify-between text-base font-semibold transition-colors"
                 >
                   {link.label}
                   <ChevronRight
                     className={cn(
-                      "size-4 transition-transform duration-200",
-                      openDropdown === link.label ? "rotate-90" : "",
+                      "size-4 transition-transform duration-200 text-muted-foreground",
+                      openDropdown === link.label ? "rotate-90 text-primary" : "",
                     )}
                   />
                 </button>
@@ -198,27 +199,27 @@ export const Navbar = () => {
                   className={cn(
                     "overflow-hidden transition-all duration-300",
                     openDropdown === link.label
-                      ? "mt-4 max-h-[1000px] opacity-100"
+                      ? "mt-3 max-h-[1000px] opacity-100"
                       : "max-h-0 opacity-0",
                   )}
                 >
-                  <div className="bg-muted/50 space-y-3 rounded-lg p-4">
+                  <div className="bg-muted/50 space-y-2.5 rounded-xl p-3 border border-border/50">
                     {link.dropdownItems.map((item) => (
                       <Link
                         key={item.title}
                         href={item.href}
-                        className="group hover:bg-accent block rounded-md p-2 transition-colors"
+                        className="group hover:bg-accent block rounded-lg p-2 transition-colors"
                         onClick={() => {
                           setIsMenuOpen(false);
                           setOpenDropdown(null);
                         }}
                       >
                         <div className="transition-transform duration-200 group-hover:translate-x-1">
-                          <div className="text-primary font-medium">
+                          <div className="text-foreground font-semibold text-sm">
                             {item.title}
                           </div>
 
-                          <p className="text-muted-foreground mt-1 text-sm">
+                          <p className="text-muted-foreground mt-0.5 text-xs leading-relaxed">
                             {item.description}
                           </p>
                         </div>
@@ -232,8 +233,8 @@ export const Navbar = () => {
                 key={link.label}
                 href={link.href}
                 className={cn(
-                  "text-primary hover:text-primary/80 py-4 text-base font-medium transition-colors first:pt-0 last:pb-0",
-                  pathname === link.href && "text-muted-foreground",
+                  "text-foreground hover:text-primary py-3.5 text-base font-semibold transition-colors first:pt-0 last:pb-0",
+                  pathname === link.href && "text-primary font-bold",
                 )}
                 onClick={() => setIsMenuOpen(false)}
               >
@@ -242,6 +243,20 @@ export const Navbar = () => {
             ),
           )}
         </nav>
+
+        {/* Dedicated Mobile Demo CTA Button */}
+        <div className="mt-4 pt-4 border-t border-border">
+          <Link
+            href="/contact"
+            className="w-full block"
+            onClick={() => setIsMenuOpen(false)}
+          >
+            <Button className="w-full justify-center font-bold shadow-md py-5 text-sm gap-2" size="lg">
+              <span>Book Site Demo</span>
+              <ChevronRight className="size-4" />
+            </Button>
+          </Link>
+        </div>
       </div>
     </section>
   );
