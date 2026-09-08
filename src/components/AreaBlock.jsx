@@ -140,6 +140,18 @@ export default function AreaBlock({
     onChangeArea(area.id, { ...area, items: updatedItems });
   };
 
+  const handleMoveItem = (itemId, direction) => {
+    const items = area.items || [];
+    const idx = items.findIndex(i => i.id === itemId);
+    if (idx === -1) return;
+    const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (targetIdx < 0 || targetIdx >= items.length) return;
+    const newItems = [...items];
+    const [moved] = newItems.splice(idx, 1);
+    newItems.splice(targetIdx, 0, moved);
+    onChangeArea(area.id, { ...area, items: newItems });
+  };
+
   return (
     <div className="card area-block shadow-sm mb-4 border border-secondary-subtle">
       {/* Area Card Header */}
@@ -341,7 +353,6 @@ export default function AreaBlock({
                   placeholder="Enter custom room name (e.g. Study Area, Pooja Room)"
                   value={area.customRoom || ''}
                   onChange={(e) => handleFieldChange('customRoom', e.target.value)}
-                  autoFocus
                 />
               </div>
             </div>
@@ -358,7 +369,6 @@ export default function AreaBlock({
                   placeholder="Enter custom work description"
                   value={area.customParentCategory || ''}
                   onChange={(e) => handleFieldChange('customParentCategory', e.target.value)}
-                  autoFocus
                 />
               </div>
             </div>
@@ -445,11 +455,14 @@ export default function AreaBlock({
                     key={item.id}
                     item={item}
                     index={itemIdx}
+                    totalItems={area.items?.length || 0}
                     billingMode={billingMode}
                     currencySymbol={currencySymbol}
                     onChangeItem={handleChangeItem}
                     onDuplicateItem={handleDuplicateItem}
                     onDeleteItem={handleDeleteItem}
+                    onMoveItemUp={() => handleMoveItem(item.id, 'up')}
+                    onMoveItemDown={() => handleMoveItem(item.id, 'down')}
                   />
                 ))}
 

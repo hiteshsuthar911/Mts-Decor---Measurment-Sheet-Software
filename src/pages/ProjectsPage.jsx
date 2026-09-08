@@ -5,7 +5,12 @@ import { getSession, logout } from '../utils/auth';
 import {
   getAllProjects,
   createProject,
+  duplicateProject,
   deleteProject,
+  getDeletedProjects,
+  restoreProject,
+  deleteProjectPermanently,
+  emptyTrash,
   getAllExcelFiles,
   deleteExcelFile,
   saveExcelFile,
@@ -30,6 +35,11 @@ export default function ProjectsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // Recently Deleted State
+  const [deletedProjects, setDeletedProjects] = useState([]);
+  const [showDeletedModal, setShowDeletedModal] = useState(false);
+  const [loadingDeleted, setLoadingDeleted] = useState(false);
+
   // Excel Files State
   const [excelFiles, setExcelFiles] = useState([]);
   const [loadingExcel, setLoadingExcel] = useState(false);
@@ -42,6 +52,7 @@ export default function ProjectsPage() {
     if (session.role === 'ADMIN') { navigate('/admin'); return; }
     fetchProjects();
     fetchExcelFiles();
+    fetchDeletedProjects();
   }, []);
 
   const fetchProjects = async () => {
@@ -68,6 +79,18 @@ export default function ProjectsPage() {
     }
   };
 
+  const fetchDeletedProjects = async () => {
+    try {
+      setLoadingDeleted(true);
+      const data = await getDeletedProjects();
+      setDeletedProjects(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.warn('Failed to load deleted projects:', err);
+    } finally {
+      setLoadingDeleted(false);
+    }
+  };
+
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 3500); };
 
   const handleNewProject = async () => {
@@ -81,14 +104,74 @@ export default function ProjectsPage() {
   };
 
   const handleDeleteProject = async (id, ownerUsername) => {
-    if (ownerUsername !== session.username) { alert('YOU CAN ONLY DELETE YOUR OWN PROJECTS.'); return; }
-    if (!confirm('DELETE THIS PROJECT AND ALL ITS DATA?')) return;
+    if (ownerUsername !== session.username && session.role !== 'ADMIN') {
+      alert('YOU CAN ONLY DELETE YOUR OWN PROJECTS.');
+      return;
+    }
+    if (!confirm('MOVE THIS PROJECT TO RECENTLY DELETED? (YOU CAN RESTORE IT ANYTIME)')) return;
     try {
       await deleteProject(id);
+      const deletedProj = projects.find(p => (p._id || p.id) === id);
       setProjects(prev => prev.filter(p => (p._id || p.id) !== id));
-      showToast('PROJECT DELETED');
+      if (deletedProj) {
+        setDeletedProjects(prev => [{ ...deletedProj, isDeleted: true, deletedAt: new Date().toISOString() }, ...prev]);
+      } else {
+        fetchDeletedProjects();
+      }
+      showToast('PROJECT MOVED TO RECENTLY DELETED');
     } catch (err) {
       alert('DELETE FAILED: ' + err.message);
+    }
+  };
+
+  const handleRestoreProject = async (id) => {
+    try {
+      const res = await restoreProject(id);
+      const restored = res.project || deletedProjects.find(p => (p._id || p.id) === id);
+      setDeletedProjects(prev => prev.filter(p => (p._id || p.id) !== id));
+      if (restored) {
+        setProjects(prev => [restored, ...prev]);
+      } else {
+        fetchProjects();
+      }
+      showToast('PROJECT RESTORED SUCCESSFULLY');
+    } catch (err) {
+      alert('RESTORE FAILED: ' + err.message);
+    }
+  };
+
+  const handleDuplicateProject = async (id) => {
+    try {
+      showToast('DUPLICATING PROJECT...');
+      const duplicated = await duplicateProject(id);
+      if (duplicated) {
+        setProjects(prev => [duplicated, ...prev]);
+        showToast('PROJECT DUPLICATED SUCCESSFULLY');
+      }
+    } catch (err) {
+      alert('DUPLICATE FAILED: ' + err.message);
+    }
+  };
+
+  const handleDeletePermanent = async (id) => {
+    if (!confirm('PERMANENTLY DELETE THIS PROJECT? THIS CANNOT BE UNDONE!')) return;
+    try {
+      await deleteProjectPermanently(id);
+      setDeletedProjects(prev => prev.filter(p => (p._id || p.id) !== id));
+      showToast('PROJECT PERMANENTLY DELETED');
+    } catch (err) {
+      alert('DELETE FAILED: ' + err.message);
+    }
+  };
+
+  const handleEmptyTrash = async () => {
+    if (!confirm('PURGE ALL RECENTLY DELETED PROJECTS? THIS CANNOT BE UNDONE!')) return;
+    try {
+      await emptyTrash();
+      setDeletedProjects([]);
+      showToast('TRASH EMPTIED SUCCESSFULLY');
+    } catch (err) {
+      alert('EMPTY TRASH FAILED: ' + err.message);
     }
   };
 
@@ -270,6 +353,15 @@ export default function ProjectsPage() {
             >
               <i className={`bi ${isOwn ? 'bi-pencil-square' : 'bi-eye'}`}></i>
               <span>{isOwn ? 'OPEN & EDIT' : 'VIEW / EDIT'}</span>
+            </button>
+            <button
+              className="btn btn-outline-secondary btn-sm px-2 d-flex align-items-center gap-1"
+              style={{ borderRadius: '8px', fontSize: '12px' }}
+              title="Duplicate Project (Make a Copy)"
+              onClick={() => handleDuplicateProject(id)}
+            >
+              <i className="bi bi-copy"></i>
+              <span className="d-none d-sm-inline">COPY</span>
             </button>
             {isOwn && (
               <button
@@ -592,8 +684,34 @@ export default function ProjectsPage() {
             </button>
           </div>
 
-          {/* Quick upload excel button */}
-          <div>
+          {/* Action buttons on the right */}
+          <div className="d-flex align-items-center gap-2">
+            {/* Recently Deleted Button */}
+            <button
+              onClick={() => { setShowDeletedModal(true); fetchDeletedProjects(); }}
+              className="btn btn-sm btn-outline-secondary fw-bold text-uppercase d-flex align-items-center gap-1.5 shadow-xs"
+              style={{
+                borderRadius: '8px',
+                backgroundColor: '#ffffff',
+                borderColor: deletedProjects.length > 0 ? '#fca5a5' : '#e2e8f0',
+                color: deletedProjects.length > 0 ? '#dc2626' : '#64748b',
+                fontSize: '11px',
+                padding: '6px 12px',
+                transition: 'all 0.15s ease',
+              }}
+              title="View and Restore Recently Deleted Projects"
+            >
+              <i className={`bi ${deletedProjects.length > 0 ? 'bi-trash3-fill text-danger' : 'bi-trash3'}`}></i>
+              <span className="d-none d-sm-inline">RECENTLY DELETED</span>
+              <span className="d-sm-none">TRASH</span>
+              {deletedProjects.length > 0 && (
+                <span className="badge bg-danger text-white rounded-pill px-1.5 py-0.5" style={{ fontSize: '10px' }}>
+                  {deletedProjects.length}
+                </span>
+              )}
+            </button>
+
+            {/* Quick upload excel button */}
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={uploadingExcel}
@@ -836,6 +954,169 @@ export default function ProjectsPage() {
           </>
         )}
       </main>
+
+      {/* ── RECENTLY DELETED (TRASH) MODAL ── */}
+      {showDeletedModal && (
+        <div
+          className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center p-3"
+          style={{
+            backgroundColor: 'rgba(15, 23, 42, 0.7)',
+            backdropFilter: 'blur(5px)',
+            zIndex: 9999,
+          }}
+          onClick={() => setShowDeletedModal(false)}
+        >
+          <div
+            className="bg-white rounded-3 shadow-xl d-flex flex-column border"
+            style={{
+              width: '100%',
+              maxWidth: '720px',
+              maxHeight: '85vh',
+              borderColor: '#e2e8f0',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="px-4 py-3 border-bottom d-flex align-items-center justify-content-between bg-light rounded-top-3">
+              <div className="d-flex align-items-center gap-2">
+                <div
+                  style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '8px',
+                    backgroundColor: '#fee2e2',
+                    color: '#dc2626',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <i className="bi bi-trash3-fill fs-6"></i>
+                </div>
+                <div>
+                  <h6 className="fw-bolder text-dark text-uppercase mb-0" style={{ letterSpacing: '0.5px' }}>
+                    RECENTLY DELETED PROJECTS
+                  </h6>
+                  <span className="text-muted extra-small text-uppercase">
+                    {deletedProjects.length} PROJECT{deletedProjects.length !== 1 ? 'S' : ''} IN RECYCLE BIN
+                  </span>
+                </div>
+              </div>
+
+              <div className="d-flex align-items-center gap-2">
+                {deletedProjects.length > 0 && (
+                  <button
+                    className="btn btn-outline-danger btn-sm extra-small fw-bold text-uppercase px-2.5 py-1"
+                    onClick={handleEmptyTrash}
+                    title="Permanently remove all deleted projects"
+                  >
+                    <i className="bi bi-trash3 me-1"></i> EMPTY TRASH
+                  </button>
+                )}
+                <button
+                  className="btn btn-light btn-sm text-secondary px-2 py-1 border"
+                  onClick={() => setShowDeletedModal(false)}
+                >
+                  <i className="bi bi-x-lg"></i>
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-4 overflow-auto flex-grow-1">
+              <p className="text-muted extra-small text-uppercase mb-3">
+                <i className="bi bi-info-circle me-1 text-primary"></i>
+                Deleted projects stay here safely until you restore them or delete them permanently.
+              </p>
+
+              {loadingDeleted && (
+                <div className="text-center py-4">
+                  <div className="spinner-border spinner-border-sm text-danger mb-2" role="status"></div>
+                  <div className="text-muted extra-small text-uppercase">LOADING DELETED PROJECTS...</div>
+                </div>
+              )}
+
+              {!loadingDeleted && deletedProjects.length === 0 && (
+                <div className="text-center py-5 bg-light rounded-3 border">
+                  <div className="display-4 text-muted mb-2">🗑️</div>
+                  <h6 className="fw-bold text-dark text-uppercase mb-1">RECYCLE BIN IS EMPTY</h6>
+                  <p className="text-muted extra-small text-uppercase mb-0">
+                    No deleted projects found. When you delete a project, it will appear here.
+                  </p>
+                </div>
+              )}
+
+              {!loadingDeleted && deletedProjects.length > 0 && (
+                <div className="d-flex flex-column gap-2.5">
+                  {deletedProjects.map((proj) => {
+                    const id = proj._id || proj.id;
+                    return (
+                      <div
+                        key={id}
+                        className="p-3 bg-white border rounded-3 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 shadow-2xs"
+                        style={{ borderColor: '#e2e8f0' }}
+                      >
+                        <div className="min-w-0 flex-grow-1">
+                          <h6 className="fw-bold text-dark text-uppercase mb-1 text-truncate" title={proj.name}>
+                            {proj.name || 'UNTITLED PROJECT'}
+                          </h6>
+                          <div className="d-flex flex-wrap align-items-center gap-2 extra-small text-muted text-uppercase">
+                            <span>
+                              <i className="bi bi-person me-1"></i>
+                              {proj.ownerName || proj.ownerUsername}
+                            </span>
+                            <span>&bull;</span>
+                            <span>
+                              <i className="bi bi-clock-history me-1 text-danger"></i>
+                              DELETED: {proj.deletedAt ? new Date(proj.deletedAt).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'RECENTLY'}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="d-flex align-items-center gap-2 flex-shrink-0">
+                          <button
+                            className="btn btn-success btn-sm fw-bold text-uppercase d-flex align-items-center gap-1.5 px-3"
+                            style={{ borderRadius: '6px', fontSize: '11px', padding: '6px 12px' }}
+                            onClick={() => handleRestoreProject(id)}
+                            title="Restore project back to your workspace"
+                          >
+                            <i className="bi bi-arrow-counterclockwise"></i>
+                            <span>RESTORE</span>
+                          </button>
+
+                          <button
+                            className="btn btn-outline-danger btn-sm fw-bold text-uppercase d-flex align-items-center gap-1 px-2.5"
+                            style={{ borderRadius: '6px', fontSize: '11px', padding: '6px 10px' }}
+                            onClick={() => handleDeletePermanent(id)}
+                            title="Delete forever (irreversible)"
+                          >
+                            <i className="bi bi-x-circle"></i>
+                            <span className="d-none d-md-inline">DELETE FOREVER</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-4 py-2.5 bg-light border-top d-flex justify-content-between align-items-center rounded-bottom-3">
+              <span className="text-muted extra-small text-uppercase">
+                TIP: Restored projects return immediately to your active projects list.
+              </span>
+              <button
+                className="btn btn-secondary btn-sm fw-bold text-uppercase px-3"
+                style={{ borderRadius: '6px', fontSize: '11px' }}
+                onClick={() => setShowDeletedModal(false)}
+              >
+                CLOSE
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── IN-BROWSER EXCEL VIEWER MODAL ── */}
       {(selectedExcelId || viewerInitialFile) && (

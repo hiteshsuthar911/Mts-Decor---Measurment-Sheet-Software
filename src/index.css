@@ -553,6 +553,109 @@ body {
 @media (max-width: 767.98px) {
   .app-container {
     padding-bottom: calc(75px + env(safe-area-inset-bottom, 0px)); /* Space for mobile sticky bar */
+    overflow-x: hidden;
+  }
+
+  /* Header Toolbar Mobile Optimization */
+  .ms-toolbar {
+    height: auto;
+    min-height: 48px;
+    padding: 6px 10px;
+    gap: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .ms-tl {
+    flex: 0 0 auto;
+    max-width: 44%;
+    min-width: 0;
+  }
+  .ms-proj-name {
+    max-width: 105px;
+    font-size: 11px;
+    letter-spacing: 0.2px;
+  }
+  .ms-tr {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    justify-content: flex-end;
+    padding: 2px 0;
+  }
+  .ms-tr::-webkit-scrollbar {
+    display: none;
+  }
+  .ms-btn {
+    padding: 5px 8px;
+    font-size: 10px;
+    flex-shrink: 0;
+  }
+  .ms-toggle {
+    padding: 3px 6px;
+    flex-shrink: 0;
+  }
+  .ms-vsep {
+    height: 14px;
+    margin: 0 1px;
+  }
+
+  /* Header Tab Bar Mobile Optimization */
+  .ms-tabbar {
+    padding: 0 4px;
+    height: 38px;
+  }
+  .ms-tabs {
+    width: 100%;
+    display: flex;
+    align-items: stretch;
+    justify-content: space-between;
+  }
+  .ms-tab {
+    flex: 1;
+    padding: 0 3px;
+    font-size: 9.5px;
+    justify-content: center;
+    gap: 3px;
+  }
+  .ms-ttext {
+    font-size: 9.5px;
+  }
+  .ms-tnum {
+    width: 13px;
+    height: 13px;
+    font-size: 7.5px;
+  }
+
+  /* Summary Dashboard Mobile Polishing */
+  .summary-dashboard {
+    margin-top: 1rem !important;
+    margin-bottom: 1.5rem !important;
+    border-radius: 8px;
+  }
+  .summary-dashboard .card-header {
+    padding: 0.85rem !important;
+  }
+  .summary-dashboard .card-title {
+    font-size: 0.98rem !important;
+  }
+  .summary-dashboard .card-body {
+    padding: 0.6rem !important;
+  }
+  .summary-dashboard .table th,
+  .summary-dashboard .table td {
+    padding: 6px 7px !important;
+    font-size: 0.78rem !important;
+  }
+  .summary-dashboard .table td:nth-child(2) {
+    min-width: 120px;
+    max-width: 150px;
+    white-space: normal;
   }
 
   .stat-card .fs-4 {
@@ -565,23 +668,46 @@ body {
     width: 100% !important;
   }
 
-  /* Compact form controls for mobile */
+  /* Prevent iOS Safari / iPad from auto-zooming on focus by enforcing 16px minimum font size */
+  input,
+  select,
+  textarea,
+  .form-control,
   .form-control-sm,
-  .form-select-sm {
-    font-size: 0.82rem;
+  .form-select,
+  .form-select-sm,
+  .ms-finput {
+    font-size: 16px !important;
   }
 }
 
-/* Tablet & iPad Portrait (768px to 1024px) */
-@media (min-width: 768px) and (max-width: 1024px) {
+/* Tablet & iPad Portrait & Landscape (up to 1024px) */
+@media (max-width: 1024px) {
+  input,
+  select,
+  textarea,
+  .form-control,
+  .form-control-sm,
+  .form-select,
+  .form-select-sm,
+  .ms-finput {
+    font-size: 16px !important; /* Critical for iPadOS / iOS input zoom prevention */
+  }
+
   .stat-card .fs-4 {
     font-size: 1.25rem !important;
   }
 
   .contractor-sheet-page {
-    padding: 1.5rem !important;
+    padding: 1.25rem !important;
+  }
+
+  /* Responsive table scrolling on iPad / tablets */
+  .table-responsive {
+    -webkit-overflow-scrolling: touch;
   }
 }
+
 
 /* Print Sheet Styling - Matches Contractor PDF / Engineering Book */
 .contractor-sheet-page {
@@ -589,7 +715,7 @@ body {
   max-width: 1100px;
   border: 1px solid #cbd5e1;
   background: white;
-  min-height: 800px;
+  min-height: auto;
   box-sizing: border-box;
   transition: all 0.2s ease;
 }
@@ -667,15 +793,28 @@ body {
   overscroll-behavior-x: contain;
 }
 
+/* ─── A4 Standard Print Page Definition ─── */
+@page {
+  size: A4 portrait;
+  margin: 5mm 6mm 5mm 6mm;
+}
+
 /* Print View Styles */
 @media print {
-  body {
+  html, body {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
     background-color: #ffffff !important;
     color: #000000 !important;
-    font-size: 11pt;
+    font-size: 8.5pt !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
   .no-print,
+  .d-print-none,
   .btn,
   .toast,
   .mobile-sticky-bar,
@@ -687,14 +826,20 @@ body {
   .print-view-wrapper {
     padding: 0 !important;
     margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
   }
 
   .contractor-sheet-page {
     box-shadow: none !important;
     border: none !important;
     padding: 0 !important;
+    margin: 0 !important;
+    margin-bottom: 0 !important;
     max-width: 100% !important;
     width: 100% !important;
+    min-height: auto !important;
+    height: auto !important;
     page-break-after: always !important;
     break-after: page !important;
   }
@@ -704,20 +849,117 @@ body {
     break-after: auto !important;
   }
 
+  /* Compact company header for print */
+  .contractor-sheet-page .company-header-block {
+    margin-bottom: 4px !important;
+  }
+  .contractor-sheet-page .company-header-block h3 {
+    font-size: 13pt !important;
+    font-weight: 800 !important;
+    letter-spacing: 1.5px !important;
+    margin: 0 !important;
+    line-height: 1.25 !important;
+  }
+  .contractor-sheet-page .company-header-block .client-subtitle {
+    font-size: 8.5pt !important;
+    margin: 0 !important;
+    line-height: 1.2 !important;
+  }
+
+  /* Unclamped table display so print engine fits exactly across A4 */
+  .table-responsive {
+    overflow: visible !important;
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
   .sheet-grid-table {
+    width: 100% !important;
+    max-width: 100% !important;
+    table-layout: fixed !important;
+    border-collapse: collapse !important;
     page-break-inside: auto;
+    margin: 0 !important;
   }
 
-  .sheet-grid-table tr {
-    page-break-inside: avoid;
-    page-break-after: auto;
+  .sheet-grid-table thead tr th {
+    background-color: #f1f5f9 !important;
+    font-weight: 700 !important;
+    border: 1px solid #000000 !important;
+    padding: 3px 4px !important;
+    font-size: 8.5pt !important;
+    line-height: 1.2 !important;
   }
 
-  .sheet-grid-table th,
-  .sheet-grid-table td {
-    border: 1.5px solid #000000 !important;
+  .sheet-grid-table thead .project-header-row th {
+    padding: 3px 5px !important;
+  }
+  .sheet-grid-table thead .project-header-row .project-name span {
+    font-size: 11pt !important;
+    font-weight: 800 !important;
+  }
+  .sheet-grid-table thead .project-header-row .meta-item {
+    font-size: 8.5pt !important;
+  }
+
+  .sheet-grid-table thead tr th div,
+  .sheet-grid-table thead tr th span {
+    font-size: inherit !important;
+    line-height: inherit !important;
+  }
+
+  .sheet-grid-table tbody tr td {
+    border: 1px solid #000000 !important;
+    padding: 2.5px 4px !important;
+    font-size: 8.5pt !important;
+    line-height: 1.2 !important;
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+  }
+
+  .sheet-grid-table tbody tr td div,
+  .sheet-grid-table tbody tr td span {
+    font-size: inherit !important;
+    line-height: inherit !important;
+  }
+
+  /* Avoid orphan subtotal and total rows across print pages */
+  .sheet-grid-table tr.fw-bold,
+  .sheet-grid-table tr.fw-bolder,
+  .sheet-grid-table tfoot tr {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  .sheet-grid-table tr.fw-bold td,
+  .sheet-grid-table tr.fw-bolder td {
+    padding: 3px 4px !important;
+    font-size: 8.5pt !important;
+    line-height: 1.2 !important;
+  }
+
+  /* Page footer compact */
+  .contractor-sheet-page .page-footer-block {
+    margin-top: 4px !important;
+    padding-top: 3px !important;
+    font-size: 7.5pt !important;
+  }
+
+  /* Signature Block in Print */
+  .signature-block-print {
+    margin-top: 1.25rem !important;
+    padding-top: 0.5rem !important;
+  }
+  .signature-block-print .sig-label {
+    font-size: 9pt !important;
+    font-weight: 700 !important;
+  }
+  .signature-block-print .sig-sub {
+    font-size: 7.5pt !important;
   }
 }
 

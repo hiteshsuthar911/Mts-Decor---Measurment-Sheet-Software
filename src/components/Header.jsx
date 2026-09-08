@@ -25,6 +25,11 @@ export default function Header({
   isOwn = true,
   ownerName = '',
   onLogout = () => {},
+  onUndo = () => {},
+  onRedo = () => {},
+  canUndo = false,
+  canRedo = false,
+  onDuplicateProject = () => {},
 }) {
   const [showDetails, setShowDetails] = useState(true);
 
@@ -68,21 +73,21 @@ export default function Header({
               {headerData.projectName || 'MEASUREMENT SHEET'}
             </span>
             {!isOwn && (
-              <span className="ms-owner-chip">
+              <span className="ms-owner-chip d-none d-sm-inline-flex">
                 <i className="bi bi-eye-fill" />
                 {ownerName?.toUpperCase()}
               </span>
             )}
             {isOwn && (
-              <span className="ms-mine-chip">
+              <span className="ms-mine-chip d-none d-sm-inline-flex">
                 <i className="bi bi-folder-fill" /> MINE
               </span>
             )}
           </div>
 
-          {/* Save status pill */}
+          {/* Save status pill (compact / hidden on small mobile) */}
           {(lastSavedAt || isSaving) && (
-            <div className={`ms-save-pill ${isSaving ? 'ms-save-pill--saving' : ''}`}>
+            <div className={`ms-save-pill d-none d-md-inline-flex ${isSaving ? 'ms-save-pill--saving' : ''}`}>
               {isSaving ? (
                 <><span className="ms-spin" /> Saving…</>
               ) : (
@@ -111,6 +116,40 @@ export default function Header({
           </label>
 
           <div className="ms-vsep" />
+
+          {/* Undo / Redo */}
+          {!readOnly && (
+            <div className="d-flex align-items-center gap-1">
+              <button
+                className="ms-btn ms-btn-ghost"
+                onClick={onUndo}
+                disabled={!canUndo}
+                title="Undo (Ctrl+Z / Cmd+Z)"
+                style={{
+                  opacity: canUndo ? 1 : 0.4,
+                  cursor: canUndo ? 'pointer' : 'not-allowed',
+                  padding: '0 8px',
+                }}
+              >
+                <i className="bi bi-arrow-counterclockwise" style={{ fontSize: '13px' }} />
+                <span className="d-none d-xxl-inline">UNDO</span>
+              </button>
+              <button
+                className="ms-btn ms-btn-ghost"
+                onClick={onRedo}
+                disabled={!canRedo}
+                title="Redo (Ctrl+Y / Cmd+Y)"
+                style={{
+                  opacity: canRedo ? 1 : 0.4,
+                  cursor: canRedo ? 'pointer' : 'not-allowed',
+                  padding: '0 8px',
+                }}
+              >
+                <i className="bi bi-arrow-clockwise" style={{ fontSize: '13px' }} />
+                <span className="d-none d-xxl-inline">REDO</span>
+              </button>
+            </div>
+          )}
 
           {/* Save */}
           {!readOnly && (
@@ -148,6 +187,12 @@ export default function Header({
           <button className="ms-btn ms-btn-ghost" onClick={onExportExcel} title="Export Excel">
             <i className="bi bi-file-earmark-excel-fill" style={{ color: '#4ade80' }} />
             <span className="d-none d-xl-inline">EXCEL</span>
+          </button>
+
+          {/* Duplicate Project */}
+          <button className="ms-btn ms-btn-ghost" onClick={onDuplicateProject} title="Duplicate This Project (Make a Copy)">
+            <i className="bi bi-copy" />
+            <span className="d-none d-xl-inline">COPY</span>
           </button>
 
           {/* Clear */}
@@ -195,7 +240,7 @@ export default function Header({
             onClick={() => onChangeSection('info')}
           >
             <span className="ms-tnum">1</span>
-            <i className="bi bi-card-heading" />
+            <i className="bi bi-card-heading d-none d-sm-inline" />
             <span className="ms-ttext">Project Info</span>
           </button>
 
@@ -204,7 +249,7 @@ export default function Header({
             onClick={() => onChangeSection('measurements')}
           >
             <span className="ms-tnum">2</span>
-            <i className="bi bi-grid-3x3-gap-fill" />
+            <i className="bi bi-grid-3x3-gap-fill d-none d-sm-inline" />
             <span className="ms-ttext">Measurements</span>
             {areasCount > 0 && <span className="ms-tcount">{areasCount}</span>}
           </button>
@@ -214,7 +259,7 @@ export default function Header({
             onClick={() => onChangeSection('summary')}
           >
             <span className="ms-tnum">3</span>
-            <i className="bi bi-pie-chart-fill" />
+            <i className="bi bi-pie-chart-fill d-none d-sm-inline" />
             <span className="ms-ttext">Summary</span>
           </button>
 
@@ -268,6 +313,30 @@ export default function Header({
               <input className="ms-finput" type="text" placeholder="MS/01/2025"
                 value={headerData.sheetNo || ''}
                 onChange={(e) => handleChange('sheetNo', e.target.value)}
+                readOnly={readOnly}
+              />
+            </div>
+
+            <div className="col-6 col-md-2 col-lg-2">
+              <label className="ms-flabel"><i className="bi bi-layers-fill me-1" style={{color:'#38bdf8'}} />Floor No.</label>
+              <input className="ms-finput" type="text" placeholder="e.g. 1st Floor"
+                value={headerData.floorNo || headerData.floor || ''}
+                onChange={(e) => {
+                  handleChange('floorNo', e.target.value);
+                  handleChange('floor', e.target.value);
+                }}
+                readOnly={readOnly}
+              />
+            </div>
+
+            <div className="col-6 col-md-2 col-lg-2">
+              <label className="ms-flabel"><i className="bi bi-door-closed-fill me-1" style={{color:'#a78bfa'}} />Flat / Unit No.</label>
+              <input className="ms-finput" type="text" placeholder="e.g. Flat 101"
+                value={headerData.flatNo || headerData.flat || ''}
+                onChange={(e) => {
+                  handleChange('flatNo', e.target.value);
+                  handleChange('flat', e.target.value);
+                }}
                 readOnly={readOnly}
               />
             </div>

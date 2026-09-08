@@ -3,31 +3,74 @@ const auth = require('../middleware/authMiddleware');
 const Project = require('../models/Project');
 const { triggerAutoBackup } = require('../utils/googleDrive');
 
-// GET /api/projects — all projects (partitioned by company for normal users)
+// Helper to build company/user filter
+function buildCompanyFilter(user, query = {}) {
+  let filter = {};
+  if (user.role === 'ADMIN') {
+    if (query.companySlug) {
+      filter.companySlug = query.companySlug;
+    } else if (query.companyId) {
+      filter.companyId = query.companyId;
+    }
+  } else {
+    const slug = user.companySlug || 'mts-decor';
+    filter = {
+      $or: [
+        { companySlug: slug },
+        { companyId: user.companyId },
+        ...(slug === 'mts-decor' ? [{ companySlug: { $exists: false } }, { companySlug: null }] : []),
+      ]
+    };
+  }
+  return filter;
+}
+
+// GET /api/projects — all active projects (excluding soft-deleted)
 router.get('/', auth, async (req, res) => {
   try {
-    let filter = {};
-    if (req.user.role === 'ADMIN') {
-      if (req.query.companySlug) {
-        filter.companySlug = req.query.companySlug;
-      } else if (req.query.companyId) {
-        filter.companyId = req.query.companyId;
-      }
-    } else {
-      const slug = req.user.companySlug || 'mts-decor';
-      filter = {
-        $or: [
-          { companySlug: slug },
-          { companyId: req.user.companyId },
-          ...(slug === 'mts-decor' ? [{ companySlug: { $exists: false } }, { companySlug: null }] : []),
-        ]
-      };
-    }
+    const baseFilter = buildCompanyFilter(req.user, req.query);
+    const filter = {
+      ...baseFilter,
+      isDeleted: { $ne: true },
+    };
 
     const projects = await Project.find(filter)
       .select('-data') // Don't send full data in list (performance)
       .sort({ updatedAt: -1 });
     res.json(projects);
+  } catch (err) {
+    res.status(500).json({ message: 'SERVER ERROR' });
+  }
+});
+
+// GET /api/projects/deleted — all soft-deleted projects
+router.get('/deleted', auth, async (req, res) => {
+  try {
+    const baseFilter = buildCompanyFilter(req.user, req.query);
+    const filter = {
+      ...baseFilter,
+      isDeleted: true,
+    };
+
+    const projects = await Project.find(filter)
+      .select('-data')
+      .sort({ deletedAt: -1, updatedAt: -1 });
+    res.json(projects);
+  } catch (err) {
+    res.status(500).json({ message: 'SERVER ERROR' });
+  }
+});
+
+// DELETE /api/projects/deleted/empty — permanently purge all deleted projects
+router.delete('/deleted/empty', auth, async (req, res) => {
+  try {
+    let filter = { isDeleted: true };
+    if (req.user.role !== 'ADMIN') {
+      filter.ownerUsername = req.user.username;
+    }
+    const result = await Project.deleteMany(filter);
+    res.json({ message: 'TRASH EMPTIED', deletedCount: result.deletedCount });
+    triggerAutoBackup();
   } catch (err) {
     res.status(500).json({ message: 'SERVER ERROR' });
   }
@@ -57,6 +100,7 @@ router.post('/', auth, async (req, res) => {
       lastEditedBy: req.user.name,
       lastEditedAt: new Date(),
       data: data || {},
+      isDeleted: false,
     });
     res.status(201).json(project);
     triggerAutoBackup();
@@ -88,15 +132,93 @@ router.put('/:id', auth, async (req, res) => {
   }
 });
 
-// DELETE /api/projects/:id — only owner can delete
+// POST /api/projects/:id/duplicate — duplicate an existing project
+router.post('/:id/duplicate', auth, async (req, res) => {
+  try {
+    const original = await Project.findById(req.params.id);
+    if (!original) return res.status(404).json({ message: 'PROJECT NOT FOUND' });
+
+    // Deep clone original data
+    const clonedData = original.data ? JSON.parse(JSON.stringify(original.data)) : {};
+
+    // Suffix name with (COPY)
+    const origName = (original.name || clonedData?.header?.projectName || 'UNTITLED PROJECT').trim();
+    const newName = `${origName} (COPY)`;
+
+    if (clonedData.header) {
+      clonedData.header.projectName = newName;
+    }
+
+    const duplicate = await Project.create({
+      name: newName,
+      ownerUsername: req.user.username,
+      ownerName: req.user.name,
+      companyId: req.user.companyId || original.companyId || null,
+      companySlug: req.user.companySlug || original.companySlug || 'mts-decor',
+      lastEditedBy: req.user.name,
+      lastEditedAt: new Date(),
+      data: clonedData,
+      isDeleted: false,
+    });
+
+    res.status(201).json(duplicate);
+    triggerAutoBackup();
+  } catch (err) {
+    console.error('DUPLICATE PROJECT ERROR:', err);
+    res.status(500).json({ message: 'SERVER ERROR' });
+  }
+});
+
+// POST /api/projects/:id/restore — restore soft-deleted project
+router.post('/:id/restore', auth, async (req, res) => {
+  try {
+    const project = await Project.findById(req.params.id);
+    if (!project) return res.status(404).json({ message: 'PROJECT NOT FOUND' });
+    if (project.ownerUsername !== req.user.username && req.user.role !== 'ADMIN')
+      return res.status(403).json({ message: 'FORBIDDEN: ONLY OWNER OR ADMIN CAN RESTORE' });
+
+    project.isDeleted = false;
+    project.deletedAt = null;
+    project.deletedBy = null;
+    await project.save();
+
+    res.json({ message: 'PROJECT RESTORED', project });
+    triggerAutoBackup();
+  } catch (err) {
+    res.status(500).json({ message: 'SERVER ERROR' });
+  }
+});
+
+// DELETE /api/projects/:id/permanent — permanently delete project
+router.delete('/:id/permanent', auth, async (req, res) => {
+  try {
+    const project = await Project.findById(req.params.id);
+    if (!project) return res.status(404).json({ message: 'PROJECT NOT FOUND' });
+    if (project.ownerUsername !== req.user.username && req.user.role !== 'ADMIN')
+      return res.status(403).json({ message: 'FORBIDDEN: ONLY OWNER OR ADMIN CAN DELETE' });
+
+    await project.deleteOne();
+    res.json({ message: 'PROJECT PERMANENTLY DELETED' });
+    triggerAutoBackup();
+  } catch (err) {
+    res.status(500).json({ message: 'SERVER ERROR' });
+  }
+});
+
+// DELETE /api/projects/:id — soft delete (move to trash)
 router.delete('/:id', auth, async (req, res) => {
   try {
     const project = await Project.findById(req.params.id);
     if (!project) return res.status(404).json({ message: 'PROJECT NOT FOUND' });
     if (project.ownerUsername !== req.user.username && req.user.role !== 'ADMIN')
       return res.status(403).json({ message: 'FORBIDDEN: ONLY OWNER OR ADMIN CAN DELETE' });
-    await project.deleteOne();
-    res.json({ message: 'PROJECT DELETED' });
+
+    project.isDeleted = true;
+    project.deletedAt = new Date();
+    project.deletedBy = req.user.name;
+    await project.save();
+
+    res.json({ message: 'PROJECT MOVED TO RECENTLY DELETED' });
     triggerAutoBackup();
   } catch (err) {
     res.status(500).json({ message: 'SERVER ERROR' });
@@ -109,6 +231,7 @@ router.get('/stats/all', auth, async (req, res) => {
     if (req.user.role !== 'ADMIN')
       return res.status(403).json({ message: 'ADMIN ONLY' });
     const stats = await Project.aggregate([
+      { $match: { isDeleted: { $ne: true } } },
       { $group: { _id: '$ownerUsername', count: { $sum: 1 }, projects: { $push: { name: '$name', id: '$_id', lastEditedAt: '$lastEditedAt' } } } }
     ]);
     res.json(stats);

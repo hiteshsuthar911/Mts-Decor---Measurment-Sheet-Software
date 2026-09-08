@@ -11,7 +11,7 @@ import { getSession, logout } from '../utils/auth';
 import { calculateProjectGrandTotals, groupAreasIntoPages, calculateSheetPageTotals, formatNumber } from '../utils/calculations';
 import { exportToExcel } from '../utils/exportUtils';
 import { createEmptyArea } from '../data/sampleData';
-import { getProject, saveProject, saveExcelFile } from '../utils/storage';
+import { getProject, saveProject, duplicateProject, saveExcelFile } from '../utils/storage';
 
 export default function MeasurementSheet() {
   const { projectId } = useParams();
@@ -83,8 +83,9 @@ export default function MeasurementSheet() {
     }
   }, [tabParam]);
 
-  // Guard: must be logged in
+  // Guard: must be logged in & scroll to top
   useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     if (!session) { navigate('/login'); return; }
     fetchProject();
   }, [projectId]);
@@ -114,6 +115,7 @@ export default function MeasurementSheet() {
           : [createEmptyArea()]
       };
       setProjectData(safeData);
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
       if (proj?.updatedAt) setLastSavedAt(new Date(proj.updatedAt));
       if (proj?.ownerUsername === session?.username || session?.role === 'ADMIN') setEditUnlocked(true);
     } catch (err) {
@@ -129,6 +131,9 @@ export default function MeasurementSheet() {
       }
     } finally {
       setPageLoading(false);
+      setTimeout(() => {
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      }, 50);
     }
   };
 
@@ -139,6 +144,13 @@ export default function MeasurementSheet() {
 
   const isDirtyRef = useRef(false);
   const latestDataRef = useRef(null);
+
+  // Undo & Redo History Stacks
+  const undoStackRef = useRef([]);
+  const redoStackRef = useRef([]);
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
+  const lastSnapshotTimeRef = useRef(0);
 
   // Auto-save every 1 second if changes were detected
   useEffect(() => {
@@ -198,14 +210,99 @@ export default function MeasurementSheet() {
     projectData?.settings?.taxPercent
   );
 
-  const setAndSave = (updater) => {
+  const setAndSave = (updater, options = {}) => {
     setProjectData(prev => {
       const next = typeof updater === 'function' ? updater(prev) : updater;
+
+      // Push snapshot to undo stack if not skipped
+      if (!options.skipUndo && prev) {
+        const now = Date.now();
+        // If immediate action or > 500ms since last typing snapshot, record a new step
+        if (options.immediate || now - lastSnapshotTimeRef.current > 500) {
+          try {
+            undoStackRef.current.push(JSON.parse(JSON.stringify(prev)));
+            if (undoStackRef.current.length > 40) undoStackRef.current.shift();
+            redoStackRef.current = []; // Clear redo stack on new action
+            setCanUndo(true);
+            setCanRedo(false);
+            lastSnapshotTimeRef.current = now;
+          } catch { /* ignore snapshot error */ }
+        }
+      }
+
       latestDataRef.current = next;
       isDirtyRef.current = true;
       return next;
     });
   };
+
+  const handleUndo = () => {
+    if (undoStackRef.current.length === 0) return;
+    const previousState = undoStackRef.current.pop();
+
+    if (latestDataRef.current || projectData) {
+      redoStackRef.current.push(JSON.parse(JSON.stringify(latestDataRef.current || projectData)));
+      if (redoStackRef.current.length > 40) redoStackRef.current.shift();
+    }
+
+    latestDataRef.current = previousState;
+    isDirtyRef.current = true;
+    lastSnapshotTimeRef.current = 0;
+    setProjectData(previousState);
+
+    setCanUndo(undoStackRef.current.length > 0);
+    setCanRedo(true);
+    showToast('ACTION UNDONE (UNDO)');
+  };
+
+  const handleRedo = () => {
+    if (redoStackRef.current.length === 0) return;
+    const nextState = redoStackRef.current.pop();
+
+    if (latestDataRef.current || projectData) {
+      undoStackRef.current.push(JSON.parse(JSON.stringify(latestDataRef.current || projectData)));
+      if (undoStackRef.current.length > 40) undoStackRef.current.shift();
+    }
+
+    latestDataRef.current = nextState;
+    isDirtyRef.current = true;
+    lastSnapshotTimeRef.current = 0;
+    setProjectData(nextState);
+
+    setCanUndo(true);
+    setCanRedo(redoStackRef.current.length > 0);
+    showToast('ACTION RESTORED (REDO)');
+  };
+
+  // Keyboard Shortcuts: Ctrl+Z / Cmd+Z (Undo) and Ctrl+Y / Cmd+Shift+Z / Cmd+Y (Redo)
+  useEffect(() => {
+    if (readOnly) return;
+
+    const handleKeyDown = (e) => {
+      const modKey = e.ctrlKey || e.metaKey;
+      if (!modKey) return;
+
+      const key = e.key.toLowerCase();
+      if (key === 'z') {
+        if (e.shiftKey) {
+          // Redo: Ctrl+Shift+Z or Cmd+Shift+Z
+          e.preventDefault();
+          handleRedo();
+        } else {
+          // Undo: Ctrl+Z or Cmd+Z
+          e.preventDefault();
+          handleUndo();
+        }
+      } else if (key === 'y') {
+        // Redo: Ctrl+Y or Cmd+Y
+        e.preventDefault();
+        handleRedo();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [readOnly, projectData]);
 
   const handleUpdateHeader = (newHeader) =>
     setAndSave(prev => ({ ...prev, header: newHeader }));
@@ -327,6 +424,21 @@ export default function MeasurementSheet() {
     if (!confirm('CLEAR ALL MEASUREMENTS IN THIS PROJECT?')) return;
     setProjectData(prev => ({ ...prev, areas: [createEmptyArea()] }));
     showToast('SHEET CLEARED');
+  };
+
+  const handleDuplicateProject = async () => {
+    const pId = project?._id || projectId;
+    if (!pId) return;
+    try {
+      showToast('DUPLICATING PROJECT...');
+      const duplicated = await duplicateProject(pId);
+      showToast('PROJECT DUPLICATED SUCCESSFULLY');
+      if (duplicated && duplicated._id) {
+        navigate(`/sheet/${duplicated._id}`);
+      }
+    } catch (err) {
+      alert('DUPLICATE FAILED: ' + err.message);
+    }
   };
 
   const handleExportExcel = async () => {
@@ -471,6 +583,11 @@ export default function MeasurementSheet() {
         }}
         onOpenQuickMeasure={readOnly ? () => {} : () => setShowQuickMeasure(true)}
         onSave={handleManualSave}
+        onUndo={readOnly ? () => {} : handleUndo}
+        onRedo={readOnly ? () => {} : handleRedo}
+        canUndo={canUndo}
+        canRedo={canRedo}
+        onDuplicateProject={handleDuplicateProject}
         isSaving={isSaving}
         lastSavedAt={lastSavedAt}
         isPrintView={isPrintView}
@@ -567,6 +684,32 @@ export default function MeasurementSheet() {
                       </span>
                     </div>
                     <div className="d-flex align-items-center gap-2">
+                      {!readOnly && (
+                        <div className="btn-group btn-group-sm me-1" role="group">
+                          <button
+                            type="button"
+                            className="btn btn-outline-light extra-small fw-bold text-uppercase py-1 px-2.5 d-flex align-items-center gap-1"
+                            onClick={handleUndo}
+                            disabled={!canUndo}
+                            title="Undo (Ctrl+Z / Cmd+Z)"
+                            style={{ opacity: canUndo ? 1 : 0.4 }}
+                          >
+                            <i className="bi bi-arrow-counterclockwise"></i>
+                            <span>UNDO</span>
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-outline-light extra-small fw-bold text-uppercase py-1 px-2.5 d-flex align-items-center gap-1"
+                            onClick={handleRedo}
+                            disabled={!canRedo}
+                            title="Redo (Ctrl+Y / Cmd+Y)"
+                            style={{ opacity: canRedo ? 1 : 0.4 }}
+                          >
+                            <i className="bi bi-arrow-clockwise"></i>
+                            <span>REDO</span>
+                          </button>
+                        </div>
+                      )}
                       <button
                         type="button"
                         className="btn btn-sm btn-outline-light extra-small fw-bold text-uppercase py-1 px-2"
@@ -1008,20 +1151,18 @@ export default function MeasurementSheet() {
             <div className="summary-section-container mb-4">
               {activeSection === 'summary' && (
                 <div className="container-fluid px-2 px-md-3 mb-3">
-                  <div className="bg-dark text-white rounded-3 p-2 px-3 d-flex flex-wrap justify-content-between align-items-center gap-2 shadow-sm">
+                  <div className="bg-dark text-white rounded-3 p-2 px-3 d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2 shadow-sm">
                     <div className="d-flex align-items-center gap-2">
                       <span className="badge bg-success fw-bold text-uppercase px-2 py-1">PAGE 3 OF 3</span>
-                      <span className="fw-bold text-uppercase small text-light">EXECUTIVE SUMMARY &amp; BILLING ROLL-UP</span>
+                      <span className="fw-bold text-uppercase extra-small text-light">EXECUTIVE SUMMARY &amp; ROLL-UP</span>
                     </div>
-                    <div className="d-flex align-items-center gap-2">
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-outline-light extra-small fw-bold text-uppercase py-1 px-2"
-                        onClick={() => setActiveSection('measurements')}
-                      >
-                        <i className="bi bi-rulers me-1"></i> Back to Measurements
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline-light extra-small fw-bold text-uppercase py-1 px-2 w-100 w-sm-auto text-nowrap"
+                      onClick={() => setActiveSection('measurements')}
+                    >
+                      <i className="bi bi-rulers me-1"></i> Back to Measurements
+                    </button>
                   </div>
                 </div>
               )}
@@ -1034,20 +1175,20 @@ export default function MeasurementSheet() {
 
               {activeSection === 'summary' && (
                 <div className="container-fluid px-2 px-md-3 my-4">
-                  <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 p-3 bg-white border rounded-3 shadow-sm">
+                  <div className="d-flex flex-column flex-md-row justify-content-between align-items-stretch align-items-md-center gap-2 p-3 bg-white border rounded-3 shadow-sm">
                     <button
                       type="button"
-                      className="btn btn-outline-dark fw-bold text-uppercase extra-small d-flex align-items-center gap-2 px-3 py-2"
+                      className="btn btn-outline-dark fw-bold text-uppercase extra-small d-flex align-items-center justify-content-center gap-2 px-3 py-2"
                       onClick={() => setActiveSection('measurements')}
                     >
                       <i className="bi bi-arrow-left"></i>
                       <span>&larr; Back to Measurements (Page 2)</span>
                     </button>
 
-                    <div className="d-flex align-items-center gap-2">
+                    <div className="d-flex flex-column flex-sm-row align-items-stretch align-items-sm-center gap-2">
                       <button
                         type="button"
-                        className="btn btn-warning text-dark fw-bold text-uppercase extra-small px-3 py-2 d-flex align-items-center gap-2 shadow-sm"
+                        className="btn btn-warning text-dark fw-bold text-uppercase extra-small px-3 py-2 d-flex align-items-center justify-content-center gap-2 shadow-sm"
                         onClick={() => setIsPrintView(true)}
                       >
                         <i className="bi bi-printer-fill"></i>
@@ -1055,7 +1196,7 @@ export default function MeasurementSheet() {
                       </button>
                       <button
                         type="button"
-                        className="btn btn-success fw-bold text-uppercase extra-small px-3 py-2 d-flex align-items-center gap-2 shadow-sm"
+                        className="btn btn-success fw-bold text-uppercase extra-small px-3 py-2 d-flex align-items-center justify-content-center gap-2 shadow-sm"
                         onClick={handleExportExcel}
                       >
                         <i className="bi bi-file-earmark-excel-fill"></i>

@@ -9,6 +9,9 @@ const projectSchema = new mongoose.Schema({
   lastEditedBy:    { type: String },
   lastEditedAt:    { type: Date },
   data:            { type: mongoose.Schema.Types.Mixed, default: {} },
+  isDeleted:       { type: Boolean, default: false, index: true },
+  deletedAt:       { type: Date, default: null },
+  deletedBy:       { type: String, default: null },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Project', projectSchema);

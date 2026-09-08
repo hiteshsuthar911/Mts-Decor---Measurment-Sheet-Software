@@ -5,11 +5,14 @@ import { calculateLineItemTotal, calculateLineItemAmount, formatNumber, formatCu
 export default function LineItemRow({
   item,
   index,
+  totalItems,
   billingMode,
   currencySymbol = '₹',
   onChangeItem,
   onDuplicateItem,
-  onDeleteItem
+  onDeleteItem,
+  onMoveItemUp,
+  onMoveItemDown,
 }) {
   const lineTotal = calculateLineItemTotal(item);
   const lineAmount = calculateLineItemAmount(item, lineTotal);
@@ -149,8 +152,30 @@ export default function LineItemRow({
       )}
 
       {/* Actions */}
-      <td className="text-center align-middle" style={{ width: '80px' }}>
+      <td className="text-center align-middle" style={{ width: '110px' }}>
         <div className="btn-group btn-group-sm">
+          {onMoveItemUp && (
+            <button
+              type="button"
+              className="btn btn-outline-secondary btn-xs"
+              disabled={index === 0}
+              onClick={() => onMoveItemUp(item.id)}
+              title="Move Row Up"
+            >
+              <i className="bi bi-arrow-up"></i>
+            </button>
+          )}
+          {onMoveItemDown && (
+            <button
+              type="button"
+              className="btn btn-outline-secondary btn-xs"
+              disabled={totalItems !== undefined && index >= totalItems - 1}
+              onClick={() => onMoveItemDown(item.id)}
+              title="Move Row Down"
+            >
+              <i className="bi bi-arrow-down"></i>
+            </button>
+          )}
           <button
             type="button"
             className="btn btn-outline-secondary btn-xs"

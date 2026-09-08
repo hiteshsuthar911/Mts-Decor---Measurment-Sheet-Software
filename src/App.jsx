@@ -1,5 +1,5 @@
-import React from 'react';
-import { BrowserRouter, HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter, HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import DownloadPage from './pages/DownloadPage';
 import AdminPanel from './pages/AdminPanel';
@@ -11,6 +11,16 @@ import { getSession, isLoggedIn } from './utils/auth';
 
 const isFileProtocol = typeof window !== 'undefined' && (window.location.protocol === 'file:' || window.isElectron);
 const Router = isFileProtocol ? HashRouter : BrowserRouter;
+
+function ScrollToTop() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [pathname]);
+
+  return null;
+}
 
 function AuthRoute({ children }) {
   const session = getSession();
@@ -37,6 +47,7 @@ function DefaultRedirect() {
 export default function App() {
   return (
     <Router>
+      <ScrollToTop />
       <Routes>
         {/* Public */}
         <Route path="/login" element={<LoginPage />} />

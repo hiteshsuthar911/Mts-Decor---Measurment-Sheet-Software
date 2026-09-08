@@ -13,11 +13,11 @@ export default function SummaryDashboard({ grandTotals: rawTotals, billingMode, 
   };
 
   return (
-    <div className="card summary-dashboard shadow-sm border-0 border-top border-4 border-dark mt-5 mb-5">
+    <div className="card summary-dashboard shadow-sm border-0 border-top border-4 border-dark my-3 my-md-5">
       <div className="card-header bg-white py-3">
-        <div className="d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
           <div>
-            <h5 className="card-title fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+            <h5 className="card-title fw-bold text-dark mb-1 d-flex align-items-center gap-2">
               <i className="bi bi-pie-chart-fill text-primary"></i>
               Executive Summary Dashboard &amp; Roll-Up
             </h5>
@@ -27,37 +27,44 @@ export default function SummaryDashboard({ grandTotals: rawTotals, billingMode, 
           </div>
 
           {/* View Filter Tabs */}
-          <div className="btn-group btn-group-sm" role="group">
+          <div className="btn-group btn-group-sm w-100 w-md-auto mt-2 mt-md-0 shadow-sm" role="group">
             <button
               type="button"
-              className={`btn ${activeTab === 'category' ? 'btn-primary' : 'btn-outline-secondary'}`}
+              className={`btn flex-fill px-2 py-1 ${activeTab === 'category' ? 'btn-primary fw-bold' : 'btn-outline-secondary'}`}
               onClick={() => setActiveTab('category')}
             >
-              <i className="bi bi-layers-half me-1"></i> By Work Category
+              <i className="bi bi-layers-half me-1"></i> <span className="d-none d-sm-inline">By </span>Category
             </button>
             <button
               type="button"
-              className={`btn ${activeTab === 'unit' ? 'btn-primary' : 'btn-outline-secondary'}`}
+              className={`btn flex-fill px-2 py-1 ${activeTab === 'unit' ? 'btn-primary fw-bold' : 'btn-outline-secondary'}`}
               onClick={() => setActiveTab('unit')}
             >
-              <i className="bi bi-rulers me-1"></i> By Unit (SFT/RFT)
+              <i className="bi bi-rulers me-1"></i> <span className="d-none d-sm-inline">By </span>Unit
             </button>
             <button
               type="button"
-              className={`btn ${activeTab === 'floor' ? 'btn-primary' : 'btn-outline-secondary'}`}
+              className={`btn flex-fill px-2 py-1 ${activeTab === 'floor' ? 'btn-primary fw-bold' : 'btn-outline-secondary'}`}
               onClick={() => setActiveTab('floor')}
             >
-              <i className="bi bi-building me-1"></i> By Floor
+              <i className="bi bi-building me-1"></i> <span className="d-none d-sm-inline">By </span>Floor
             </button>
           </div>
         </div>
       </div>
 
-      <div className="card-body p-3 p-md-4">
+      <div className="card-body p-2 p-sm-3 p-md-4">
         {/* Tab 1: Roll-up grouped by Work Category across all flats */}
         {activeTab === 'category' && (
-          <div className="table-responsive">
-            <table className="table table-hover table-bordered align-middle">
+          <div className="summary-tab-category">
+            {/* Mobile Swipe Hint */}
+            <div className="d-md-none text-muted extra-small py-1 px-2 bg-light border rounded mb-2 text-uppercase d-flex align-items-center justify-content-between">
+              <span><i className="bi bi-arrow-left-right me-1 text-primary"></i> SWIPE TABLE FOR ALL DETAILS</span>
+              <span className="badge bg-secondary-subtle text-secondary fw-bold">{grandTotals.categoryRollup.length} CATEGORIES</span>
+            </div>
+
+            <div className="table-responsive">
+              <table className="table table-hover table-bordered align-middle">
               <thead className="table-dark small text-uppercase">
                 <tr>
                   <th>#</th>
@@ -113,38 +120,44 @@ export default function SummaryDashboard({ grandTotals: rawTotals, billingMode, 
               </tfoot>
             </table>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Tab 2: Roll-up grouped by Unit (SFT, SQM, RFT, RMT, NOS) */}
-        {activeTab === 'unit' && (
-          <div className="row g-3">
-            {Object.entries(grandTotals.unitRollup).map(([unit, data]) => (
-              <div key={unit} className="col-12 col-md-6 col-lg-3">
-                <div className="p-3 rounded border bg-light">
-                  <div className="d-flex justify-content-between align-items-center mb-2">
-                    <span className="badge bg-dark fs-6">{unit}</span>
-                    <span className="text-muted extra-small">Unit Summary</span>
-                  </div>
-                  <div className="d-flex justify-content-between py-1 border-bottom small">
-                    <span className="text-secondary">Gross Additions:</span>
-                    <span className="fw-semibold">{formatNumber(data.gross)} {unit}</span>
-                  </div>
-                  <div className="d-flex justify-content-between py-1 border-bottom small">
-                    <span className="text-danger">Deductions (LESS):</span>
-                    <span className="fw-semibold text-danger">-{formatNumber(data.less)} {unit}</span>
-                  </div>
-                  <div className="d-flex justify-content-between pt-2">
-                    <span className="fw-bold text-dark">Net Quantity:</span>
-                    <span className="fw-bold text-primary fs-5">{formatNumber(data.net)} {unit}</span>
-                  </div>
+      {/* Tab 2: Roll-up grouped by Unit (SFT, SQM, RFT, RMT, NOS) */}
+      {activeTab === 'unit' && (
+        <div className="row g-3">
+          {Object.entries(grandTotals.unitRollup).map(([unit, data]) => (
+            <div key={unit} className="col-12 col-md-6 col-lg-3">
+              <div className="p-3 rounded border bg-light">
+                <div className="d-flex justify-content-between align-items-center mb-2">
+                  <span className="badge bg-dark fs-6">{unit}</span>
+                  <span className="text-muted extra-small">Unit Summary</span>
+                </div>
+                <div className="d-flex justify-content-between py-1 border-bottom small">
+                  <span className="text-secondary">Gross Additions:</span>
+                  <span className="fw-semibold">{formatNumber(data.gross)} {unit}</span>
+                </div>
+                <div className="d-flex justify-content-between py-1 border-bottom small">
+                  <span className="text-danger">Deductions (LESS):</span>
+                  <span className="fw-semibold text-danger">-{formatNumber(data.less)} {unit}</span>
+                </div>
+                <div className="d-flex justify-content-between pt-2">
+                  <span className="fw-bold text-dark">Net Quantity:</span>
+                  <span className="fw-bold text-primary fs-5">{formatNumber(data.net)} {unit}</span>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
+            </div>
+          ))}
+        </div>
+      )}
 
-        {/* Tab 3: Roll-up grouped by Floor */}
-        {activeTab === 'floor' && (
+      {/* Tab 3: Roll-up grouped by Floor */}
+      {activeTab === 'floor' && (
+        <div className="summary-tab-floor">
+          <div className="d-md-none text-muted extra-small py-1 px-2 bg-light border rounded mb-2 text-uppercase d-flex align-items-center justify-content-between">
+            <span><i className="bi bi-arrow-left-right me-1 text-primary"></i> SWIPE TABLE FOR DETAILS</span>
+            <span className="badge bg-secondary-subtle text-secondary fw-bold">{Object.keys(grandTotals.floorRollup || {}).length} FLOORS</span>
+          </div>
           <div className="table-responsive">
             <table className="table table-bordered table-hover">
               <thead className="table-light small text-uppercase">
@@ -169,7 +182,8 @@ export default function SummaryDashboard({ grandTotals: rawTotals, billingMode, 
               </tbody>
             </table>
           </div>
-        )}
+        </div>
+      )}
 
         {/* Financial Billing Roll-up (When billing mode is ON) */}
         {billingMode && (

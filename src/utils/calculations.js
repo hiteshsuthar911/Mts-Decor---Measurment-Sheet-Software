@@ -222,8 +222,6 @@ export function formatCurrency(num, symbol = '₹') {
  * - Consecutive areas with the same Work Category stay on the same sheet page.
  * - When the Work Category changes from the previous area, a new sheet page is automatically started.
  * - If an area has `startNewPage: true`, a manual page break starts a new sheet page.
- * - Sequential 1-1-2-3-1: If work category changes back to a previous category later in the sequence,
- *   it starts a new subsequent page (never merging back into page 1).
  */
 export function groupAreasIntoPages(rawAreas = []) {
   const areas = Array.isArray(rawAreas) ? rawAreas : [];
@@ -258,6 +256,7 @@ export function groupAreasIntoPages(rawAreas = []) {
 
   return pages;
 }
+
 
 /**
  * Calculates page-level rollup metrics for a specific sheet page

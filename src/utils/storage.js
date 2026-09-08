@@ -20,9 +20,34 @@ export async function saveProject(id, data) {
   return api.put(`/projects/${id}`, { data });
 }
 
-// DELETE project
+// POST duplicate project
+export async function duplicateProject(id) {
+  return api.post(`/projects/${id}/duplicate`);
+}
+
+// DELETE project (soft delete)
 export async function deleteProject(id) {
   return api.delete(`/projects/${id}`);
+}
+
+// GET soft-deleted projects
+export async function getDeletedProjects() {
+  return api.get('/projects/deleted');
+}
+
+// POST restore soft-deleted project
+export async function restoreProject(id) {
+  return api.post(`/projects/${id}/restore`);
+}
+
+// DELETE project permanently from DB
+export async function deleteProjectPermanently(id) {
+  return api.delete(`/projects/${id}/permanent`);
+}
+
+// DELETE empty trash (purge all deleted projects)
+export async function emptyTrash() {
+  return api.delete('/projects/deleted/empty');
 }
 
 // GET admin stats
