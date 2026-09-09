@@ -144,10 +144,9 @@ export default function CivilLabourRatesManager({ companySlug = 'mts-decor' }) {
   const handleSaveAll = async () => {
     setIsSaving(true);
     setSaveSuccessMsg('');
+    // 1. Always save locally first (instant)
+    saveCivilLabourRates(rates);
     try {
-      // 1. Save local
-      saveCivilLabourRates(rates);
-
       // 2. Save remote to MongoDB
       await saveCivilLabourRatesRemote({
         companySlug,
@@ -155,13 +154,14 @@ export default function CivilLabourRatesManager({ companySlug = 'mts-decor' }) {
         date: rateDate,
         rates
       });
-
-      setSaveSuccessMsg(`Saved ${rates.length} rates to Cloud & Database!`);
-      setTimeout(() => setSaveSuccessMsg(''), 4000);
+      setSaveSuccessMsg(`✅ Saved ${rates.length} rates to Cloud Database!`);
+      setTimeout(() => setSaveSuccessMsg(''), 5000);
     } catch (err) {
-      console.error('Error saving rates:', err);
-      setSaveSuccessMsg(`Saved locally in browser storage!`);
-      setTimeout(() => setSaveSuccessMsg(''), 4000);
+      console.error('Error saving rates to cloud:', err);
+      const msg = err?.message || 'Unknown error';
+      // Still saved locally — inform user clearly
+      setSaveSuccessMsg(`⚠️ Saved locally only. Cloud error: ${msg}. Try restarting the server.`);
+      setTimeout(() => setSaveSuccessMsg(''), 8000);
     } finally {
       setIsSaving(false);
     }
@@ -231,9 +231,87 @@ export default function CivilLabourRatesManager({ companySlug = 'mts-decor' }) {
     XLSX.writeFile(wb, `MTS_Decor_Civil_Labour_Rates_${rateDate.replace(/\//g, '-')}.xlsx`);
   };
 
-  // Print View
+  // Print / PDF — opens a clean formatted rate sheet in a new window
   const handlePrint = () => {
-    window.print();
+    const printRates = filteredRates.length > 0 ? filteredRates : rates;
+    const rows = printRates.map((r, idx) => `
+      <tr>
+        <td class="sr">${r.sr ?? idx + 1}</td>
+        <td class="part">${r.particulars || ''}</td>
+        <td class="unit">${r.unit || ''}</td>
+        <td class="rate">₹${r.rate ?? ''}</td>
+        <td class="rtext">${r.rateText || `${r.rate}/- per ${(r.unit || '').toLowerCase()}`}</td>
+        <td class="cat">${r.workCategory || '—'}</td>
+        <td class="grp">${r.group || '—'}</td>
+      </tr>
+    `).join('');
+
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Civil Labour Rates — MTS DECOR</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Calibri, Arial, sans-serif; font-size: 11px; color: #111; background: #fff; }
+    .header { text-align: center; padding: 14px 20px 8px; border-bottom: 2.5px solid #000; margin-bottom: 8px; }
+    .header h1 { font-size: 16px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; }
+    .header h2 { font-size: 13px; font-weight: 700; margin-top: 2px; }
+    .meta { display: flex; justify-content: space-between; padding: 4px 20px 8px; font-size: 10px; font-weight: 700; text-transform: uppercase; color: #555; }
+    table { width: 100%; border-collapse: collapse; page-break-inside: auto; }
+    thead tr { background: #1a1a2e; color: #fff; }
+    thead th { padding: 6px 5px; font-size: 9.5px; text-transform: uppercase; font-weight: 800; letter-spacing: 0.3px; border: 1px solid #333; }
+    tbody tr { page-break-inside: avoid; }
+    tbody tr:nth-child(even) { background: #f4f6fb; }
+    tbody td { padding: 4px 5px; border: 1px solid #ccc; vertical-align: middle; }
+    td.sr { text-align: center; font-weight: 700; width: 32px; }
+    td.part { font-weight: 600; min-width: 200px; }
+    td.unit { text-align: center; font-weight: 700; width: 60px; }
+    td.rate { text-align: right; font-weight: 900; color: #1a4731; width: 65px; }
+    td.rtext { width: 110px; font-size: 10px; color: #444; }
+    td.cat { font-size: 10px; font-weight: 600; color: #1a3c6e; min-width: 120px; }
+    td.grp { font-size: 10px; color: #555; min-width: 110px; }
+    .footer { text-align: center; margin-top: 10px; font-size: 9px; color: #888; padding: 6px 20px; border-top: 1px solid #ccc; }
+    @page { margin: 12mm 10mm; size: A4 portrait; }
+    @media print { thead { display: table-header-group; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>MTS DECOR — Civil Work Only Labour Rates</h1>
+    <h2>${rateTitle}</h2>
+  </div>
+  <div class="meta">
+    <span>Date: ${rateDate}</span>
+    <span>Total Items: ${printRates.length}</span>
+    <span>Printed: ${new Date().toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' })}</span>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>SR.</th>
+        <th>PARTICULARS (AS PER RATE SHEET)</th>
+        <th>UNIT</th>
+        <th>RATE (₹)</th>
+        <th>RATE DESC.</th>
+        <th>MAPPED CATEGORY</th>
+        <th>TRADE GROUP</th>
+      </tr>
+    </thead>
+    <tbody>${rows}</tbody>
+  </table>
+  <div class="footer">MTS DECOR • Civil Measurement Software • Auto-generated rate sheet • For internal use only</div>
+  <script>window.onload = () => { window.print(); }<\/script>
+</body>
+</html>`;
+
+    const win = window.open('', '_blank', 'width=900,height=700');
+    if (win) {
+      win.document.write(html);
+      win.document.close();
+    } else {
+      alert('Pop-up blocked. Please allow pop-ups for this site and try again.');
+    }
   };
 
   return (
@@ -319,11 +397,11 @@ export default function CivilLabourRatesManager({ companySlug = 'mts-decor' }) {
             </div>
           </div>
 
-          {/* Success Toast Banner */}
+          {/* Success / Warning Toast Banner */}
           {saveSuccessMsg && (
-            <div className="alert alert-success d-flex align-items-center justify-content-between py-2 px-3 mt-3 mb-0 shadow-sm border-0 rounded-3">
+            <div className={`alert ${saveSuccessMsg.startsWith('⚠️') ? 'alert-warning' : 'alert-success'} d-flex align-items-center justify-content-between py-2 px-3 mt-3 mb-0 shadow-sm border-0 rounded-3`}>
               <div className="d-flex align-items-center gap-2">
-                <i className="bi bi-check-circle-fill fs-5 text-success"></i>
+                <i className={`bi ${saveSuccessMsg.startsWith('⚠️') ? 'bi-exclamation-triangle-fill text-warning' : 'bi-check-circle-fill text-success'} fs-5`}></i>
                 <span className="fw-bold extra-small text-uppercase">{saveSuccessMsg}</span>
               </div>
               <button type="button" className="btn-close btn-sm" onClick={() => setSaveSuccessMsg('')}></button>
