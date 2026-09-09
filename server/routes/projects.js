@@ -149,8 +149,10 @@ router.put('/:id', auth, async (req, res) => {
       }
     }
 
-    // Preserve clientApproval if not present in payload
-    if (!newData.clientApproval && oldData.clientApproval) {
+    // Handle clientApproval: allow intentional revocation (null) or explicit preservation if omitted
+    if (newData.clientApproval === null || req.body?.revokeApproval) {
+      newData.clientApproval = null;
+    } else if (newData.clientApproval === undefined && oldData.clientApproval) {
       newData.clientApproval = oldData.clientApproval;
     }
 
@@ -158,11 +160,43 @@ router.put('/:id', auth, async (req, res) => {
     existing.lastEditedBy = req.user.name;
     existing.lastEditedAt = new Date();
     existing.data = newData;
+    existing.markModified('data');
     await existing.save();
 
     res.json(existing);
     triggerAutoBackup();
   } catch (err) {
+    res.status(500).json({ message: 'SERVER ERROR' });
+  }
+});
+
+// POST /api/projects/:id/revoke-approval — Directly revoke client approval stamp
+router.post('/:id/revoke-approval', auth, async (req, res) => {
+  try {
+    const project = await Project.findById(req.params.id);
+    if (!project) return res.status(404).json({ message: 'PROJECT NOT FOUND' });
+    if (!canUserAccessProject(req.user, project)) {
+      return res.status(403).json({ message: 'FORBIDDEN: CANNOT ACCESS PROJECT FROM ANOTHER COMPANY' });
+    }
+
+    const currentData = project.data || {};
+    project.data = {
+      ...currentData,
+      clientApproval: null
+    };
+    project.markModified('data');
+    project.lastEditedBy = req.user.name;
+    project.lastEditedAt = new Date();
+    await project.save();
+
+    res.json({
+      success: true,
+      message: 'CLIENT APPROVAL REVOKED',
+      project
+    });
+    triggerAutoBackup();
+  } catch (err) {
+    console.error('Revoke approval error:', err);
     res.status(500).json({ message: 'SERVER ERROR' });
   }
 });

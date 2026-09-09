@@ -16,8 +16,13 @@ export async function createProject(data) {
 }
 
 // PUT save/update project
-export async function saveProject(id, data) {
-  return api.put(`/projects/${id}`, { data });
+export async function saveProject(id, data, options = {}) {
+  return api.put(`/projects/${id}`, { data, ...options });
+}
+
+// POST revoke client digital seal / approval stamp
+export async function revokeClientApproval(id) {
+  return api.post(`/projects/${id}/revoke-approval`);
 }
 
 // POST duplicate project

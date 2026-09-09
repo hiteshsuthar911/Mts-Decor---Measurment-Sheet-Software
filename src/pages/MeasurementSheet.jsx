@@ -18,7 +18,7 @@ import { getSession, logout } from '../utils/auth';
 import { calculateProjectGrandTotals, groupAreasIntoPages, calculateSheetPageTotals, formatNumber } from '../utils/calculations';
 import { exportToExcel } from '../utils/exportUtils';
 import { createEmptyArea } from '../data/sampleData';
-import { getProject, saveProject, duplicateProject, saveExcelFile } from '../utils/storage';
+import { getProject, saveProject, revokeClientApproval, duplicateProject, saveExcelFile } from '../utils/storage';
 import AppLoader from '../components/AppLoader';
 
 export default function MeasurementSheet() {
@@ -160,10 +160,19 @@ export default function MeasurementSheet() {
               if (q && q.id) queryMap.set(q.id, q);
             });
 
+            // If server has no approval (e.g. revoked), do NOT resurrect old approval from local cache
+            const verifiedApproval = safeData.clientApproval || null;
+            if (!verifiedApproval && backup.data?.clientApproval) {
+              backup.data.clientApproval = null;
+              try {
+                localStorage.setItem(`mts_local_backup_${projectId}`, JSON.stringify(backup));
+              } catch {}
+            }
+
             finalData = {
               ...backup.data,
               engineerQueries: Array.from(queryMap.values()),
-              clientApproval: safeData.clientApproval || backup.data.clientApproval || null
+              clientApproval: verifiedApproval
             };
             isDirtyRef.current = true; // schedule immediate sync to cloud
             setTimeout(() => {
@@ -173,6 +182,20 @@ export default function MeasurementSheet() {
         }
       } catch (err) {
         console.warn('Backup recovery check failed', err);
+      }
+
+      // If server does not have client approval, ensure local backup is also cleansed of stale approval
+      if (!safeData.clientApproval) {
+        try {
+          const raw = localStorage.getItem(`mts_local_backup_${projectId}`);
+          if (raw) {
+            const b = JSON.parse(raw);
+            if (b?.data?.clientApproval) {
+              b.data.clientApproval = null;
+              localStorage.setItem(`mts_local_backup_${projectId}`, JSON.stringify(b));
+            }
+          }
+        } catch {}
       }
 
       setProjectData(finalData);
@@ -293,6 +316,10 @@ export default function MeasurementSheet() {
             setProjectData(event.data.data);
             showToast('SYNCED UPDATES FROM ANOTHER TAB');
           }
+        } else if (event.data?.type === 'APPROVAL_REVOKED') {
+          setProjectData(prev => prev ? ({ ...prev, clientApproval: null }) : prev);
+          if (latestDataRef.current) latestDataRef.current.clientApproval = null;
+          showToast('APPROVAL STAMP REVOKED');
         }
       };
     } catch {}
@@ -638,25 +665,83 @@ export default function MeasurementSheet() {
     showToast('RA BILLING PARAMETERS SAVED TO PROJECT');
   };
 
-  const handleSaveClientApproval = (approvalData) => {
+  const handleSaveClientApproval = async (approvalData) => {
     if (!projectData) return;
     const updated = {
       ...projectData,
       clientApproval: approvalData
     };
-    setAndSave(updated);
+    setProjectData(updated);
+    latestDataRef.current = updated;
+    isDirtyRef.current = false;
     saveRevision(projectId || 'default', updated, `Client Sign-Off: ${approvalData.signerName}`, approvalData.signerName);
     showToast(`DIGITAL APPROVAL SAVED FOR ${approvalData.signerName.toUpperCase()}`);
+    try {
+      setIsSaving(true);
+      await saveProject(projectId, updated);
+      setLastSavedAt(new Date());
+    } catch (err) {
+      console.warn('Immediate save failed, queueing for autosave:', err);
+      isDirtyRef.current = true;
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleRevokeClientApproval = () => {
+  const handleRevokeClientApproval = async () => {
     if (!projectData) return;
     const updated = {
       ...projectData,
       clientApproval: null
     };
-    setAndSave(updated);
+
+    // 1. Immediately update local state and refs
+    setProjectData(updated);
+    latestDataRef.current = updated;
+    isDirtyRef.current = false;
+
+    // 2. Clear from local storage backup immediately so recovery or unload won't revive it
+    try {
+      const backupKey = `mts_local_backup_${projectId}`;
+      const raw = localStorage.getItem(backupKey);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed?.data) {
+          parsed.data.clientApproval = null;
+          localStorage.setItem(backupKey, JSON.stringify(parsed));
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to clear clientApproval in local backup', e);
+    }
+
+    // 3. Immediately persist revocation to server
+    setIsSaving(true);
+    try {
+      await revokeClientApproval(projectId);
+      setLastSavedAt(new Date());
+    } catch (err) {
+      console.warn('Dedicated revoke endpoint failed, falling back to saveProject:', err);
+      try {
+        await saveProject(projectId, updated, { revokeApproval: true });
+        setLastSavedAt(new Date());
+      } catch (saveErr) {
+        console.error('Failed to revoke client approval on server:', saveErr);
+      }
+    } finally {
+      setIsSaving(false);
+    }
+
+    // 4. Save revision history and show confirmation
+    saveRevision(projectId || 'default', updated, 'Client Approval Revoked', session?.name || 'User');
     showToast('CLIENT APPROVAL REVOKED');
+
+    // 5. Broadcast to other tabs
+    try {
+      const ch = new BroadcastChannel(`mts_sheet_sync_${projectId}`);
+      ch.postMessage({ type: 'APPROVAL_REVOKED', projectId });
+      ch.close();
+    } catch {}
   };
 
   const handleUpdateSignPortalPin = (pin) => {
