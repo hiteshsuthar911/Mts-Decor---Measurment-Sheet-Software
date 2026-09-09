@@ -229,5 +229,15 @@ export async function deleteCompany(id) {
   return api.delete(`/companies/${id}`);
 }
 
+// ── CIVIL WORK ONLY LABOUR RATES ──
+export async function fetchCivilLabourRates(companySlug = 'mts-decor') {
+  return api.get(`/labour-rates?companySlug=${companySlug}`);
+}
 
+export async function saveCivilLabourRatesRemote(data) {
+  return api.post('/labour-rates', data);
+}
 
+export async function resetCivilLabourRatesRemote(companySlug = 'mts-decor') {
+  return api.post('/labour-rates/reset', { companySlug });
+}

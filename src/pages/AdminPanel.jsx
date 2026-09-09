@@ -25,6 +25,7 @@ import {
   deleteCompany
 } from '../utils/storage';
 import ExcelViewerModal from '../components/ExcelViewerModal';
+import CivilLabourRatesManager from '../components/CivilLabourRatesManager';
 
 export default function AdminPanel() {
   const navigate = useNavigate();
@@ -234,9 +235,10 @@ export default function AdminPanel() {
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 3000); };
 
   const navItems = [
-    { key: 'dashboard',   label: 'DASHBOARD',           icon: 'bi-speedometer2' },
-    { key: 'projects',    label: 'ALL PROJECTS',         icon: 'bi-folder2-open' },
-    { key: 'excel',       label: 'EXCEL SPREADSHEETS',   icon: 'bi-file-earmark-excel-fill' },
+    { key: 'dashboard',    label: 'DASHBOARD',            icon: 'bi-speedometer2' },
+    { key: 'labour-rates', label: 'CIVIL LABOUR RATES',   icon: 'bi-hammer', badge: '68 RATES' },
+    { key: 'projects',     label: 'ALL PROJECTS',          icon: 'bi-folder2-open' },
+    { key: 'excel',        label: 'EXCEL SPREADSHEETS',    icon: 'bi-file-earmark-excel-fill' },
     { key: 'users',       label: 'USER MANAGEMENT',      icon: 'bi-people-fill'  },
     { key: 'companies',   label: 'CLIENT PORTALS',      icon: 'bi-cone-striped', badge: 'ON HOLD' },
     { key: 'slides',      label: 'FOUNDER SLIDES',       icon: 'bi-images'       },
@@ -611,15 +613,23 @@ export default function AdminPanel() {
           <div>
             <div className="row g-3 mb-4">
               {[
+                { label: 'CIVIL LABOUR RATES', value: '68 RATES', icon: 'bi-hammer', color: 'danger', isClickable: true },
                 { label: 'CLIENT COMPANIES',   value: companiesList.length || 1,      icon: 'bi-building-fill-gear',       color: 'primary'   },
                 { label: 'TOTAL PROJECTS',     value: projects.length,                icon: 'bi-folder2-open',             color: 'info'      },
                 { label: 'SAVED EXCEL FILES',  value: excelFiles.length,              icon: 'bi-file-earmark-excel-fill',  color: 'success'   },
-                { label: 'SYSTEM USERS',       value: usersList.length || 3,          icon: 'bi-people-fill',              color: 'warning'   },
               ].map((kpi, i) => (
                 <div key={i} className="col-6 col-md-3">
-                  <div className={`card border-0 border-start border-${kpi.color} border-4 shadow-sm position-relative overflow-hidden h-100`}>
+                  <div 
+                    className={`card border-0 border-start border-${kpi.color} border-4 shadow-sm position-relative overflow-hidden h-100 ${kpi.isClickable ? 'cursor-pointer' : ''}`}
+                    onClick={() => kpi.isClickable && setActiveSection('labour-rates')}
+                    style={kpi.isClickable ? { cursor: 'pointer' } : {}}
+                    title={kpi.isClickable ? 'Click to manage Civil Labour Rates' : ''}
+                  >
                     <div className="card-body py-3">
-                      <div className="text-muted extra-small fw-bold text-uppercase mb-1">{kpi.label}</div>
+                      <div className="text-muted extra-small fw-bold text-uppercase mb-1">
+                        {kpi.label}
+                        {kpi.isClickable && <i className="bi bi-arrow-right-short ms-1"></i>}
+                      </div>
                       <div className={`fs-3 fw-bolder text-${kpi.color}`}>{kpi.value}</div>
                     </div>
                     <i className={`bi ${kpi.icon} position-absolute end-0 bottom-0 me-3 mb-1 opacity-10`} style={{ fontSize: '3rem' }}></i>
@@ -1674,6 +1684,11 @@ export default function AdminPanel() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* ── 7. CIVIL LABOUR RATES ── */}
+        {activeSection === 'labour-rates' && (
+          <CivilLabourRatesManager companySlug={session?.companySlug || 'mts-decor'} />
         )}
       </main>
 

@@ -73,6 +73,7 @@ app.use('/api/excel-files',    require('./routes/excelFiles'));
 app.use('/api/pdf-files',      require('./routes/pdfFiles'));
 app.use('/api/founder-slides', require('./routes/founderSlides'));
 app.use('/api/backup',         require('./routes/backup'));
+app.use('/api/labour-rates',   require('./routes/civilLabourRates'));
 
 // Direct download endpoints for Windows & Mac builds
 app.get('/api/download/windows', (req, res) => {
