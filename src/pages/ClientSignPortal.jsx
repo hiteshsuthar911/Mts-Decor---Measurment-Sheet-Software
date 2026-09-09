@@ -12,6 +12,7 @@ export default function ClientSignPortal() {
   const [requiresPin, setRequiresPin] = useState(false);
   const [pinInput, setPinInput] = useState(initialPin);
   const [pinError, setPinError] = useState('');
+  const [currentPin, setCurrentPin] = useState(initialPin);
   const [project, setProject] = useState(null);
 
   // Digital Sign Modal
@@ -34,8 +35,11 @@ export default function ClientSignPortal() {
       setError('');
       setPinError('');
 
-      const url = `/api/projects/sign-portal/${projectId}${pinToUse ? `?pin=${encodeURIComponent(pinToUse)}` : ''}`;
-      const res = await fetch(url);
+      const cleanPin = pinToUse.trim();
+      const url = `/api/projects/sign-portal/${projectId}${cleanPin ? `?pin=${encodeURIComponent(cleanPin)}` : ''}`;
+      const res = await fetch(url, {
+        headers: cleanPin ? { 'x-portal-pin': cleanPin } : {}
+      });
       const data = await res.json();
 
       if (!res.ok) {
@@ -44,31 +48,16 @@ export default function ClientSignPortal() {
 
       if (data.requiresPin) {
         setRequiresPin(true);
-        if (pinToUse) {
+        if (cleanPin) {
           setPinError('Invalid Passcode / PIN. Please re-enter.');
         }
       } else {
         setRequiresPin(false);
+        setCurrentPin(cleanPin);
         setProject(data);
       }
     } catch (err) {
       console.error('Portal fetch error:', err);
-      // Local fallback for offline testing
-      try {
-        const localSaved = localStorage.getItem('mts_current_project') || localStorage.getItem(`mts_project_${projectId}`);
-        if (localSaved) {
-          const parsed = JSON.parse(localSaved);
-          setProject({
-            id: projectId,
-            header: parsed.header || {},
-            areas: parsed.areas || [],
-            settings: parsed.settings || {},
-            clientApproval: parsed.clientApproval || null
-          });
-          setRequiresPin(false);
-          return;
-        }
-      } catch {}
       setError(err.message || 'Failed to load measurement sheet.');
     } finally {
       setLoading(false);
@@ -159,8 +148,9 @@ export default function ClientSignPortal() {
       setIsSubmitting(true);
       const signatureDataUrl = canvasRef.current ? canvasRef.current.toDataURL('image/png') : null;
 
+      const pinToSend = (currentPin || pinInput).trim();
       const payload = {
-        pin: pinInput.trim(),
+        pin: pinToSend,
         signerName: signerName.trim(),
         company: company.trim(),
         designation: designation.trim(),
@@ -170,7 +160,10 @@ export default function ClientSignPortal() {
 
       const res = await fetch(`/api/projects/sign-portal/${projectId}/submit`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-portal-pin': pinToSend
+        },
         body: JSON.stringify(payload)
       });
 

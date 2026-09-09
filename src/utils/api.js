@@ -21,7 +21,25 @@ async function request(method, path, body) {
     ...(body ? { body: JSON.stringify(body) } : {}),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || 'API ERROR');
+  if (!res.ok) {
+    if ((res.status === 401 || res.status === 403) && typeof window !== 'undefined') {
+      const path = window.location.pathname || '';
+      const isPublicPath = path.startsWith('/sign') || 
+                           path.startsWith('/review') || 
+                           path.startsWith('/engineer') || 
+                           path.startsWith('/site-review') || 
+                           path.startsWith('/login') || 
+                           path.startsWith('/c/') || 
+                           path.startsWith('/construction') || 
+                           path.startsWith('/download') || 
+                           path.startsWith('/apps');
+      if (!isPublicPath) {
+        localStorage.removeItem('MS_PRO_AUTH_V1');
+        window.location.replace('/login');
+      }
+    }
+    throw new Error(data.message || 'API ERROR');
+  }
   return data;
 }
 

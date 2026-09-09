@@ -28,11 +28,13 @@ export default function ClientApprovalModal({
 
   const canvasRef = useRef(null);
 
+  const defaultPin = String(projectId).slice(-4).toUpperCase();
+
   useEffect(() => {
     if (show) {
       const existingPin = projectData?.signPortalPin || '';
-      setPinCode(existingPin);
-      setEnablePin(!!existingPin);
+      setPinCode(existingPin || defaultPin);
+      setEnablePin(true);
 
       if (approvalData?.approved) {
         setSignerName(approvalData.signerName || '');
@@ -50,11 +52,12 @@ export default function ClientApprovalModal({
         setHasSignature(false);
       }
     }
-  }, [show, approvalData, projectData]);
+  }, [show, approvalData, projectData, projectId, defaultPin]);
 
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
   const portalUrl = `${origin}/sign/${projectId}`;
-  const protectedUrl = enablePin && pinCode.trim() ? `${portalUrl}?pin=${encodeURIComponent(pinCode.trim())}` : portalUrl;
+  const effectivePin = (enablePin && pinCode.trim()) || defaultPin;
+  const protectedUrl = `${portalUrl}?pin=${encodeURIComponent(effectivePin)}`;
 
   // Generate QR code for mobile scanning
   useEffect(() => {
@@ -100,16 +103,16 @@ export default function ClientApprovalModal({
   };
 
   const handleSavePinSettings = () => {
-    const finalPin = enablePin ? pinCode.trim() : '';
+    const finalPin = (enablePin && pinCode.trim()) || defaultPin;
     if (onUpdatePin) {
       onUpdatePin(finalPin);
     }
-    alert(finalPin ? `Passcode PIN set to "${finalPin}". Link is now protected.` : 'Passcode protection disabled.');
+    alert(`Passcode PIN set to "${finalPin}". Link is protected against unauthorized access.`);
   };
 
   const projectName = projectData?.header?.projectName || 'Measurement Sheet';
   const whatsappText = encodeURIComponent(
-    `Hello, please find the measurement sheet for "${projectName}" ready for your digital review and sign-off:\n${portalUrl}${enablePin && pinCode.trim() ? `\n\nSecurity Access PIN: ${pinCode.trim()}` : ''}`
+    `Hello, please find the measurement sheet for "${projectName}" ready for your digital review and sign-off:\n${portalUrl}\n\nSecurity Access PIN: ${effectivePin}\n(Passcode required to open)`
   );
 
   // Drawing handlers

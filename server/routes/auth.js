@@ -264,10 +264,30 @@ router.post('/verify-password', require('../middleware/authMiddleware'), async (
       return res.status(404).json({ message: 'USER NOT FOUND' });
     }
     const valid = await user.comparePassword(password.trim());
-    if (!valid) {
-      logger.logAuthFailure(req.user.username, 'EDIT_GUARD_INVALID_PASSWORD', req);
-    }
     res.json({ valid });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/auth/verify-token (Verify active session JWT token & ensure user account is valid)
+router.get('/verify-token', require('../middleware/authMiddleware'), async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.id).select('-password');
+    if (!user) {
+      return res.status(401).json({ message: 'USER ACCOUNT NOT FOUND OR DEACTIVATED' });
+    }
+    res.json({
+      valid: true,
+      user: {
+        id: user._id,
+        username: user.username,
+        name: user.name,
+        role: user.role,
+        companyId: user.companyId,
+        companySlug: user.companySlug || 'mts-decor'
+      }
+    });
   } catch (err) {
     next(err);
   }

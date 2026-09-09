@@ -9,7 +9,8 @@ import ProfilePage from './pages/ProfilePage';
 import UnderConstructionPage from './pages/UnderConstructionPage';
 import ClientSignPortal from './pages/ClientSignPortal';
 import SiteEngineerPortal from './pages/SiteEngineerPortal';
-import { getSession, isLoggedIn } from './utils/auth';
+import { getSession, isLoggedIn, logout } from './utils/auth';
+import { api } from './utils/api';
 
 const isFileProtocol = typeof window !== 'undefined' && (window.location.protocol === 'file:' || window.isElectron);
 const Router = isFileProtocol ? HashRouter : BrowserRouter;
@@ -26,13 +27,19 @@ function ScrollToTop() {
 
 function AuthRoute({ children }) {
   const session = getSession();
-  if (!session) return <Navigate to="/login" replace />;
+  if (!session || !session.token) {
+    logout();
+    return <Navigate to="/login" replace />;
+  }
   return children;
 }
 
 function RoleRoute({ children, allowedRole }) {
   const session = getSession();
-  if (!session) return <Navigate to="/login" replace />;
+  if (!session || !session.token) {
+    logout();
+    return <Navigate to="/login" replace />;
+  }
   if (session.role !== allowedRole) {
     // Redirect to the correct home for their role
     return <Navigate to={session.role === 'ADMIN' ? '/admin' : '/projects'} replace />;
@@ -42,11 +49,29 @@ function RoleRoute({ children, allowedRole }) {
 
 function DefaultRedirect() {
   const session = getSession();
-  if (!session) return <Navigate to="/login" replace />;
+  if (!session || !session.token) {
+    logout();
+    return <Navigate to="/login" replace />;
+  }
   return <Navigate to={session.role === 'ADMIN' ? '/admin' : '/projects'} replace />;
 }
 
 export default function App() {
+  useEffect(() => {
+    const session = getSession();
+    if (session?.token) {
+      api.get('/auth/verify-token').catch(() => {
+        logout();
+        if (typeof window !== 'undefined') {
+          const path = window.location.pathname || '';
+          const isPublic = path.startsWith('/sign') || path.startsWith('/engineer') || path.startsWith('/review') || path.startsWith('/site-review') || path.startsWith('/c/') || path.startsWith('/login') || path.startsWith('/download') || path.startsWith('/apps');
+          if (!isPublic) {
+            window.location.replace('/login');
+          }
+        }
+      });
+    }
+  }, []);
   return (
     <Router>
       <ScrollToTop />

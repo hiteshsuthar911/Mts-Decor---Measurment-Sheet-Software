@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { calculateLineItemTotal, calculateAreaTotals, formatNumber } from '../utils/calculations';
 
 function getOrdinalSuffix(num) {
@@ -30,9 +30,15 @@ function detectFloorFromRemark(remark) {
 
 export default function SiteEngineerPortal() {
   const { projectId } = useParams();
+  const [searchParams] = useSearchParams();
+  const initialPin = searchParams.get('pin') || '';
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [requiresPin, setRequiresPin] = useState(false);
+  const [pinInput, setPinInput] = useState(initialPin);
+  const [pinError, setPinError] = useState('');
+  const [currentPin, setCurrentPin] = useState(initialPin);
   const [project, setProject] = useState(null);
 
   // Active modifications proposed by engineer: { [itemId]: { proposed: {...}, reason: '', areaId, areaLabel, original: {...} } }
@@ -59,33 +65,34 @@ export default function SiteEngineerPortal() {
   // Active category filter
   const [activeTab, setActiveTab] = useState('ALL');
 
-  const fetchProject = async () => {
+  const fetchProject = async (pinToUse = '') => {
     try {
       setLoading(true);
       setError('');
-      const res = await fetch(`/api/projects/engineer-portal/${projectId}`);
+      setPinError('');
+
+      const cleanPin = pinToUse.trim();
+      const url = `/api/projects/engineer-portal/${projectId}${cleanPin ? `?pin=${encodeURIComponent(cleanPin)}` : ''}`;
+      const res = await fetch(url, {
+        headers: cleanPin ? { 'x-portal-pin': cleanPin } : {}
+      });
       const data = await res.json();
       if (!res.ok) {
         throw new Error(data.message || 'Unable to load project');
       }
-      setProject(data);
+
+      if (data.requiresPin) {
+        setRequiresPin(true);
+        if (cleanPin) {
+          setPinError('Invalid Passcode / PIN. Please re-enter.');
+        }
+      } else {
+        setRequiresPin(false);
+        setCurrentPin(cleanPin);
+        setProject(data);
+      }
     } catch (err) {
       console.error('Engineer portal fetch error:', err);
-      // Local fallback for offline testing
-      try {
-        const localSaved = localStorage.getItem('mts_current_project') || localStorage.getItem(`mts_project_${projectId}`);
-        if (localSaved) {
-          const parsed = JSON.parse(localSaved);
-          setProject({
-            id: projectId,
-            header: parsed.header || {},
-            areas: parsed.areas || [],
-            settings: parsed.settings || {},
-            engineerQueries: parsed.engineerQueries || []
-          });
-          return;
-        }
-      } catch {}
       setError(err.message || 'Failed to load project.');
     } finally {
       setLoading(false);
@@ -93,8 +100,14 @@ export default function SiteEngineerPortal() {
   };
 
   useEffect(() => {
-    fetchProject();
+    fetchProject(initialPin);
   }, [projectId]);
+
+  const handleUnlockPin = (e) => {
+    e.preventDefault();
+    if (!pinInput.trim()) return;
+    fetchProject(pinInput.trim());
+  };
 
   const handleOpenEdit = (area, item, currentFloor = '', currentFlat = '') => {
     const existing = proposedChanges[item.id];
@@ -170,7 +183,9 @@ export default function SiteEngineerPortal() {
 
     try {
       setIsSubmitting(true);
+      const pinToSend = (currentPin || pinInput).trim();
       const payload = {
+        pin: pinToSend,
         engineerName: engineerName.trim(),
         engineerRole: engineerRole.trim(),
         phone: phone.trim(),
@@ -180,7 +195,10 @@ export default function SiteEngineerPortal() {
 
       const res = await fetch(`/api/projects/engineer-portal/${projectId}/query`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-portal-pin': pinToSend
+        },
         body: JSON.stringify(payload)
       });
 
@@ -231,7 +249,7 @@ export default function SiteEngineerPortal() {
       setSubmittedSuccess(true);
       setProposedChanges({});
       setShowSubmitModal(false);
-      fetchProject(); // refresh queries list
+      fetchProject(pinToSend); // refresh queries list
     } catch (err) {
       console.warn('API submission failed, saving to local state:', err);
 
@@ -287,6 +305,54 @@ export default function SiteEngineerPortal() {
     );
   }
 
+  // PIN / Passcode Lock Screen
+  if (requiresPin) {
+    return (
+      <div className="min-vh-100 d-flex align-items-center justify-content-center bg-light p-3">
+        <div className="card border-0 shadow-lg" style={{ maxWidth: '420px', width: '100%', borderRadius: '16px' }}>
+          <div className="card-body p-4 p-sm-5 text-center">
+            <div className="d-inline-flex align-items-center justify-content-center bg-warning-subtle text-warning-emphasis rounded-circle mb-3" style={{ width: '68px', height: '68px' }}>
+              <i className="bi bi-shield-lock-fill fs-2 text-warning"></i>
+            </div>
+            <span className="badge bg-dark text-warning mb-2 px-2 py-1">SITE ENGINEER PORTAL</span>
+            <h4 className="fw-bold text-dark mb-1">Passcode Protected</h4>
+            <p className="text-muted small mb-4">
+              Enter the access PIN provided by the contractor to review site measurements and submit queries.
+            </p>
+
+            {pinError && (
+              <div className="alert alert-danger py-2 small mb-3">
+                <i className="bi bi-exclamation-triangle-fill me-1"></i> {pinError}
+              </div>
+            )}
+
+            <form onSubmit={handleUnlockPin}>
+              <div className="mb-4">
+                <input
+                  type="password"
+                  inputMode="numeric"
+                  autoFocus
+                  className="form-control form-control-lg text-center fw-bold letter-spacing-2"
+                  style={{ letterSpacing: '6px', fontSize: '1.4rem' }}
+                  placeholder="••••"
+                  maxLength={10}
+                  value={pinInput}
+                  onChange={(e) => setPinInput(e.target.value)}
+                  required
+                />
+                <div className="form-text extra-small mt-1 text-muted">Passcode / PIN is case-sensitive</div>
+              </div>
+
+              <button type="submit" className="btn btn-warning text-dark w-100 py-2 fw-bold shadow-sm">
+                <i className="bi bi-unlock-fill me-1"></i> Unlock Site Sheet
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (error || !project) {
     return (
       <div className="min-vh-100 d-flex align-items-center justify-content-center bg-light p-3">
@@ -294,7 +360,7 @@ export default function SiteEngineerPortal() {
           <i className="bi bi-exclamation-triangle text-danger display-4 mb-2"></i>
           <h4 className="fw-bold">Unable to Open Portal</h4>
           <p className="text-muted small mb-3">{error || 'Measurement sheet not found'}</p>
-          <button className="btn btn-primary btn-sm" onClick={fetchProject}>
+          <button className="btn btn-primary btn-sm" onClick={() => fetchProject(pinInput)}>
             Try Again
           </button>
         </div>

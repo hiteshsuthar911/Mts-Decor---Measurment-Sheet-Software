@@ -264,7 +264,6 @@ router.delete('/:id', auth, async (req, res) => {
     project.deletedAt = new Date();
     project.deletedBy = req.user.name;
     await project.save();
-
     res.json({ message: 'PROJECT MOVED TO RECENTLY DELETED' });
     triggerAutoBackup();
   } catch (err) {
@@ -272,7 +271,15 @@ router.delete('/:id', auth, async (req, res) => {
   }
 });
 
-// ── DIGITAL CLIENT SIGN-OFF PORTAL (Public with optional PIN protection) ──
+// Helper: Determine deterministic or custom security PIN for portal access
+function getProjectAccessPin(project) {
+  const data = project.data || {};
+  if (data.signPortalPin && String(data.signPortalPin).trim()) {
+    return String(data.signPortalPin).trim();
+  }
+  // Deterministic 4-character fallback PIN based on Project ID
+  return String(project._id).slice(-4).toUpperCase();
+}
 
 // GET /api/projects/sign-portal/:id
 router.get('/sign-portal/:id', async (req, res) => {
@@ -286,19 +293,18 @@ router.get('/sign-portal/:id', async (req, res) => {
     }
 
     const data = project.data || {};
-    const configuredPin = data.signPortalPin ? String(data.signPortalPin).trim() : '';
-    const providedPin = String(req.query.pin || req.headers['x-sign-pin'] || '').trim();
+    const requiredPin = getProjectAccessPin(project);
+    const providedPin = String(req.query.pin || req.headers['x-portal-pin'] || req.headers['x-sign-pin'] || '').trim();
 
-    if (configuredPin) {
-      if (!providedPin || providedPin !== configuredPin) {
-        return res.json({
-          requiresPin: true,
-          projectName: project.name || data.header?.projectName || 'Measurement Sheet',
-          contractorName: data.header?.contractorName || 'MTS DECOR',
-          date: data.header?.date || '',
-          companySlug: project.companySlug
-        });
-      }
+    // Mandatory PIN verification: Without matching PIN, return zero measurement data
+    if (!providedPin || providedPin.toUpperCase() !== requiredPin.toUpperCase()) {
+      return res.json({
+        requiresPin: true,
+        projectName: project.name || data.header?.projectName || 'Measurement Sheet',
+        contractorName: data.header?.contractorName || 'MTS DECOR',
+        date: data.header?.date || '',
+        companySlug: project.companySlug
+      });
     }
 
     res.json({
@@ -329,11 +335,11 @@ router.post('/sign-portal/:id/submit', async (req, res) => {
     }
 
     const data = project.data || {};
-    const configuredPin = data.signPortalPin ? String(data.signPortalPin).trim() : '';
-    const providedPin = String(req.body.pin || req.headers['x-sign-pin'] || '').trim();
+    const requiredPin = getProjectAccessPin(project);
+    const providedPin = String(req.body.pin || req.headers['x-portal-pin'] || req.headers['x-sign-pin'] || '').trim();
 
-    if (configuredPin && (!providedPin || providedPin !== configuredPin)) {
-      return res.status(401).json({ message: 'INVALID PASSCODE / PIN' });
+    if (!providedPin || providedPin.toUpperCase() !== requiredPin.toUpperCase()) {
+      return res.status(401).json({ message: 'INVALID OR MISSING PASSCODE / PIN' });
     }
 
     const { signerName, company, designation, approvalDate, notes, signatureDataUrl } = req.body;
@@ -341,7 +347,7 @@ router.post('/sign-portal/:id/submit', async (req, res) => {
       return res.status(400).json({ message: 'SIGNER NAME IS REQUIRED' });
     }
 
-    const clientApproval = {
+    const approvalObj = {
       approved: true,
       signerName: signerName.trim(),
       company: (company || '').trim(),
@@ -350,23 +356,20 @@ router.post('/sign-portal/:id/submit', async (req, res) => {
       signedAt: new Date().toISOString(),
       notes: (notes || '').trim(),
       signatureDataUrl: signatureDataUrl || null,
-      verificationSource: 'DIGITAL_PORTAL',
-      ip: req.ip || req.headers['x-forwarded-for'] || '',
-      userAgent: req.headers['user-agent'] || ''
+      source: 'PORTAL'
     };
 
     project.data = {
       ...data,
-      clientApproval
+      clientApproval: approvalObj
     };
-    project.lastEditedAt = new Date();
-    project.lastEditedBy = `${signerName} (Client Digital Sign-Off)`;
+    project.markModified('data');
     await project.save();
 
     res.json({
       success: true,
-      message: 'MEASUREMENT SHEET APPROVED & SEALED',
-      clientApproval
+      message: 'CLIENT APPROVAL RECORDED SUCCESSFULLY',
+      clientApproval: approvalObj
     });
     triggerAutoBackup();
   } catch (err) {
@@ -375,7 +378,7 @@ router.post('/sign-portal/:id/submit', async (req, res) => {
   }
 });
 
-// GET /api/projects/engineer-portal/:id — Site Engineer review data
+// GET /api/projects/engineer-portal/:id — Site Engineer review data (PIN Protected)
 router.get('/engineer-portal/:id', async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
@@ -387,7 +390,22 @@ router.get('/engineer-portal/:id', async (req, res) => {
     }
 
     const data = project.data || {};
+    const requiredPin = getProjectAccessPin(project);
+    const providedPin = String(req.query.pin || req.headers['x-portal-pin'] || req.headers['x-sign-pin'] || '').trim();
+
+    // Mandatory PIN verification: Without matching PIN, return zero measurement data
+    if (!providedPin || providedPin.toUpperCase() !== requiredPin.toUpperCase()) {
+      return res.json({
+        requiresPin: true,
+        projectName: project.name || data.header?.projectName || 'Measurement Sheet',
+        contractorName: data.header?.contractorName || 'MTS DECOR',
+        date: data.header?.date || '',
+        companySlug: project.companySlug
+      });
+    }
+
     res.json({
+      requiresPin: false,
       id: project._id,
       projectName: project.name || data.header?.projectName || 'Measurement Sheet',
       companySlug: project.companySlug,
@@ -412,6 +430,14 @@ router.post('/engineer-portal/:id/query', async (req, res) => {
     const project = await Project.findById(req.params.id);
     if (!project || project.isDeleted) {
       return res.status(404).json({ message: 'PROJECT NOT FOUND' });
+    }
+
+    const data = project.data || {};
+    const requiredPin = getProjectAccessPin(project);
+    const providedPin = String(req.body.pin || req.headers['x-portal-pin'] || req.headers['x-sign-pin'] || '').trim();
+
+    if (!providedPin || providedPin.toUpperCase() !== requiredPin.toUpperCase()) {
+      return res.status(401).json({ message: 'INVALID OR MISSING PASSCODE / PIN' });
     }
 
     const { engineerName, engineerRole, phone, overallNote, changes } = req.body;
@@ -442,7 +468,6 @@ router.post('/engineer-portal/:id/query', async (req, res) => {
       }))
     };
 
-    const data = project.data || {};
     const existingQueries = Array.isArray(data.engineerQueries) ? data.engineerQueries : [];
 
     project.data = {
