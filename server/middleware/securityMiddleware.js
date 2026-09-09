@@ -42,15 +42,21 @@ const detectSuspiciousProbes = (req, res, next) => {
 // 3. Brute-Force Rate Limiter for Authentication Routes
 const authRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // Max 10 attempts per IP per 15 minutes
+  max: process.env.NODE_ENV === 'production' ? 15 : 1000,
   standardHeaders: true,
   legacyHeaders: false,
   validate: { trustProxy: false },
+  skipSuccessfulRequests: true,
+  skip: (req) => {
+    if (process.env.NODE_ENV !== 'production') return true;
+    const ip = req.ip || req.connection?.remoteAddress || '';
+    return ip === '127.0.0.1' || ip === '::1' || ip.includes('127.0.0.1') || ip === '::ffff:127.0.0.1';
+  },
   message: { message: 'TOO MANY LOGIN ATTEMPTS. PLEASE TRY AGAIN AFTER 15 MINUTES.' },
   handler: (req, res, next, options) => {
     logger.logSuspiciousTraffic(
       'BRUTE_FORCE_RATE_LIMIT_EXCEEDED',
-      `Exceeded max 10 auth requests in 15min window`,
+      `Exceeded max auth requests in 15min window`,
       req
     );
     res.status(options.statusCode).json(options.message);
@@ -60,15 +66,20 @@ const authRateLimiter = rateLimit({
 // 4. General API Burst Limiter
 const apiRateLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
-  max: 200, // 200 requests per minute per IP
+  max: process.env.NODE_ENV === 'production' ? 200 : 5000,
   standardHeaders: true,
   legacyHeaders: false,
   validate: { trustProxy: false },
+  skip: (req) => {
+    if (process.env.NODE_ENV !== 'production') return true;
+    const ip = req.ip || req.connection?.remoteAddress || '';
+    return ip === '127.0.0.1' || ip === '::1' || ip.includes('127.0.0.1') || ip === '::ffff:127.0.0.1';
+  },
   message: { message: 'RATE LIMIT EXCEEDED. PLEASE REDUCE REQUEST FREQUENCY.' },
   handler: (req, res, next, options) => {
     logger.logSuspiciousTraffic(
       'UNUSUAL_TRAFFIC_BURST',
-      `Exceeded 200 requests per minute`,
+      `Exceeded requests per minute`,
       req
     );
     res.status(options.statusCode).json(options.message);

@@ -31,8 +31,8 @@ export default function ProjectsPage() {
   const session = getSession();
   const fileInputRef = useRef(null);
 
-  // Active Tab: 'projects', 'excel', or 'pdf'
-  const [activeTab, setActiveTab] = useState('projects');
+  // Active Tab: 'all', 'my', 'team', 'excel', or 'pdf'
+  const [activeTab, setActiveTab] = useState('all');
 
   // Projects State
   const [projects, setProjects] = useState([]);
@@ -331,15 +331,46 @@ export default function ProjectsPage() {
     }
   };
 
+  const formatTimeAgo = (dateStr) => {
+    if (!dateStr) return 'Recently';
+    const now = new Date();
+    const date = new Date(dateStr);
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffMins < 2) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
+  };
+
   // Filtered lists
   const safeProjects = Array.isArray(projects) ? projects : [];
-  const filteredProjects = safeProjects.filter(p =>
-    !search ||
-    (p.name || '').toUpperCase().includes(search.toUpperCase()) ||
-    (p.ownerName || '').toUpperCase().includes(search.toUpperCase())
-  );
-  const myProjects    = filteredProjects.filter(p => p.ownerUsername === session?.username);
-  const otherProjects = filteredProjects.filter(p => p.ownerUsername !== session?.username);
+  const myProjectsAll = safeProjects.filter(p => p.ownerUsername === session?.username);
+  const teamProjectsAll = safeProjects.filter(p => p.ownerUsername !== session?.username);
+
+  const filteredProjects = safeProjects.filter(p => {
+    if (!search) return true;
+    const q = search.toUpperCase();
+    return (
+      (p.name || '').toUpperCase().includes(q) ||
+      (p.clientName || '').toUpperCase().includes(q) ||
+      (p.location || '').toUpperCase().includes(q) ||
+      (p.ownerName || '').toUpperCase().includes(q)
+    );
+  });
+  const myProjectsFiltered = filteredProjects.filter(p => p.ownerUsername === session?.username);
+  const teamProjectsFiltered = filteredProjects.filter(p => p.ownerUsername !== session?.username);
+
+  const displayedProjects = activeTab === 'my'
+    ? myProjectsFiltered
+    : activeTab === 'team'
+    ? teamProjectsFiltered
+    : filteredProjects;
 
   const safeExcelFiles = Array.isArray(excelFiles) ? excelFiles : [];
   const filteredExcelFiles = safeExcelFiles.filter(f =>
@@ -367,84 +398,103 @@ export default function ProjectsPage() {
 
   const ProjectCard = ({ proj, isOwn }) => {
     const id = proj._id || proj.id;
+    const clientName = proj.clientName || proj.data?.header?.clientName || '';
+    const location = proj.location || proj.data?.header?.location || proj.data?.header?.siteAddress || '';
+    const areasCount = proj.areasCount || (Array.isArray(proj.data?.areas) ? proj.data.areas.length : 0);
+    const updatedTime = proj.updatedAt || proj.lastEditedAt || proj.createdAt;
+
     return (
-      <div
-        className="card h-100 bg-white border shadow-sm"
-        style={{
-          borderRadius: '12px',
-          borderColor: '#e2e8f0',
-          transition: 'transform 0.15s ease, box-shadow 0.15s ease',
-        }}
-      >
-        <div
-          className="px-3 py-2 border-bottom d-flex align-items-center justify-content-between"
-          style={{
-            backgroundColor: isOwn ? '#f0f9ff' : '#fefce8',
-            borderTopLeftRadius: '12px',
-            borderTopRightRadius: '12px',
-            borderBottomColor: isOwn ? '#e0f2fe' : '#fef08a',
-          }}
-        >
-          <span
-            className="fw-bolder text-uppercase extra-small d-flex align-items-center gap-1"
-            style={{ color: isOwn ? '#0369a1' : '#a16207' }}
-          >
-            <i className={`bi ${isOwn ? 'bi-folder-check' : 'bi-person-badge'}`}></i>
-            {isOwn ? 'MY PROJECT' : `${(proj.ownerName || '').toUpperCase()}'S PROJECT`}
+      <div className="workspace-project-card">
+        {/* Card Header Tag */}
+        <div className="px-3 pt-3 pb-2 d-flex align-items-center justify-content-between">
+          <span className={`workspace-badge-pill ${isOwn ? 'workspace-badge-pill--own' : 'workspace-badge-pill--team'}`}>
+            <i className={`bi ${isOwn ? 'bi-person-check-fill' : 'bi-people-fill'}`}></i>
+            <span>{isOwn ? 'My Project' : (proj.ownerName || 'Team')}</span>
           </span>
 
-          <span className="text-muted extra-small fw-medium">
-            <i className="bi bi-calendar3 me-1"></i>
-            {new Date(proj.createdAt).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}
+          <span className="text-muted extra-small d-flex align-items-center gap-1" title={new Date(updatedTime).toLocaleString()}>
+            <i className="bi bi-clock-history"></i>
+            {formatTimeAgo(updatedTime)}
           </span>
         </div>
 
-        <div className="card-body p-3 d-flex flex-column justify-content-between">
+        {/* Card Body */}
+        <div className="px-3 py-2 flex-grow-1 d-flex flex-column justify-content-between">
           <div>
             <h6
-              className="fw-bolder text-dark text-uppercase mb-2 text-truncate"
+              className="fw-bold text-dark mb-1 text-truncate"
               title={proj.name}
-              style={{ fontSize: '15px', letterSpacing: '0.3px' }}
+              style={{ fontSize: '15px', letterSpacing: '-0.2px' }}
             >
-              {proj.name || 'UNTITLED PROJECT'}
+              {proj.name || 'Untitled Project'}
             </h6>
 
-            <div className="text-muted extra-small text-uppercase mb-3 d-flex flex-wrap align-items-center gap-2">
-              <span className="d-flex align-items-center gap-1">
-                <i className="bi bi-person-fill text-secondary"></i>
-                OWNER: <strong className="text-dark">{proj.ownerName}</strong>
-              </span>
-              {proj.lastEditedBy && (
-                <span className="text-secondary">
-                  &bull; LAST: <strong className="text-dark">{(proj.lastEditedBy || '').toUpperCase()}</strong>
-                </span>
+            {/* Client & Location Metadata */}
+            <div className="d-flex flex-column gap-1 my-2 text-muted" style={{ fontSize: '11.5px' }}>
+              {clientName ? (
+                <div className="d-flex align-items-center gap-1.5 text-truncate" title={`Client: ${clientName}`}>
+                  <i className="bi bi-building text-secondary" style={{ fontSize: '11px' }}></i>
+                  <span className="text-secondary text-truncate">{clientName}</span>
+                </div>
+              ) : (
+                <div className="d-flex align-items-center gap-1.5 text-muted fst-italic">
+                  <i className="bi bi-building text-muted" style={{ fontSize: '11px' }}></i>
+                  <span>No client specified</span>
+                </div>
               )}
+
+              {location ? (
+                <div className="d-flex align-items-center gap-1.5 text-truncate" title={`Location: ${location}`}>
+                  <i className="bi bi-geo-alt text-secondary" style={{ fontSize: '11px' }}></i>
+                  <span className="text-secondary text-truncate">{location}</span>
+                </div>
+              ) : null}
             </div>
           </div>
 
-          <div className="d-flex gap-2 pt-2 border-top" style={{ borderColor: '#f1f5f9' }}>
+          {/* Area / Items count chip */}
+          <div className="d-flex align-items-center gap-2 pt-2 pb-1">
+            <span className="badge workspace-card-chip border px-2 py-1 fw-semibold extra-small">
+              <i className="bi bi-grid me-1 text-primary"></i>
+              {areasCount} {areasCount === 1 ? 'Area' : 'Areas'}
+            </span>
+            {proj.lastEditedBy && proj.lastEditedBy !== proj.ownerName && (
+              <span className="text-muted extra-small text-truncate" style={{ fontSize: '10.5px' }}>
+                Edited by {proj.lastEditedBy}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Card Actions Footer */}
+        <div className="px-3 py-2.5 workspace-card-footer border-top d-flex align-items-center justify-content-between gap-2">
+          <button
+            type="button"
+            className="btn btn-primary btn-sm fw-bold px-3 py-1.5 flex-grow-1 d-flex align-items-center justify-content-center gap-1.5 shadow-2xs"
+            style={{ borderRadius: '8px', fontSize: '12px' }}
+            onClick={() => navigate(`/sheet/${id}`)}
+          >
+            <span>Open Sheet</span>
+            <i className="bi bi-arrow-right project-card-arrow"></i>
+          </button>
+
+          <div className="d-flex align-items-center gap-1">
             <button
-              className="btn btn-primary btn-sm fw-bold text-uppercase flex-grow-1 d-flex align-items-center justify-content-center gap-1 shadow-sm"
-              style={{ borderRadius: '8px', padding: '7px 12px', fontSize: '12px' }}
-              onClick={() => navigate(`/sheet/${id}`)}
-            >
-              <i className={`bi ${isOwn ? 'bi-pencil-square' : 'bi-eye'}`}></i>
-              <span>{isOwn ? 'OPEN & EDIT' : 'VIEW / EDIT'}</span>
-            </button>
-            <button
-              className="btn btn-outline-secondary btn-sm px-2 d-flex align-items-center gap-1"
-              style={{ borderRadius: '8px', fontSize: '12px' }}
+              type="button"
+              className="btn btn-sm btn-outline-secondary px-2 py-1.5"
+              style={{ borderRadius: '8px' }}
               title="Duplicate Project (Make a Copy)"
               onClick={() => handleDuplicateProject(id)}
             >
               <i className="bi bi-copy"></i>
-              <span className="d-none d-sm-inline">COPY</span>
             </button>
+
             {isOwn && (
               <button
-                className="btn btn-outline-danger btn-sm px-2"
+                type="button"
+                className="btn btn-sm btn-outline-danger px-2 py-1.5"
                 style={{ borderRadius: '8px' }}
-                title="Delete Project"
+                title="Move to Recently Deleted"
                 onClick={() => handleDeleteProject(id, proj.ownerUsername)}
               >
                 <i className="bi bi-trash3"></i>
@@ -459,82 +509,64 @@ export default function ProjectsPage() {
   const ExcelCard = ({ file }) => {
     const isOwn = file.ownerUsername === session?.username;
     return (
-      <div
-        className="card h-100 bg-white border shadow-sm"
-        style={{
-          borderRadius: '12px',
-          borderColor: '#e2e8f0',
-          transition: 'transform 0.15s ease, box-shadow 0.15s ease',
-        }}
-      >
-        <div
-          className="px-3 py-2 border-bottom d-flex align-items-center justify-content-between"
-          style={{
-            backgroundColor: '#f0fdf4',
-            borderTopLeftRadius: '12px',
-            borderTopRightRadius: '12px',
-            borderBottomColor: '#dcfce7',
-          }}
-        >
-          <span className="fw-bolder text-uppercase extra-small text-success d-flex align-items-center gap-1">
-            <i className="bi bi-file-earmark-excel-fill"></i> EXCEL SPREADSHEET
+      <div className="workspace-project-card">
+        <div className="px-3 pt-3 pb-2 d-flex align-items-center justify-content-between">
+          <span className="workspace-badge-pill workspace-badge-pill--excel">
+            <i className="bi bi-file-earmark-excel-fill text-success"></i>
+            <span>Excel Workbook</span>
           </span>
-          {file.billingMode && (
-            <span className="badge bg-warning text-dark extra-small fw-bold">
-              BILLING
-            </span>
-          )}
+
+          <span className="text-muted extra-small d-flex align-items-center gap-1">
+            <i className="bi bi-clock-history"></i>
+            {formatTimeAgo(file.createdAt)}
+          </span>
         </div>
 
-        <div className="card-body p-3 d-flex flex-column justify-content-between">
+        <div className="px-3 py-2 flex-grow-1 d-flex flex-column justify-content-between">
           <div>
             <h6
-              className="fw-bolder text-dark text-uppercase mb-1 text-truncate"
+              className="fw-bold text-dark mb-1 text-truncate"
               title={file.fileName}
-              style={{ fontSize: '14px' }}
+              style={{ fontSize: '14.5px' }}
             >
               {file.fileName}
             </h6>
 
-            <div className="text-muted extra-small text-uppercase mb-2 text-truncate">
+            <div className="text-muted extra-small mb-2 text-truncate">
               <i className="bi bi-folder2 text-success me-1"></i>
-              PROJECT: <strong className="text-dark">{file.projectName || 'MEASUREMENT SHEET'}</strong>
+              Project: <span className="text-dark fw-semibold">{file.projectName || 'Measurement Sheet'}</span>
             </div>
 
-            <div className="d-flex flex-wrap gap-1 mb-3">
-              <span className="badge bg-light text-dark border extra-small">
-                <i className="bi bi-calendar3 me-1"></i>
-                {new Date(file.createdAt).toLocaleDateString('en-IN', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric'
-                })}
-              </span>
-              <span className="badge bg-light text-dark border extra-small">
-                <i className="bi bi-hdd me-1"></i>
+            <div className="d-flex flex-wrap gap-1.5 mb-2">
+              <span className="badge workspace-card-chip border extra-small">
+                <i className="bi bi-hdd me-1 text-secondary"></i>
                 {formatFileSize(file.fileSize)}
               </span>
-              <span className="badge bg-light text-dark border extra-small">
-                <i className="bi bi-person me-1"></i>
-                {(file.ownerName || 'USER').toUpperCase()}
+              <span className="badge workspace-card-chip border extra-small">
+                <i className="bi bi-person me-1 text-secondary"></i>
+                {file.ownerName || 'User'}
               </span>
             </div>
           </div>
+        </div>
 
-          <div className="d-flex gap-2 pt-2 border-top" style={{ borderColor: '#f1f5f9' }}>
-            <button
-              className="btn btn-success btn-sm fw-bold text-uppercase flex-grow-1 d-flex align-items-center justify-content-center gap-1 shadow-sm"
-              style={{ borderRadius: '8px', padding: '7px 12px', fontSize: '12px' }}
-              onClick={() => setSelectedExcelId(file._id)}
-            >
-              <i className="bi bi-eye-fill"></i>
-              <span>OPEN EXCEL VIEW</span>
-            </button>
+        <div className="px-3 py-2.5 workspace-card-footer border-top d-flex align-items-center justify-content-between gap-2">
+          <button
+            type="button"
+            className="btn btn-success btn-sm fw-bold px-3 py-1.5 flex-grow-1 d-flex align-items-center justify-content-center gap-1.5 shadow-2xs"
+            style={{ borderRadius: '8px', fontSize: '12px' }}
+            onClick={() => setSelectedExcelId(file._id)}
+          >
+            <i className="bi bi-eye-fill"></i>
+            <span>View Sheet</span>
+          </button>
 
+          <div className="d-flex align-items-center gap-1">
             <button
-              className="btn btn-outline-success btn-sm fw-bold px-2"
+              type="button"
+              className="btn btn-sm btn-outline-success px-2 py-1.5"
               style={{ borderRadius: '8px' }}
-              title="Download .xlsx File"
+              title="Download .xlsx file"
               onClick={() => handleDownloadExcelCard(file)}
             >
               <i className="bi bi-download"></i>
@@ -542,9 +574,10 @@ export default function ProjectsPage() {
 
             {(isOwn || session.role === 'ADMIN') && (
               <button
-                className="btn btn-outline-danger btn-sm px-2"
+                type="button"
+                className="btn btn-sm btn-outline-danger px-2 py-1.5"
                 style={{ borderRadius: '8px' }}
-                title="Delete Excel File"
+                title="Delete Excel file"
                 onClick={() => handleDeleteExcel(file._id, file.ownerUsername)}
               >
                 <i className="bi bi-trash3"></i>
@@ -559,88 +592,70 @@ export default function ProjectsPage() {
   const PdfCard = ({ file }) => {
     const isOwn = file.ownerUsername === session?.username;
     return (
-      <div
-        className="card h-100 bg-white border shadow-sm"
-        style={{
-          borderRadius: '12px',
-          borderColor: '#e2e8f0',
-          transition: 'transform 0.15s ease, box-shadow 0.15s ease',
-        }}
-      >
-        <div
-          className="px-3 py-2 border-bottom d-flex align-items-center justify-content-between"
-          style={{
-            backgroundColor: '#fef2f2',
-            borderTopLeftRadius: '12px',
-            borderTopRightRadius: '12px',
-            borderBottomColor: '#fee2e2',
-          }}
-        >
-          <span className="fw-bolder text-uppercase extra-small text-danger d-flex align-items-center gap-1">
-            <i className="bi bi-file-earmark-pdf-fill"></i> PDF DOCUMENT
+      <div className="workspace-project-card">
+        <div className="px-3 pt-3 pb-2 d-flex align-items-center justify-content-between">
+          <span className="workspace-badge-pill workspace-badge-pill--pdf">
+            <i className="bi bi-file-earmark-pdf-fill text-danger"></i>
+            <span>PDF Print</span>
           </span>
-          {file.billingMode && (
-            <span className="badge bg-warning text-dark extra-small fw-bold">
-              BILLING
-            </span>
-          )}
+
+          <span className="text-muted extra-small d-flex align-items-center gap-1">
+            <i className="bi bi-clock-history"></i>
+            {formatTimeAgo(file.createdAt)}
+          </span>
         </div>
 
-        <div className="card-body p-3 d-flex flex-column justify-content-between">
+        <div className="px-3 py-2 flex-grow-1 d-flex flex-column justify-content-between">
           <div>
             <h6
-              className="fw-bolder text-dark text-uppercase mb-1 text-truncate"
+              className="fw-bold text-dark mb-1 text-truncate"
               title={file.fileName}
-              style={{ fontSize: '14px' }}
+              style={{ fontSize: '14.5px' }}
             >
               {file.fileName}
             </h6>
 
-            <div className="text-muted extra-small text-uppercase mb-2 text-truncate">
+            <div className="text-muted extra-small mb-2 text-truncate">
               <i className="bi bi-folder2 text-danger me-1"></i>
-              PROJECT: <strong className="text-dark">{file.projectName || 'MEASUREMENT SHEET'}</strong>
+              Project: <span className="text-dark fw-semibold">{file.projectName || 'Measurement Sheet'}</span>
             </div>
 
-            <div className="d-flex flex-wrap gap-1 mb-3">
-              <span className="badge bg-light text-dark border extra-small">
-                <i className="bi bi-calendar3 me-1"></i>
-                {new Date(file.createdAt).toLocaleDateString('en-IN', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric'
-                })}
-              </span>
-              {file.pageCount && (
-                <span className="badge bg-light text-dark border extra-small">
-                  <i className="bi bi-files me-1"></i>
-                  {file.pageCount} PAGE{file.pageCount > 1 ? 'S' : ''}
-                </span>
-              )}
-              <span className="badge bg-light text-dark border extra-small">
-                <i className="bi bi-hdd me-1"></i>
+            <div className="d-flex flex-wrap gap-1.5 mb-2">
+              <span className="badge workspace-card-chip border extra-small">
+                <i className="bi bi-hdd me-1 text-secondary"></i>
                 {formatFileSize(file.fileSize)}
               </span>
-              <span className="badge bg-light text-dark border extra-small">
-                <i className="bi bi-person me-1"></i>
-                {(file.ownerName || 'USER').toUpperCase()}
+              {file.pageCount && (
+                <span className="badge workspace-card-chip border extra-small">
+                  <i className="bi bi-files me-1 text-secondary"></i>
+                  {file.pageCount} Pages
+                </span>
+              )}
+              <span className="badge workspace-card-chip border extra-small">
+                <i className="bi bi-person me-1 text-secondary"></i>
+                {file.ownerName || 'User'}
               </span>
             </div>
           </div>
+        </div>
 
-          <div className="d-flex gap-2 pt-2 border-top" style={{ borderColor: '#f1f5f9' }}>
-            <button
-              className="btn btn-danger btn-sm fw-bold text-uppercase flex-grow-1 d-flex align-items-center justify-content-center gap-1 shadow-sm"
-              style={{ borderRadius: '8px', padding: '7px 12px', fontSize: '12px' }}
-              onClick={() => setSelectedPdfId(file._id)}
-            >
-              <i className="bi bi-eye-fill"></i>
-              <span>VIEW PDF</span>
-            </button>
+        <div className="px-3 py-2.5 workspace-card-footer border-top d-flex align-items-center justify-content-between gap-2">
+          <button
+            type="button"
+            className="btn btn-danger btn-sm fw-bold px-3 py-1.5 flex-grow-1 d-flex align-items-center justify-content-center gap-1.5 shadow-2xs"
+            style={{ borderRadius: '8px', fontSize: '12px' }}
+            onClick={() => setSelectedPdfId(file._id)}
+          >
+            <i className="bi bi-eye-fill"></i>
+            <span>View PDF</span>
+          </button>
 
+          <div className="d-flex align-items-center gap-1">
             <button
-              className="btn btn-outline-danger btn-sm fw-bold px-2"
+              type="button"
+              className="btn btn-sm btn-outline-danger px-2 py-1.5"
               style={{ borderRadius: '8px' }}
-              title="Download .pdf Document"
+              title="Download .pdf document"
               onClick={() => handleDownloadPdfCard(file)}
             >
               <i className="bi bi-download"></i>
@@ -648,9 +663,10 @@ export default function ProjectsPage() {
 
             {(isOwn || session.role === 'ADMIN') && (
               <button
-                className="btn btn-outline-secondary btn-sm px-2"
+                type="button"
+                className="btn btn-sm btn-outline-secondary px-2 py-1.5"
                 style={{ borderRadius: '8px' }}
-                title="Delete PDF Document"
+                title="Delete PDF document"
                 onClick={() => handleDeletePdf(file._id, file.ownerUsername)}
               >
                 <i className="bi bi-trash3"></i>
@@ -665,7 +681,7 @@ export default function ProjectsPage() {
   if (!session) return null;
 
   return (
-    <div className="min-vh-100 d-flex flex-column" style={{ backgroundColor: '#f8fafc' }}>
+    <div className="workspace-page-wrapper min-vh-100 d-flex flex-column">
       {/* Toast Notification */}
       {toast && (
         <div className="position-fixed bottom-0 end-0 p-3" style={{ zIndex: 99999 }}>
@@ -687,58 +703,75 @@ export default function ProjectsPage() {
         style={{ display: 'none' }}
       />
 
-      {/* ── 1. MODERN LIGHT TOP NAVBAR ── */}
+      {/* ── 1. MODERN SAAS TOP NAVBAR ── */}
       <nav
-        className="navbar bg-white border-bottom px-3 px-sm-4 py-2 sticky-top"
-        style={{ borderColor: '#e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}
+        className="navbar workspace-navbar border-bottom px-3 px-sm-4 py-2.5 sticky-top"
+        style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.03)', zIndex: 1020 }}
       >
         <div className="d-flex align-items-center gap-3">
           <div className="d-flex align-items-center gap-2">
             <img
               src="/mtsdecor.png"
               alt="MTS Decor"
-              style={{ height: '28px', maxWidth: '120px', objectFit: 'contain' }}
+              style={{ height: '30px', maxWidth: '120px', objectFit: 'contain' }}
               onError={(e) => { e.target.onerror = null; e.target.src = '/logo.png'; }}
             />
-            <span className="fw-bolder fs-5 text-dark text-uppercase mb-0" style={{ letterSpacing: '0.5px' }}>
+            <span className="fw-bolder fs-5 text-dark mb-0" style={{ letterSpacing: '0.2px' }}>
               MS PRO
             </span>
           </div>
-          <span
-            className="d-none d-md-inline extra-small text-uppercase fw-semibold px-2 py-1 rounded"
-            style={{ backgroundColor: '#f1f5f9', color: '#64748b' }}
-          >
-            CIVIL &amp; INTERIOR CONTRACTOR SYSTEM
+          <span className="d-none d-md-inline extra-small fw-semibold px-2.5 py-1 rounded-pill workspace-brand-pill">
+            Contractor Measurement Suite
           </span>
         </div>
 
         <div className="d-flex align-items-center gap-2">
           <ThemeToggle className="d-none d-sm-inline-flex me-1" />
 
+          {/* User Profile Pill */}
           <Link
             to="/profile"
-            className="btn btn-light btn-sm extra-small fw-bold text-uppercase d-flex align-items-center gap-2 px-3 border"
-            style={{ borderRadius: '8px', backgroundColor: '#ffffff', borderColor: '#e2e8f0' }}
-            title="View & Edit Profile"
+            className="btn btn-sm workspace-user-pill border d-flex align-items-center gap-2 px-2.5 py-1.5"
+            title="Account Profile & Settings"
           >
-            <i className="bi bi-person-circle text-primary fs-6"></i>
-            <span className="text-dark d-none d-sm-inline">{session.name}</span>
+            <div
+              style={{
+                width: '24px',
+                height: '24px',
+                borderRadius: '50%',
+                backgroundColor: '#eff6ff',
+                color: '#2563eb',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '11px',
+                fontWeight: 700
+              }}
+            >
+              {(session.name || 'U').charAt(0).toUpperCase()}
+            </div>
+            <span className="text-dark fw-semibold d-none d-sm-inline" style={{ fontSize: '12.5px' }}>
+              {session.name}
+            </span>
           </Link>
 
+          {/* Single Primary Action: + New Project */}
           <button
-            className="btn btn-primary btn-sm fw-bold text-uppercase px-3 shadow-sm d-flex align-items-center gap-1"
-            style={{ borderRadius: '8px', padding: '6px 14px' }}
+            type="button"
+            className="btn btn-primary btn-sm fw-bold px-3 py-1.5 shadow-sm d-flex align-items-center gap-1.5"
+            style={{ borderRadius: '8px', fontSize: '12.5px' }}
             onClick={handleNewProject}
           >
             <i className="bi bi-plus-lg"></i>
-            <span className="d-none d-sm-inline">NEW PROJECT</span>
-            <span className="d-sm-none">NEW</span>
+            <span>New Project</span>
           </button>
 
+          {/* Logout Button */}
           <button
-            className="btn btn-outline-danger btn-sm fw-bold px-2"
+            type="button"
+            className="btn btn-outline-danger btn-sm px-2 py-1.5"
             style={{ borderRadius: '8px' }}
-            title="Logout"
+            title="Log out of system"
             onClick={() => { logout(); navigate('/login'); }}
           >
             <i className="bi bi-box-arrow-right"></i>
@@ -746,222 +779,214 @@ export default function ProjectsPage() {
         </div>
       </nav>
 
-      {/* ── 2. DASHBOARD LIGHT SUBHEADER ── */}
-      <div
-        className="bg-white border-bottom px-3 px-sm-4 py-3"
-        style={{ borderColor: '#e2e8f0' }}
-      >
+      {/* ── 2. WORKSPACE HEADER & HERO SECTION ── */}
+      <div className="workspace-hero-banner border-bottom px-3 px-sm-4 py-3">
         <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
           <div>
-            <h5 className="fw-bolder text-dark text-uppercase mb-1" style={{ letterSpacing: '0.5px' }}>
-              {activeTab === 'projects' && (
-                <span>
-                  <i className="bi bi-folder2-open text-primary me-2"></i>PROJECT WORKSPACE
-                </span>
-              )}
-              {activeTab === 'excel' && (
-                <span>
-                  <i className="bi bi-file-earmark-excel-fill text-success me-2"></i>SAVED EXCEL SPREADSHEETS
-                </span>
-              )}
-              {activeTab === 'pdf' && (
-                <span>
-                  <i className="bi bi-file-earmark-pdf-fill text-danger me-2"></i>SAVED PDF DOCUMENTS
-                </span>
-              )}
-            </h5>
-            <div className="text-muted extra-small text-uppercase">
-              {activeTab === 'projects' && (
-                <>
-                  {safeProjects.length} PROJECT{safeProjects.length !== 1 ? 'S' : ''} TOTAL &bull; LOGGED IN AS <strong className="text-dark">{session.name}</strong>
-                </>
-              )}
-              {activeTab === 'excel' && (
-                <>
-                  {safeExcelFiles.length} EXCEL WORKBOOK{safeExcelFiles.length !== 1 ? 'S' : ''} SAVED &bull; OPEN IN BROWSER OR DOWNLOAD ANYTIME
-                </>
-              )}
-              {activeTab === 'pdf' && (
-                <>
-                  {safePdfFiles.length} PDF DOCUMENT{safePdfFiles.length !== 1 ? 'S' : ''} SAVED &bull; HIGH-RESOLUTION A4 PRINTS ARCHIVED TO CLOUD
-                </>
-              )}
+            <div className="d-flex align-items-center gap-2 mb-1">
+              <h5 className="fw-bold text-dark mb-0" style={{ letterSpacing: '-0.2px' }}>
+                Project Workspace
+              </h5>
+              <span className="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-0.5" style={{ fontSize: '11px' }}>
+                Cloud Sync Active
+              </span>
+            </div>
+            <div className="text-muted small">
+              Welcome back, <strong>{session.name}</strong> &bull; Manage measurement sheets, BOQ estimates, and export archives.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── 3. MAIN WORKSPACE CONTENT ── */}
+      <main className="container-fluid py-4 px-3 px-sm-4 flex-grow-1">
+
+        {/* KPI METRIC TILES */}
+        <div className="row g-3 mb-4">
+          <div className="col-6 col-md-3">
+            <div
+              className="workspace-metric-card d-flex align-items-center justify-content-between"
+              style={{ cursor: 'pointer' }}
+              onClick={() => setActiveTab('all')}
+            >
+              <div>
+                <div className="text-muted extra-small fw-semibold text-uppercase">Total Projects</div>
+                <div className="fs-4 fw-bold text-dark mt-0.5">{safeProjects.length}</div>
+              </div>
+              <div className="workspace-metric-icon workspace-metric-icon--blue">
+                <i className="bi bi-folder2-open"></i>
+              </div>
             </div>
           </div>
 
-          {/* Search Box */}
-          <div style={{ minWidth: '240px', maxWidth: '340px' }} className="flex-grow-1 flex-sm-grow-0">
-            <div className="input-group input-group-sm">
-              <span className="input-group-text bg-white border-end-0" style={{ borderColor: '#cbd5e1' }}>
-                <i className="bi bi-search text-muted"></i>
-              </span>
-              <input
-                type="text"
-                className="form-control border-start-0 text-uppercase fw-semibold"
-                style={{ borderColor: '#cbd5e1' }}
-                placeholder={activeTab === 'projects' ? 'SEARCH PROJECTS...' : activeTab === 'excel' ? 'SEARCH SPREADSHEETS...' : 'SEARCH PDF DOCUMENTS...'}
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-              {search && (
-                <button
-                  className="btn btn-outline-secondary border-start-0 bg-white"
-                  style={{ borderColor: '#cbd5e1' }}
-                  onClick={() => setSearch('')}
-                >
-                  ✕
-                </button>
-              )}
+          <div className="col-6 col-md-3">
+            <div
+              className="workspace-metric-card d-flex align-items-center justify-content-between"
+              style={{ cursor: 'pointer' }}
+              onClick={() => setActiveTab('my')}
+            >
+              <div>
+                <div className="text-muted extra-small fw-semibold text-uppercase">My Projects</div>
+                <div className="fs-4 fw-bold text-primary mt-0.5">{myProjectsAll.length}</div>
+              </div>
+              <div className="workspace-metric-icon workspace-metric-icon--indigo">
+                <i className="bi bi-person-check-fill"></i>
+              </div>
+            </div>
+          </div>
+
+          <div className="col-6 col-md-3">
+            <div
+              className="workspace-metric-card d-flex align-items-center justify-content-between"
+              style={{ cursor: 'pointer' }}
+              onClick={() => setActiveTab('team')}
+            >
+              <div>
+                <div className="text-muted extra-small fw-semibold text-uppercase">Team Shared</div>
+                <div className="fs-4 fw-bold text-dark mt-0.5">{teamProjectsAll.length}</div>
+              </div>
+              <div className="workspace-metric-icon workspace-metric-icon--amber">
+                <i className="bi bi-people-fill"></i>
+              </div>
+            </div>
+          </div>
+
+          <div className="col-6 col-md-3">
+            <div
+              className="workspace-metric-card d-flex align-items-center justify-content-between"
+              style={{ cursor: 'pointer' }}
+              onClick={() => setActiveTab('excel')}
+            >
+              <div>
+                <div className="text-muted extra-small fw-semibold text-uppercase">Cloud Archives</div>
+                <div className="fs-4 fw-bold text-success mt-0.5">{safeExcelFiles.length + safePdfFiles.length}</div>
+              </div>
+              <div className="workspace-metric-icon workspace-metric-icon--emerald">
+                <i className="bi bi-cloud-arrow-down-fill"></i>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Segmented Light Tabs Switcher */}
-        <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mt-3 pt-2 border-top" style={{ borderColor: '#f1f5f9' }}>
-          <div
-            className="d-inline-flex p-1 rounded-3"
-            style={{ backgroundColor: '#f1f5f9', border: '1px solid #e2e8f0' }}
-          >
+        {/* VIEW FILTER & SEARCH BAR */}
+        <div className="workspace-filter-bar border rounded-3 p-2.5 mb-4 shadow-sm d-flex flex-wrap align-items-center justify-content-between gap-3">
+          {/* Segmented Filter Pills */}
+          <div className="workspace-filter-tabs d-flex flex-wrap align-items-center gap-1 p-1 rounded-2">
             <button
-              onClick={() => setActiveTab('projects')}
-              className="btn btn-sm d-flex align-items-center gap-2 fw-bold text-uppercase"
-              style={{
-                backgroundColor: activeTab === 'projects' ? '#ffffff' : 'transparent',
-                color: activeTab === 'projects' ? '#0f172a' : '#64748b',
-                boxShadow: activeTab === 'projects' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
-                borderRadius: '6px',
-                padding: '6px 16px',
-                fontSize: '12px',
-                border: 'none',
-                transition: 'all 0.15s ease',
-              }}
+              type="button"
+              className={`workspace-tab-btn ${activeTab === 'all' ? 'active' : ''}`}
+              onClick={() => setActiveTab('all')}
             >
-              <i className="bi bi-folder2-open text-primary"></i>
-              <span>MY PROJECTS</span>
-              <span
-                className="badge"
-                style={{
-                  backgroundColor: activeTab === 'projects' ? '#eff6ff' : '#e2e8f0',
-                  color: activeTab === 'projects' ? '#1d4ed8' : '#475569',
-                  fontSize: '10px',
-                  padding: '2px 6px',
-                }}
-              >
+              <i className="bi bi-grid-fill"></i>
+              <span>All Projects</span>
+              <span className="badge rounded-pill workspace-tab-badge border px-1.5 py-0.5" style={{ fontSize: '10px' }}>
                 {safeProjects.length}
               </span>
             </button>
 
             <button
+              type="button"
+              className={`workspace-tab-btn ${activeTab === 'my' ? 'active' : ''}`}
+              onClick={() => setActiveTab('my')}
+            >
+              <i className="bi bi-person-fill"></i>
+              <span>My Projects</span>
+              <span className="badge rounded-pill workspace-tab-badge border px-1.5 py-0.5" style={{ fontSize: '10px' }}>
+                {myProjectsAll.length}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              className={`workspace-tab-btn ${activeTab === 'team' ? 'active' : ''}`}
+              onClick={() => setActiveTab('team')}
+            >
+              <i className="bi bi-people-fill"></i>
+              <span>Team Shared</span>
+              <span className="badge rounded-pill workspace-tab-badge border px-1.5 py-0.5" style={{ fontSize: '10px' }}>
+                {teamProjectsAll.length}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              className={`workspace-tab-btn ${activeTab === 'excel' ? 'active' : ''}`}
               onClick={() => setActiveTab('excel')}
-              className="btn btn-sm d-flex align-items-center gap-2 fw-bold text-uppercase"
-              style={{
-                backgroundColor: activeTab === 'excel' ? '#ffffff' : 'transparent',
-                color: activeTab === 'excel' ? '#0f172a' : '#64748b',
-                boxShadow: activeTab === 'excel' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
-                borderRadius: '6px',
-                padding: '6px 16px',
-                fontSize: '12px',
-                border: 'none',
-                transition: 'all 0.15s ease',
-              }}
             >
               <i className="bi bi-file-earmark-excel-fill text-success"></i>
-              <span>SAVED EXCEL WORKBOOKS</span>
-              <span
-                className="badge"
-                style={{
-                  backgroundColor: activeTab === 'excel' ? '#f0fdf4' : '#e2e8f0',
-                  color: activeTab === 'excel' ? '#15803d' : '#475569',
-                  fontSize: '10px',
-                  padding: '2px 6px',
-                }}
-              >
+              <span>Excel Files</span>
+              <span className="badge rounded-pill workspace-tab-badge border px-1.5 py-0.5" style={{ fontSize: '10px' }}>
                 {safeExcelFiles.length}
               </span>
             </button>
 
             <button
+              type="button"
+              className={`workspace-tab-btn ${activeTab === 'pdf' ? 'active' : ''}`}
               onClick={() => setActiveTab('pdf')}
-              className="btn btn-sm d-flex align-items-center gap-2 fw-bold text-uppercase"
-              style={{
-                backgroundColor: activeTab === 'pdf' ? '#ffffff' : 'transparent',
-                color: activeTab === 'pdf' ? '#0f172a' : '#64748b',
-                boxShadow: activeTab === 'pdf' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
-                borderRadius: '6px',
-                padding: '6px 16px',
-                fontSize: '12px',
-                border: 'none',
-                transition: 'all 0.15s ease',
-              }}
             >
               <i className="bi bi-file-earmark-pdf-fill text-danger"></i>
-              <span>SAVED PDF DOCUMENTS</span>
-              <span
-                className="badge"
-                style={{
-                  backgroundColor: activeTab === 'pdf' ? '#fef2f2' : '#e2e8f0',
-                  color: activeTab === 'pdf' ? '#b91c1c' : '#475569',
-                  fontSize: '10px',
-                  padding: '2px 6px',
-                }}
-              >
+              <span>PDF Documents</span>
+              <span className="badge rounded-pill workspace-tab-badge border px-1.5 py-0.5" style={{ fontSize: '10px' }}>
                 {safePdfFiles.length}
               </span>
             </button>
           </div>
 
-          {/* Action buttons on the right */}
-          <div className="d-flex align-items-center gap-2">
+          {/* Right Side: Search and Secondary Actions */}
+          <div className="d-flex align-items-center gap-2 flex-grow-1 flex-md-grow-0">
+            {/* Search Input */}
+            <div className="input-group input-group-sm workspace-search-group" style={{ minWidth: '220px', maxWidth: '300px' }}>
+              <span className="input-group-text border-end-0 text-muted">
+                <i className="bi bi-search"></i>
+              </span>
+              <input
+                type="text"
+                className="form-control border-start-0"
+                placeholder="Search projects, client, location..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              {search && (
+                <button className="btn btn-outline-secondary border-start-0" onClick={() => setSearch('')}>
+                  ✕
+                </button>
+              )}
+            </div>
+
+            {/* Quick upload excel button */}
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadingExcel}
+              className="btn btn-sm btn-outline-success fw-bold d-flex align-items-center gap-1.5"
+              style={{ borderRadius: '8px', fontSize: '12px' }}
+              title="Upload external .xlsx spreadsheet"
+            >
+              <i className="bi bi-cloud-arrow-up-fill"></i>
+              <span className="d-none d-lg-inline">Import Excel</span>
+            </button>
+
             {/* Recently Deleted Button */}
             <button
+              type="button"
               onClick={() => { setShowDeletedModal(true); fetchDeletedProjects(); }}
-              className="btn btn-sm btn-outline-secondary fw-bold text-uppercase d-flex align-items-center gap-1.5 shadow-xs"
-              style={{
-                borderRadius: '8px',
-                backgroundColor: '#ffffff',
-                borderColor: deletedProjects.length > 0 ? '#fca5a5' : '#e2e8f0',
-                color: deletedProjects.length > 0 ? '#dc2626' : '#64748b',
-                fontSize: '11px',
-                padding: '6px 12px',
-                transition: 'all 0.15s ease',
-              }}
-              title="View and Restore Recently Deleted Projects"
+              className={`btn btn-sm fw-semibold d-flex align-items-center gap-1.5 workspace-trash-btn ${deletedProjects.length > 0 ? 'has-items' : ''}`}
+              title="View and Restore Deleted Projects"
             >
               <i className={`bi ${deletedProjects.length > 0 ? 'bi-trash3-fill text-danger' : 'bi-trash3'}`}></i>
-              <span className="d-none d-sm-inline">RECENTLY DELETED</span>
-              <span className="d-sm-none">TRASH</span>
+              <span className="d-none d-lg-inline">Trash</span>
               {deletedProjects.length > 0 && (
                 <span className="badge bg-danger text-white rounded-pill px-1.5 py-0.5" style={{ fontSize: '10px' }}>
                   {deletedProjects.length}
                 </span>
               )}
             </button>
-
-            {/* Quick upload excel button */}
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploadingExcel}
-              className="btn btn-sm btn-outline-success fw-bold text-uppercase d-flex align-items-center gap-1 shadow-xs"
-              style={{
-                borderRadius: '8px',
-                backgroundColor: '#ffffff',
-                borderColor: '#86efac',
-                fontSize: '11px',
-                padding: '6px 14px',
-              }}
-              title="Upload external .xlsx spreadsheet"
-            >
-              <i className="bi bi-cloud-arrow-up-fill text-success"></i>
-              <span>{uploadingExcel ? 'UPLOADING...' : 'UPLOAD EXCEL (.XLSX)'}</span>
-            </button>
           </div>
         </div>
-      </div>
 
-      {/* ── 3. MAIN DASHBOARD CONTENT (LIGHT THEME) ── */}
-      <main className="container-fluid py-4 px-3 px-sm-4 flex-grow-1">
-        {/* ── TAB 1: PROJECTS VIEW ── */}
-        {activeTab === 'projects' && (
+        {/* ── PROJECTS VIEW (FOR 'all', 'my', 'team' TABS) ── */}
+        {(activeTab === 'all' || activeTab === 'my' || activeTab === 'team' || activeTab === 'projects') && (
           <>
             {loading && (
               <div className="text-center py-5">
@@ -976,101 +1001,37 @@ export default function ProjectsPage() {
               </div>
             )}
 
-            {!loading && !error && projects.length === 0 && (
-              <div className="text-center py-5 my-5 bg-white border rounded-3 shadow-sm p-4">
-                <div className="display-1 mb-3 text-muted">📋</div>
-                <h5 className="fw-bolder text-uppercase text-dark">NO PROJECTS FOUND</h5>
-                <p className="text-muted text-uppercase small">CREATE YOUR FIRST MEASUREMENT PROJECT TO GET STARTED.</p>
-                <button className="btn btn-primary fw-bold text-uppercase px-4 mt-2 shadow-sm" onClick={handleNewProject}>
-                  <i className="bi bi-plus-lg me-2"></i> CREATE FIRST PROJECT
-                </button>
+            {!loading && !error && displayedProjects.length === 0 && (
+              <div className="text-center py-5 my-4 workspace-empty-card border rounded-3 shadow-sm p-4">
+                <div className="display-4 mb-3 text-muted opacity-75">
+                  <i className="bi bi-folder-plus text-primary"></i>
+                </div>
+                <h6 className="fw-bold text-dark mb-1">
+                  {search ? 'No projects match your search' : 'No projects found in this view'}
+                </h6>
+                <p className="text-muted small mb-3">
+                  {search ? 'Try clearing the search query or checking another tab.' : 'Create a new project to start taking measurements.'}
+                </p>
+                {search ? (
+                  <button className="btn btn-sm btn-outline-secondary" onClick={() => setSearch('')}>
+                    Clear Search
+                  </button>
+                ) : (
+                  <button className="btn btn-sm btn-primary fw-bold px-3 py-2 shadow-sm" onClick={handleNewProject}>
+                    <i className="bi bi-plus-lg me-1"></i> Create First Project
+                  </button>
+                )}
               </div>
             )}
 
-            {!loading && !error && (
-              <>
-                {myProjects.length > 0 && (
-                  <div className="mb-4">
-                    <div className="d-flex align-items-center justify-content-between mb-3">
-                      <h6 className="fw-bolder text-uppercase text-dark mb-0 d-flex align-items-center gap-2">
-                        <span className="badge bg-white text-primary border px-3 py-2 shadow-2xs">
-                          MY PROJECTS ({myProjects.length})
-                        </span>
-                      </h6>
-                    </div>
-
-                    <div className="row g-3">
-                      {myProjects.map(proj => (
-                        <div key={proj._id || proj.id} className="col-12 col-sm-6 col-lg-4 col-xl-3">
-                          <ProjectCard proj={proj} isOwn={true} />
-                        </div>
-                      ))}
-
-                      {/* New Project Dashed Card */}
-                      <div className="col-12 col-sm-6 col-lg-4 col-xl-3">
-                        <div
-                          className="card h-100 d-flex flex-column align-items-center justify-content-center text-center p-4 bg-white"
-                          style={{
-                            borderRadius: '12px',
-                            cursor: 'pointer',
-                            minHeight: '170px',
-                            border: '2px dashed #93c5fd',
-                            backgroundColor: '#f8fafc',
-                            transition: 'all 0.2s ease',
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.borderColor = '#2563eb';
-                            e.currentTarget.style.backgroundColor = '#eff6ff';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.borderColor = '#93c5fd';
-                            e.currentTarget.style.backgroundColor = '#f8fafc';
-                          }}
-                          onClick={handleNewProject}
-                        >
-                          <div
-                            style={{
-                              width: '42px',
-                              height: '42px',
-                              borderRadius: '50%',
-                              backgroundColor: '#eff6ff',
-                              color: '#2563eb',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              marginBottom: '8px',
-                            }}
-                          >
-                            <i className="bi bi-plus-lg fs-5"></i>
-                          </div>
-                          <div className="fw-bold text-primary text-uppercase small">START NEW PROJECT</div>
-                          <div className="text-muted extra-small text-uppercase mt-1">Empty Measurement Sheet</div>
-                        </div>
-                      </div>
-                    </div>
+            {!loading && !error && displayedProjects.length > 0 && (
+              <div className="row g-3">
+                {displayedProjects.map(proj => (
+                  <div key={proj._id || proj.id} className="col-12 col-sm-6 col-lg-4 col-xl-3">
+                    <ProjectCard proj={proj} isOwn={proj.ownerUsername === session?.username} />
                   </div>
-                )}
-
-                {otherProjects.length > 0 && (
-                  <div className="mb-4">
-                    <div className="d-flex align-items-center justify-content-between mb-3">
-                      <h6 className="fw-bolder text-uppercase text-dark mb-0 d-flex align-items-center gap-2">
-                        <span className="badge bg-white text-secondary border px-3 py-2 shadow-2xs">
-                          OTHER TEAM MEMBERS ({otherProjects.length})
-                        </span>
-                      </h6>
-                    </div>
-
-                    <div className="row g-3">
-                      {otherProjects.map(proj => (
-                        <div key={proj._id || proj.id} className="col-12 col-sm-6 col-lg-4 col-xl-3">
-                          <ProjectCard proj={proj} isOwn={false} />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </>
+                ))}
+              </div>
             )}
           </>
         )}
@@ -1085,7 +1046,7 @@ export default function ProjectsPage() {
             )}
 
             {!loadingExcel && safeExcelFiles.length === 0 && (
-              <div className="text-center py-5 my-5 bg-white border rounded-3 shadow-sm p-4">
+              <div className="text-center py-5 my-5 workspace-empty-card border rounded-3 shadow-sm p-4">
                 <div className="display-1 mb-3 text-success">📊</div>
                 <h5 className="fw-bolder text-uppercase text-dark">NO EXCEL FILES SAVED YET</h5>
                 <p className="text-muted text-uppercase small mx-auto" style={{ maxWidth: '520px' }}>
@@ -1100,9 +1061,9 @@ export default function ProjectsPage() {
                   </button>
                   <button
                     className="btn btn-primary fw-bold text-uppercase px-3 shadow-sm"
-                    onClick={() => setActiveTab('projects')}
+                    onClick={() => setActiveTab('all')}
                   >
-                    <i className="bi bi-folder2-open me-1"></i> GO TO PROJECTS
+                    <i className="bi bi-folder2-open me-1"></i> Go to Projects
                   </button>
                 </div>
               </div>
@@ -1134,22 +1095,13 @@ export default function ProjectsPage() {
                   {/* Upload Dashed Card */}
                   <div className="col-12 col-sm-6 col-lg-4 col-xl-3">
                     <div
-                      className="card h-100 d-flex flex-column align-items-center justify-content-center text-center p-4 bg-white"
+                      className="card h-100 d-flex flex-column align-items-center justify-content-center text-center p-4 workspace-upload-dashed-card"
                       style={{
                         borderRadius: '12px',
                         cursor: 'pointer',
                         minHeight: '170px',
                         border: '2px dashed #86efac',
-                        backgroundColor: '#f0fdf4',
                         transition: 'all 0.2s ease',
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.borderColor = '#16a34a';
-                        e.currentTarget.style.backgroundColor = '#dcfce7';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.borderColor = '#86efac';
-                        e.currentTarget.style.backgroundColor = '#f0fdf4';
                       }}
                       onClick={() => fileInputRef.current?.click()}
                     >
@@ -1158,7 +1110,7 @@ export default function ProjectsPage() {
                           width: '42px',
                           height: '42px',
                           borderRadius: '50%',
-                          backgroundColor: '#dcfce7',
+                          backgroundColor: 'rgba(22, 163, 74, 0.15)',
                           color: '#16a34a',
                           display: 'flex',
                           alignItems: 'center',
@@ -1188,7 +1140,7 @@ export default function ProjectsPage() {
             )}
 
             {!loadingPdf && safePdfFiles.length === 0 && (
-              <div className="text-center py-5 my-5 bg-white border rounded-3 shadow-sm p-4">
+              <div className="text-center py-5 my-5 workspace-empty-card border rounded-3 shadow-sm p-4">
                 <div className="display-1 mb-3 text-danger">📄</div>
                 <h5 className="fw-bolder text-uppercase text-dark">NO PDF DOCUMENTS SAVED YET</h5>
                 <p className="text-muted text-uppercase small mx-auto" style={{ maxWidth: '520px' }}>
@@ -1197,9 +1149,9 @@ export default function ProjectsPage() {
                 <div className="d-flex justify-content-center gap-2 mt-3">
                   <button
                     className="btn btn-primary fw-bold text-uppercase px-3 shadow-sm"
-                    onClick={() => setActiveTab('projects')}
+                    onClick={() => setActiveTab('all')}
                   >
-                    <i className="bi bi-folder2-open me-1"></i> GO TO PROJECTS
+                    <i className="bi bi-folder2-open me-1"></i> Go to Projects
                   </button>
                 </div>
               </div>
@@ -1246,17 +1198,16 @@ export default function ProjectsPage() {
           onClick={() => setShowDeletedModal(false)}
         >
           <div
-            className="bg-white rounded-3 shadow-xl d-flex flex-column border"
+            className="workspace-modal-card rounded-3 shadow-xl d-flex flex-column border"
             style={{
               width: '100%',
               maxWidth: '720px',
               maxHeight: '85vh',
-              borderColor: '#e2e8f0',
             }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div className="px-4 py-3 border-bottom d-flex align-items-center justify-content-between bg-light rounded-top-3">
+            <div className="px-4 py-3 border-bottom d-flex align-items-center justify-content-between workspace-modal-header rounded-top-3">
               <div className="d-flex align-items-center gap-2">
                 <div
                   style={{
@@ -1332,8 +1283,7 @@ export default function ProjectsPage() {
                     return (
                       <div
                         key={id}
-                        className="p-3 bg-white border rounded-3 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 shadow-2xs"
-                        style={{ borderColor: '#e2e8f0' }}
+                        className="p-3 workspace-deleted-item border rounded-3 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 shadow-2xs"
                       >
                         <div className="min-w-0 flex-grow-1">
                           <h6 className="fw-bold text-dark text-uppercase mb-1 text-truncate" title={proj.name}>
@@ -1381,7 +1331,7 @@ export default function ProjectsPage() {
             </div>
 
             {/* Modal Footer */}
-            <div className="px-4 py-2.5 bg-light border-top d-flex justify-content-between align-items-center rounded-bottom-3">
+            <div className="px-4 py-2.5 workspace-modal-footer border-top d-flex justify-content-between align-items-center rounded-bottom-3">
               <span className="text-muted extra-small text-uppercase">
                 TIP: Restored projects return immediately to your active projects list.
               </span>
@@ -1422,7 +1372,7 @@ export default function ProjectsPage() {
       )}
 
       {/* ── CLEAN LIGHT FOOTER ── */}
-      <footer className="bg-white border-top py-4 text-center mt-auto" style={{ borderColor: '#e2e8f0' }}>
+      <footer className="workspace-footer border-top py-4 text-center mt-auto">
         <div className="container">
           <div className="d-flex flex-column flex-md-row align-items-center justify-content-between gap-3 mb-3">
             <div className="text-start text-muted extra-small">

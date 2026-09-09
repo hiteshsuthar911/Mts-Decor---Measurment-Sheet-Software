@@ -166,7 +166,7 @@ export default function UiverseLoginButton({ loading = false, disabled = false, 
                 <p className="state-1">
                   <span style={{ '--i': 1 }}><span>G</span></span>
                   <span style={{ '--i': 2 }}><span>e</span></span>
-                  <span style={{ '--i': 3 }}><span>t</span></span>
+                  <span style={{ '--i': 3, marginRight: '6px' }}><span>t</span></span>
                   <span style={{ '--i': 4 }}><span>S</span></span>
                   <span style={{ '--i': 5 }}><span>t</span></span>
                   <span style={{ '--i': 6 }}><span>a</span></span>
@@ -180,7 +180,7 @@ export default function UiverseLoginButton({ loading = false, disabled = false, 
                   <span style={{ '--i': 2 }}><span>e</span></span>
                   <span style={{ '--i': 3 }}><span>t</span></span>
                   <span style={{ '--i': 4 }}><span>'</span></span>
-                  <span style={{ '--i': 5 }}><span>s</span></span>
+                  <span style={{ '--i': 5, marginRight: '6px' }}><span>s</span></span>
                   <span style={{ '--i': 6 }}><span>C</span></span>
                   <span style={{ '--i': 7 }}><span>o</span></span>
                   <span style={{ '--i': 8 }}><span>o</span></span>

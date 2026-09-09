@@ -7,7 +7,7 @@ export default function UnderConstructionPage() {
   return (
     <div
       className="min-vh-100 d-flex flex-column justify-content-between"
-      style={{ backgroundColor: '#f8fafc', color: '#0f172a', fontFamily: 'Inter, system-ui, sans-serif' }}
+      style={{ backgroundColor: '#f8fafc', color: '#0f172a', fontFamily: 'var(--ms-font-family)' }}
     >
       {/* Top Navbar */}
       <header className="bg-white border-bottom py-3 px-4 shadow-sm">

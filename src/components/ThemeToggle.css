@@ -333,11 +333,11 @@
 }
 
 /* ==========================================================================
-   Global App Dark Theme Enhancements
+   Global App Dark Theme Enhancements (Light Grey / Slate Dark Mode)
    ========================================================================== */
 [data-theme="dark"] body,
 [data-bs-theme="dark"] body {
-  background-color: #0b0f19 !important;
+  background-color: #1e2430 !important;
   color: #f1f5f9 !important;
 }
 
@@ -345,7 +345,7 @@
 [data-bs-theme="dark"] .bg-white,
 [data-theme="dark"] .bg-light,
 [data-bs-theme="dark"] .bg-light {
-  background-color: #0f172a !important;
+  background-color: #273142 !important;
   color: #f8fafc !important;
 }
 
@@ -355,13 +355,13 @@
 [data-bs-theme="dark"] .border-top,
 [data-theme="dark"] .border,
 [data-bs-theme="dark"] .border {
-  border-color: #1e293b !important;
+  border-color: #3a475d !important;
 }
 
 [data-theme="dark"] .card,
 [data-bs-theme="dark"] .card {
-  background-color: #111827 !important;
-  border-color: #1f2937 !important;
+  background-color: #273142 !important;
+  border-color: #3a475d !important;
   color: #f3f4f6 !important;
 }
 
@@ -377,37 +377,38 @@
 
 [data-theme="dark"] .modal-content,
 [data-bs-theme="dark"] .modal-content {
-  background-color: #0f172a !important;
+  background-color: #273142 !important;
   color: #f8fafc !important;
-  border-color: #1e293b !important;
+  border-color: #3a475d !important;
 }
 
 [data-theme="dark"] .form-control,
 [data-theme="dark"] .form-select,
 [data-bs-theme="dark"] .form-control,
 [data-bs-theme="dark"] .form-select {
-  background-color: #1e293b !important;
-  border-color: #334155 !important;
+  background-color: #1e2430 !important;
+  border-color: #3a475d !important;
   color: #f8fafc !important;
 }
 
 [data-theme="dark"] .table,
 [data-bs-theme="dark"] .table {
   color: #f8fafc !important;
-  border-color: #1e293b !important;
+  border-color: #3a475d !important;
 }
 
 [data-theme="dark"] .table > :not(caption) > * > *,
 [data-bs-theme="dark"] .table > :not(caption) > * > * {
   background-color: transparent !important;
   color: #f8fafc !important;
-  border-color: #1e293b !important;
+  border-color: #3a475d !important;
 }
 
 [data-theme="dark"] .btn-light,
 [data-bs-theme="dark"] .btn-light {
-  background-color: #1e293b !important;
-  border-color: #334155 !important;
+  background-color: #1e2430 !important;
+  border-color: #3a475d !important;
   color: #f8fafc !important;
 }
+
 

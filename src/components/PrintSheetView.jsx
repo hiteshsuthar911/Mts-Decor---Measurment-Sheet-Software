@@ -835,7 +835,7 @@ export default function PrintSheetView({
                   </tr>
                   <tr className="bg-light-subtle text-center">
                     <th style={{ width: '5%' }}>SR.</th>
-                    <th style={{ width: '25%' }}>LOCATION</th>
+                    <th style={{ width: '25%' }}>DESCRIPTION</th>
                     <th style={{ width: '24%' }}>REMARK</th>
                     <th style={{ width: '6%' }}>UNIT</th>
                     <th style={{ width: '6%' }}>QTY</th>
@@ -948,16 +948,7 @@ export default function PrintSheetView({
                                           isLess ? (
                                             <div className="fw-bold text-dark">LESS</div>
                                           ) : (
-                                            <div>
-                                              <div className="fw-bold text-dark">{mainLocation}</div>
-                                              {segIdx === 0 && (areaFloor || areaFlat) && (
-                                                <div className="text-secondary fw-semibold extra-small mt-0.5" style={{ fontSize: '9px' }}>
-                                                  {areaFloor && `Floor: ${areaFloor}`}
-                                                  {areaFloor && areaFlat && ' | '}
-                                                  {areaFlat && `Flat: ${areaFlat}`}
-                                                </div>
-                                              )}
-                                            </div>
+                                            <div className="fw-bold text-dark">{mainLocation}</div>
                                           )
                                         ) : null}
                                       </td>
@@ -1086,16 +1077,7 @@ export default function PrintSheetView({
                                 }}
                               >
                                 {isFirst ? (
-                                  <div>
-                                    <div>{mainLocation}</div>
-                                    {(areaFloor || areaFlat) && (
-                                      <div className="text-muted fw-normal extra-small mt-1" style={{ fontSize: '9px' }}>
-                                        {areaFloor && `Flr: ${areaFloor}`}
-                                        {areaFloor && areaFlat && ' • '}
-                                        {areaFlat && `Flt: ${areaFlat}`}
-                                      </div>
-                                    )}
-                                  </div>
+                                  <div className="fw-bold text-dark">{mainLocation}</div>
                                 ) : null}
                               </td>
                               <td className="px-1 text-uppercase" style={{ fontSize: '10px' }}>{item.remark || '-'}</td>

@@ -156,13 +156,10 @@ export default function AreaBlock({
 
   // Line item handlers
   const handleAddItem = (isLess = false) => {
-    // Detect predominant unit in current area or default to SFT
     const defaultUnit = area.items?.length > 0 ? area.items[area.items.length - 1].unit : 'SFT';
     const newItem = createEmptyItem(defaultUnit);
     newItem.isLess = isLess;
-    if (isLess) {
-      newItem.remark = 'Deduction / Opening';
-    }
+    if (isLess) newItem.remark = 'Deduction / Opening';
     onChangeArea(area.id, {
       ...area,
       items: [...(area.items || []), newItem]
@@ -258,121 +255,105 @@ export default function AreaBlock({
     onChangeArea(area.id, { ...area, items: updatedItems });
   };
 
+  // Area title for display
+  const areaTitle = [area.floor, area.flat, area.room]
+    .filter(Boolean)
+    .join(' · ') || 'Untitled Area';
+  const categoryLabel = area.parentCategory === 'Other'
+    ? (area.customParentCategory || 'Other')
+    : (area.parentCategory || 'General Work');
+
   return (
-    <div className="card area-block shadow-sm mb-4 border border-secondary-subtle">
-      {/* Area Card Header */}
-      <div className="card-header bg-white py-3 border-bottom">
-        <div className="d-flex flex-wrap justify-content-between align-items-center gap-2">
-          {/* Title and location badge */}
-          <div className="d-flex align-items-center flex-wrap gap-2">
-            <span className="badge bg-dark rounded-pill px-3 py-2 fw-semibold">
-              Area #{index + 1}
+    <div className="ent-area-block">
+
+      {/* ─── Compact Enterprise Area Header Bar ─────────── */}
+      {/* ─── Enterprise Area Header Bar ─────────── */}
+      <div className="ent-area-header">
+        {/* Top Header Row (Badges on left, Actions on right in mobile; flattened on desktop) */}
+        <div className="ent-area-top-row">
+          <div className="d-flex align-items-center gap-1.5 flex-shrink-0">
+            <span className="ent-area-id-badge">
+              <i className="bi bi-grid-3x3 me-1" />
+              AREA #{index + 1}
             </span>
+
             {sheetPageNumber && (
-              <span className="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-1 extra-small fw-bold text-uppercase">
-                <i className="bi bi-file-earmark-text me-1"></i>Sheet Page #{sheetPageNumber}
+              <span className="ent-area-page-tag d-none d-sm-inline-flex">
+                Sheet {sheetPageNumber}
               </span>
             )}
-            <div className="d-flex align-items-center gap-2">
-              <span className="fw-bold text-dark fs-6">
-                {area.floor || 'Floor'} &bull; {area.flat || 'Unit'} &bull; {area.room || 'Description'}
-              </span>
-              <span className="text-secondary small">
-                ({area.parentCategory === 'Other' ? (area.customParentCategory || 'Other') : (area.parentCategory || 'General Work')})
-              </span>
-            </div>
           </div>
 
-          {/* Card action buttons */}
-          <div className="d-flex align-items-center gap-1">
+          {/* Right: Actions */}
+          <div className="ent-area-actions">
+            {/* Page break toggle - clean, subtle button */}
             <button
               type="button"
-              className="btn btn-sm btn-outline-secondary"
-              disabled={index === 0}
+              className={`ent-hdr-btn ${area.startNewPage ? 'ent-hdr-btn--active' : ''}`}
+              disabled={readOnly}
+              onClick={() => handleFieldChange('startNewPage', !area.startNewPage)}
+              title={area.startNewPage ? 'Starts on new sheet page' : 'Click to start this area on a new page'}
+            >
+              <i className="bi bi-file-earmark-break" />
+              <span className="d-none d-xl-inline">{area.startNewPage ? 'Break Active' : 'Break'}</span>
+            </button>
+
+            <button
+              type="button"
+              className="ent-hdr-btn"
+              disabled={index === 0 || readOnly}
               onClick={() => onMoveArea(area.id, -1)}
-              title="Move this area up"
+              title="Move Area Up"
             >
-              <i className="bi bi-arrow-up"></i>
+              <i className="bi bi-arrow-up" />
             </button>
             <button
               type="button"
-              className="btn btn-sm btn-outline-secondary"
-              disabled={index === totalAreas - 1}
+              className="ent-hdr-btn"
+              disabled={index === totalAreas - 1 || readOnly}
               onClick={() => onMoveArea(area.id, 1)}
-              title="Move this area down"
+              title="Move Area Down"
             >
-              <i className="bi bi-arrow-down"></i>
+              <i className="bi bi-arrow-down" />
             </button>
             <button
               type="button"
-              className="btn btn-sm btn-outline-primary"
+              className="ent-hdr-btn"
+              disabled={readOnly}
               onClick={() => onDuplicateArea(area.id)}
-              title="Duplicate entire area"
+              title="Clone Area"
             >
-              <i className="bi bi-copy me-sm-1"></i>
-              <span className="d-none d-sm-inline"> Clone Area</span>
+              <i className="bi bi-copy" />
+              <span className="d-none d-sm-inline">Clone</span>
             </button>
             <button
               type="button"
-              className="btn btn-sm btn-outline-danger"
+              className="ent-hdr-btn ent-hdr-btn--danger"
+              disabled={readOnly}
               onClick={() => onDeleteArea(area.id)}
-              title="Delete this area"
+              title="Delete Area"
             >
-              <i className="bi bi-trash"></i>
+              <i className="bi bi-trash3" />
             </button>
             <button
               type="button"
-              className="btn btn-sm btn-light border ms-2"
+              className="ent-hdr-btn"
               onClick={() => setIsCollapsed(!isCollapsed)}
-              title={isCollapsed ? 'Expand Area' : 'Collapse Area'}
+              title={isCollapsed ? 'Expand Area Table' : 'Collapse Area Table'}
             >
-              <i className={`bi ${isCollapsed ? 'bi-chevron-down' : 'bi-chevron-up'}`}></i>
+              <i className={`bi ${isCollapsed ? 'bi-chevron-down' : 'bi-chevron-up'}`} />
             </button>
           </div>
         </div>
 
-        {/* Location & Hierarchical Work Category Form */}
-        <div className="row g-2 mt-2 pt-2 border-top">
-          {/* Floor Number */}
-          <div className="col-6 col-md-2">
-            <label className="form-label extra-small text-muted fw-bold mb-1">Floor Number</label>
-            <input
-              type="text"
-              className="form-control form-control-sm"
-              placeholder="e.g. 8th Floor"
-              value={area.floor || ''}
-              onChange={(e) => handleFieldChange('floor', e.target.value)}
-            />
-          </div>
-
-          {/* Flat / Unit Number */}
-          <div className="col-6 col-md-2">
-            <label className="form-label extra-small text-muted fw-bold mb-1">Flat / Unit Number</label>
-            <input
-              type="text"
-              className="form-control form-control-sm"
-              placeholder="e.g. Flat 801"
-              value={area.flat || ''}
-              onChange={(e) => handleFieldChange('flat', e.target.value)}
-            />
-          </div>
-
-          {/* Description Dropdown (formerly Room / Location Area) */}
-          <div className="col-12 col-md-4">
-            <div className="d-flex justify-content-between align-items-center mb-1">
-              <label className="form-label extra-small text-muted fw-bold mb-0">Description</label>
-              <button
-                type="button"
-                className="btn btn-link p-0 text-primary extra-small text-decoration-none fw-semibold"
-                onClick={handlePromptAddRoom}
-                title="Add a custom description option"
-              >
-                <i className="bi bi-plus-circle me-1"></i>+ Add Description
-              </button>
-            </div>
+        {/* Area Controls (Room, Category, Floor, Unit) */}
+        <div className="ent-area-controls">
+          {/* Description / Room Dropdown */}
+          <div className="ent-meta-item ent-meta-item--room">
             <select
-              className="form-select form-select-sm fw-semibold"
+              className="ent-meta-select ent-meta-select-room"
               value={area.room || ''}
+              disabled={readOnly}
               onChange={(e) => {
                 if (e.target.value === '__ADD_NEW__') {
                   handlePromptAddRoom();
@@ -380,38 +361,25 @@ export default function AreaBlock({
                   handleFieldChange('room', e.target.value);
                 }
               }}
+              title="Select Room / Area Description"
             >
-              <option value="" disabled>Select Description</option>
+              <option value="" disabled>Select Room / Description...</option>
               {area.room && !allRooms.includes(area.room) && (
                 <option value={area.room}>{area.room} (Custom)</option>
               )}
               {allRooms.map((r) => (
-                <option key={r} value={r}>
-                  {r}
-                </option>
+                <option key={r} value={r}>{r}</option>
               ))}
-              <option value="__ADD_NEW__" className="text-primary fw-bold">
-                + Add Custom Description...
-              </option>
+              <option value="__ADD_NEW__">+ Custom Room...</option>
             </select>
           </div>
 
-          {/* Work Category (Work Detail) Dropdown */}
-          <div className="col-12 col-md-4">
-            <div className="d-flex justify-content-between align-items-center mb-1">
-              <label className="form-label extra-small text-muted fw-bold mb-0">Work Category (Detail)</label>
-              <button
-                type="button"
-                className="btn btn-link p-0 text-primary extra-small text-decoration-none fw-semibold"
-                onClick={handlePromptAddCategory}
-                title="Add a custom category option"
-              >
-                <i className="bi bi-plus-circle me-1"></i>+ Add Option
-              </button>
-            </div>
+          {/* Work Category Dropdown */}
+          <div className="ent-meta-item ent-meta-item--cat">
             <select
-              className="form-select form-select-sm fw-semibold"
+              className="ent-meta-select ent-meta-select-cat"
               value={area.parentCategory || 'Floor Tiles'}
+              disabled={readOnly}
               onChange={(e) => {
                 if (e.target.value === '__ADD_NEW__') {
                   handlePromptAddCategory();
@@ -419,135 +387,108 @@ export default function AreaBlock({
                   handleFieldChange('parentCategory', e.target.value);
                 }
               }}
+              title="Select Work Category"
             >
-              <option value="" disabled>Select Work Category</option>
+              <option value="" disabled>Category...</option>
               {area.parentCategory && !allCategories.includes(area.parentCategory) && (
                 <option value={area.parentCategory}>{area.parentCategory} (Custom)</option>
               )}
               {Object.entries(CATEGORIZED_WORK_TYPES).map(([groupTitle, catList]) => (
                 <optgroup key={groupTitle} label={groupTitle}>
                   {catList.map((catKey) => (
-                    <option key={catKey} value={catKey}>
-                      {catKey}
-                    </option>
+                    <option key={catKey} value={catKey}>{catKey}</option>
                   ))}
                 </optgroup>
               ))}
               {customCategories.length > 0 && (
-                <optgroup label="User Custom Categories">
+                <optgroup label="Custom Categories">
                   {customCategories.map((catKey) => (
-                    <option key={catKey} value={catKey}>
-                      {catKey}
-                    </option>
+                    <option key={catKey} value={catKey}>{catKey}</option>
                   ))}
                 </optgroup>
               )}
-              <option value="__ADD_NEW__" className="text-primary fw-bold">
-                + Add Custom Category...
-              </option>
+              <option value="__ADD_NEW__">+ Custom Category...</option>
             </select>
           </div>
 
-          {/* Conditional "Other" Room input */}
-          {area.room === 'Other' && (
-            <div className="col-12 mt-1">
-              <div className="input-group input-group-sm">
-                <span className="input-group-text bg-info-subtle text-dark fw-bold">Custom Room / Area:</span>
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Enter custom room name (e.g. Study Area, Pooja Room)"
-                  value={area.customRoom || ''}
-                  onChange={(e) => handleFieldChange('customRoom', e.target.value)}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Conditional "Other" inputs */}
-          {area.parentCategory === 'Other' && (
-            <div className="col-12 mt-1">
-              <div className="input-group input-group-sm">
-                <span className="input-group-text bg-warning-subtle text-dark fw-bold">Custom Work Category:</span>
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Enter custom work description"
-                  value={area.customParentCategory || ''}
-                  onChange={(e) => handleFieldChange('customParentCategory', e.target.value)}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Sheet Description Header */}
-          <div className="col-12 mt-2">
-            <div className="input-group input-group-sm">
-              <span className="input-group-text text-secondary fw-semibold">Sheet Description Header:</span>
-              <input
-                type="text"
-                className="form-control fw-bold"
-                placeholder="e.g. DESIGN WALL TILES, FLOOR TILES (defaults to Description above)"
-                value={area.room || area.descriptionHeader || ''}
-                onChange={(e) => {
-                  handleFieldChange('room', e.target.value);
-                  handleFieldChange('descriptionHeader', e.target.value);
-                }}
-              />
-            </div>
+          {/* Floor Input */}
+          <div className="ent-meta-chip">
+            <span className="ent-meta-lbl">FLR:</span>
+            <input
+              type="text"
+              className="ent-meta-input"
+              style={{ width: '48px' }}
+              placeholder="8th"
+              value={area.floor || ''}
+              disabled={readOnly}
+              onChange={(e) => handleFieldChange('floor', e.target.value)}
+              title="Floor Number (e.g. 8th, Ground)"
+            />
           </div>
 
-          {/* Manual Page Break Toggle */}
-          <div className="col-12 mt-2 pt-2 border-top d-flex flex-wrap align-items-center justify-content-between gap-2">
-            <div className="form-check form-switch mb-0">
-              <input
-                className="form-check-input"
-                type="checkbox"
-                role="switch"
-                id={`startNewPage-${area.id}`}
-                checked={!!area.startNewPage}
-                disabled={readOnly}
-                onChange={(e) => handleFieldChange('startNewPage', e.target.checked)}
-              />
-              <label className="form-check-label extra-small fw-bold text-uppercase text-secondary" htmlFor={`startNewPage-${area.id}`}>
-                <i className="bi bi-file-earmark-plus me-1 text-primary"></i>
-                Start on New Sheet Page (Manual Page Break)
-              </label>
-            </div>
-            <span className="text-muted extra-small">
-              {area.startNewPage
-                ? '✓ Manual break active: Starts a separate sheet page for this area.'
-                : 'Auto: Auto-starts a new page whenever the work category changes (1-1-2-3-1).'}
-            </span>
+          {/* Flat Input */}
+          <div className="ent-meta-chip">
+            <span className="ent-meta-lbl">UNIT:</span>
+            <input
+              type="text"
+              className="ent-meta-input"
+              style={{ width: '52px' }}
+              placeholder="801"
+              value={area.flat || ''}
+              disabled={readOnly}
+              onChange={(e) => handleFieldChange('flat', e.target.value)}
+              title="Flat / Unit Number (e.g. 801, A-102)"
+            />
           </div>
         </div>
       </div>
 
-      {/* Area Body: Line Items */}
-      {!isCollapsed && (
-        <div className="card-body p-0">
-          {/* Mobile Swipe Hint */}
-          <div className="d-md-none text-muted extra-small py-1 px-3 bg-light border-bottom text-uppercase d-flex align-items-center justify-content-between">
-            <span><i className="bi bi-arrow-left-right me-1 text-primary"></i> SWIPE TABLE TO VIEW ALL COLUMNS</span>
-            <span className="badge bg-secondary extra-small">{area.items?.length || 0} ITEMS</span>
-          </div>
+      {/* Custom Name Prompt Row if 'Other' selected */}
+      {!isCollapsed && (area.room === 'Other' || area.parentCategory === 'Other') && (
+        <div className="px-3 py-1.5 bg-light border-bottom d-flex gap-2 align-items-center">
+          {area.room === 'Other' && (
+            <input
+              type="text"
+              className="form-control form-control-sm"
+              style={{ fontSize: '11px', maxWidth: '240px' }}
+              placeholder="Enter Custom Room / Area Name"
+              value={area.customRoom || ''}
+              onChange={(e) => handleFieldChange('customRoom', e.target.value)}
+            />
+          )}
+          {area.parentCategory === 'Other' && (
+            <input
+              type="text"
+              className="form-control form-control-sm"
+              style={{ fontSize: '11px', maxWidth: '240px' }}
+              placeholder="Enter Custom Work Category"
+              value={area.customParentCategory || ''}
+              onChange={(e) => handleFieldChange('customParentCategory', e.target.value)}
+            />
+          )}
+        </div>
+      )}
 
-          {/* Bulk Selection Action Toolbar */}
+      {/* ─── Area Body (Table Grid & Subtotals) ─────────── */}
+      {!isCollapsed && (
+        <>
+
+          {/* ─── Bulk Selection Toolbar ───────────────── */}
           {selectedItemIds.length > 0 && (
-            <div className="bg-primary-subtle border-bottom border-primary border-opacity-25 px-3 py-2 d-flex flex-wrap align-items-center justify-content-between gap-2">
-              <div className="d-flex align-items-center gap-2">
-                <span className="badge bg-primary fs-6 fw-bold">
-                  <i className="bi bi-check2-square me-1"></i>
+            <div className="ent-bulk-bar">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span className="ent-bulk-badge">
+                  <i className="bi bi-check2-square" />
                   {selectedItemIds.length} item{selectedItemIds.length > 1 ? 's' : ''} selected
                 </span>
-                <span className="text-secondary small fw-medium d-none d-sm-inline">Batch update:</span>
               </div>
-              <div className="d-flex align-items-center flex-wrap gap-2">
+              <div className="ent-bulk-controls">
                 {/* Batch Set Unit */}
-                <div className="input-group input-group-sm" style={{ width: '135px' }}>
-                  <span className="input-group-text bg-white small fw-bold">Unit</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <span style={{ fontSize: '10px', fontWeight: 700, color: '#374151', textTransform: 'uppercase' }}>Unit:</span>
                   <select
-                    className="form-select form-select-sm"
+                    className="ent-field-select"
+                    style={{ width: '100px', fontSize: '11px', padding: '3px 6px' }}
                     onChange={(e) => {
                       if (e.target.value) {
                         handleBulkSetUnit(e.target.value);
@@ -564,10 +505,11 @@ export default function AreaBlock({
                 </div>
 
                 {/* Batch Set Remark */}
-                <div className="input-group input-group-sm" style={{ width: '175px' }}>
-                  <span className="input-group-text bg-white small fw-bold">Remark</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <span style={{ fontSize: '10px', fontWeight: 700, color: '#374151', textTransform: 'uppercase' }}>Remark:</span>
                   <select
-                    className="form-select form-select-sm"
+                    className="ent-field-select"
+                    style={{ width: '140px', fontSize: '11px', padding: '3px 6px' }}
                     onChange={(e) => {
                       if (e.target.value) {
                         handleBulkSetRemark(e.target.value);
@@ -591,31 +533,28 @@ export default function AreaBlock({
                 {billingMode && (
                   <button
                     type="button"
-                    className="btn btn-sm btn-outline-dark fw-semibold"
+                    className="ent-add-btn ent-add-btn--primary"
                     onClick={() => {
-                      const r = window.prompt(`Enter rate (${currencySymbol}) for ${selectedItemIds.length} selected items:`);
-                      if (r !== null && !isNaN(parseFloat(r))) {
-                        handleBulkSetRate(parseFloat(r));
-                      }
+                      const r = window.prompt(`Rate (${currencySymbol}) for ${selectedItemIds.length} items:`);
+                      if (r !== null && !isNaN(parseFloat(r))) handleBulkSetRate(parseFloat(r));
                     }}
                   >
-                    <i className="bi bi-tag me-1"></i>Set Rate
+                    <i className="bi bi-tag" /> Set Rate
                   </button>
                 )}
 
                 {/* Bulk Delete */}
                 <button
                   type="button"
-                  className="btn btn-sm btn-danger fw-semibold"
+                  className="ent-add-btn ent-add-btn--danger"
                   onClick={handleBulkDelete}
                 >
-                  <i className="bi bi-trash me-1"></i>Delete ({selectedItemIds.length})
+                  <i className="bi bi-trash3" /> Delete ({selectedItemIds.length})
                 </button>
 
-                {/* Deselect All */}
                 <button
                   type="button"
-                  className="btn btn-sm btn-outline-secondary"
+                  className="ent-add-btn ent-add-btn--primary"
                   onClick={() => setSelectedItemIds([])}
                 >
                   Clear
@@ -624,38 +563,45 @@ export default function AreaBlock({
             </div>
           )}
 
-          <div className="table-responsive">
-            <table className={`table table-sm table-hover align-middle mb-0 line-items-table ${billingMode ? 'billing-active' : ''}`}>
-              <thead className="table-light text-secondary small text-uppercase">
+          {/* ─── Mobile Swipe Hint ──────────────────────── */}
+          <div className="ent-swipe-hint">
+            <span><i className="bi bi-arrow-left-right" style={{ color: '#2563eb' }} /> Scroll to view all columns</span>
+            <span style={{ background: '#e2e8f0', borderRadius: '3px', padding: '2px 7px', fontSize: '10px', fontWeight: 700 }}>
+              {area.items?.length || 0} rows
+            </span>
+          </div>
+
+          {/* ─── Data Grid Table ────────────────────────── */}
+          <div className="table-responsive" style={{ overflowX: 'auto' }}>
+            <table className={`xls-grid-table ${billingMode ? 'billing-active' : ''}`}>
+              <thead className="xls-grid-thead">
                 <tr>
-                  <th className="text-center" style={{ width: '60px' }}>
-                    <div className="d-flex align-items-center justify-content-center gap-1">
+                  <th className="th-center th-rn">
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
                       <input
                         type="checkbox"
-                        className="form-check-input mt-0 cursor-pointer"
+                        className="xls-checkbox"
                         checked={allSelected}
                         onChange={handleToggleSelectAll}
-                        title="Select or deselect all items in this area"
+                        title="Select / Deselect All"
                       />
                       <span>SR.</span>
                     </div>
                   </th>
-                  <th className="text-center" style={{ width: '90px' }}>TYPE</th>
-                  <th>REMARK</th>
-                  <th style={{ width: '110px' }}>UNIT</th>
-                  <th className="text-center" style={{ width: '80px' }}>QTY</th>
-                  <th className="text-end" style={{ width: '105px' }}>LENGTH</th>
-                  <th className="text-end" style={{ width: '115px' }}>
-                    HEIGHT / WIDTH
-                  </th>
-                  <th className="text-end" style={{ width: '120px' }}>TOTAL</th>
+                  <th className="th-center" style={{ width: '80px' }}>TYPE</th>
+                  <th>REMARK / DESCRIPTION</th>
+                  <th style={{ width: '105px' }}>UNIT</th>
+                  <th className="th-center" style={{ width: '90px' }}>QTY</th>
+                  <th className="th-right" style={{ width: '100px' }}>LENGTH</th>
+                  <th className="th-right" style={{ width: '100px' }}>HT / WIDTH</th>
+                  <th className="th-right" style={{ width: '130px', borderLeft: '2px solid #bfdbfe' }}>TOTAL</th>
                   {billingMode && (
                     <>
-                      <th className="text-end" style={{ width: '105px' }}>RATE</th>
-                      <th className="text-end" style={{ width: '125px' }}>AMOUNT</th>
+                      <th className="th-right" style={{ width: '105px' }}>RATE</th>
+                      <th className="th-right" style={{ width: '130px', borderLeft: '2px solid #fde68a' }}>AMOUNT</th>
                     </>
                   )}
-                  <th className="text-center" style={{ width: '80px' }}>ACTIONS</th>
+                  <th className="th-center" style={{ width: '104px', borderLeft: '2px solid #c8d3de' }}>ACTIONS</th>
                 </tr>
               </thead>
               <tbody>
@@ -678,16 +624,19 @@ export default function AreaBlock({
                 ))}
 
                 {(!area.items || area.items.length === 0) && (
-                  <tr>
-                    <td colSpan={billingMode ? 10 : 8} className="text-center py-4 text-muted">
-                      <p className="mb-2">No line items in this area yet.</p>
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-primary"
-                        onClick={() => handleAddItem(false)}
-                      >
-                        <i className="bi bi-plus me-1"></i> Add First Item
-                      </button>
+                  <tr className="ent-empty-row">
+                    <td colSpan={billingMode ? 11 : 9}>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                        <i className="bi bi-table" style={{ fontSize: '20px', color: '#d1d5db' }} />
+                        <span>No measurement rows yet.</span>
+                        <button
+                          type="button"
+                          className="ent-add-btn ent-add-btn--primary"
+                          onClick={() => handleAddItem(false)}
+                        >
+                          <i className="bi bi-plus-lg" /> Add First Row
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 )}
@@ -695,84 +644,84 @@ export default function AreaBlock({
             </table>
           </div>
 
-          {/* Area Footer Bar: Add buttons & Subtotal calculation */}
-          <div className="p-3 bg-light border-top d-flex flex-column flex-md-row justify-content-between align-items-stretch align-items-md-center gap-3">
-            <div className="d-flex flex-wrap align-items-center gap-2">
+          {/* ─── Area Footer ────────────────────────────── */}
+          <div className="ent-area-footer">
+            {/* Add Item Buttons */}
+            <div className="ent-footer-actions">
               <button
                 type="button"
-                className="btn btn-sm btn-outline-primary fw-bold text-uppercase flex-grow-1 flex-md-grow-0"
+                className="ent-add-btn ent-add-btn--primary"
                 onClick={() => handleAddItem(false)}
               >
-                <i className="bi bi-plus-lg me-1"></i> ADD LINE ITEM
+                <i className="bi bi-plus-lg" />
+                <span>Add Row</span>
               </button>
+
               <button
                 type="button"
-                className="btn btn-sm btn-outline-danger fw-bold text-uppercase flex-grow-1 flex-md-grow-0"
+                className="ent-add-btn ent-add-btn--danger"
                 onClick={() => handleAddItem(true)}
-                title="Add a deduction item (e.g. door opening, column cutout, duct)"
+                title="Add deduction row (door opening, column cutout, etc.)"
               >
-                <i className="bi bi-dash-lg me-1"></i> ADD DEDUCTION (LESS)
+                <i className="bi bi-dash-lg" />
+                <span>Add Deduction</span>
               </button>
 
-              <div className="vr d-none d-md-block mx-1"></div>
+              <span className="ent-vdivider" />
 
-              {/* Multi-Floor Fast Replicate Tool */}
               <button
                 type="button"
-                className="btn btn-sm btn-outline-success fw-bold text-uppercase flex-grow-1 flex-md-grow-0"
+                className="ent-add-btn ent-add-btn--ghost"
                 onClick={() => setShowReplicateModal(true)}
-                title="Fast auto-replicate repeating measurements across 1st to 18th floor"
+                title="Replicate measurements to multiple floors"
               >
-                <i className="bi bi-layers-fill me-1"></i> REPLICATE TO FLOORS...
+                <i className="bi bi-layers" />
+                <span>Replicate Floors</span>
               </button>
 
-              {/* 1-Click Duplicate to Next Floor button */}
               {nextFloorInfo && (
                 <button
                   type="button"
-                  className="btn btn-sm btn-success fw-bold text-uppercase flex-grow-1 flex-md-grow-0 shadow-sm d-flex align-items-center gap-1"
+                  className="ent-add-btn ent-add-btn--ghost text-success"
                   onClick={handleQuickAddNextFloor}
-                  title={`1-Click: duplicate ${nextFloorInfo.template.length} items to ${nextFloorInfo.nextFloorName}`}
+                  title={`1-Click: Add ${nextFloorInfo.nextFloorName} (${nextFloorInfo.template.length} rows)`}
                 >
-                  <i className="bi bi-lightning-charge-fill"></i>
-                  <span>+ ADD {nextFloorInfo.nextFloorName.toUpperCase()}</span>
+                  <i className="bi bi-lightning-charge-fill" />
+                  <span>+ {nextFloorInfo.nextFloorName}</span>
                 </button>
               )}
             </div>
 
-            {/* Area Subtotals */}
-            <div className="d-flex align-items-center flex-wrap gap-2 gap-md-3 justify-content-end">
-              <div className="text-end">
-                <span className="text-muted extra-small d-block text-uppercase fw-bold">GROSS:</span>
-                <span className="fw-semibold text-dark small">{formatNumber(totals.grossQty)}</span>
+            {/* Subtotals */}
+            <div className="ent-subtotals">
+              <div className="ent-subtotal-pill">
+                <span className="ent-subtotal-label">GROSS</span>
+                <span className="ent-subtotal-val">{formatNumber(totals.grossQty)}</span>
               </div>
 
               {totals.lessQty > 0 && (
-                <div className="text-end">
-                  <span className="text-danger extra-small d-block text-uppercase fw-bold">LESS:</span>
-                  <span className="fw-semibold text-danger small">-{formatNumber(totals.lessQty)}</span>
+                <div className="ent-subtotal-pill ent-subtotal-pill--less">
+                  <span className="ent-subtotal-label">LESS</span>
+                  <span className="ent-subtotal-val">−{formatNumber(totals.lessQty)}</span>
                 </div>
               )}
 
-              <div className="text-end bg-white px-3 py-1 rounded border border-primary-subtle shadow-sm">
-                <span className="text-primary extra-small d-block text-uppercase fw-bold">
-                  TOTAL AFTER LESS:
-                </span>
-                <span className="fw-bold text-primary fs-6">{formatNumber(totals.netQty)}</span>
+              <div className="ent-subtotal-pill ent-subtotal-pill--total">
+                <span className="ent-subtotal-label">NET TOTAL</span>
+                <span className="ent-subtotal-val">{formatNumber(totals.netQty)}</span>
               </div>
 
               {billingMode && (
-                <div className="text-end bg-warning-subtle px-3 py-1 rounded border border-warning shadow-sm">
-                  <span className="text-dark extra-small d-block text-uppercase fw-bold">
-                    NET AMOUNT:
-                  </span>
-                  <span className="fw-bold text-dark fs-6">{formatCurrency(totals.netAmount, currencySymbol)}</span>
+                <div className="ent-subtotal-pill ent-subtotal-pill--amount">
+                  <span className="ent-subtotal-label">NET AMOUNT</span>
+                  <span className="ent-subtotal-val">{formatCurrency(totals.netAmount, currencySymbol)}</span>
                 </div>
               )}
             </div>
           </div>
-        </div>
+        </>
       )}
+
       {/* Multi-Floor Replicate Modal */}
       <MultiFloorReplicateModal
         show={showReplicateModal}

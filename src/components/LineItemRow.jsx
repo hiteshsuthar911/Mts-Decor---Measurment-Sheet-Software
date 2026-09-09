@@ -54,47 +54,48 @@ export default function LineItemRow({
   };
 
   return (
-    <tr className={`line-item-row ${isSelected ? 'table-primary bg-primary-subtle' : ''} ${item.isLess ? 'table-danger-subtle border-danger border-opacity-25' : ''}`}>
-      {/* SR Index & Select Checkbox */}
-      <td className="text-center align-middle" style={{ width: '60px' }}>
-        <div className="d-flex align-items-center justify-content-center gap-1">
+    <tr
+      className={`xls-row ${isSelected ? 'xls-row--selected' : ''} ${item.isLess ? 'xls-row--deduction' : ''}`}
+      title={item.isLess ? 'Deduction Row' : ''}
+    >
+      {/* SR + Checkbox */}
+      <td className="xls-cell xls-cell--sr">
+        <div className="xls-sr-wrap">
           {onToggleSelect && (
             <input
               type="checkbox"
-              className="form-check-input mt-0 cursor-pointer"
+              className="xls-checkbox"
               checked={isSelected}
               onChange={() => onToggleSelect(item.id)}
               title="Select for bulk actions"
             />
           )}
-          <span className="text-muted fw-semibold small">{index + 1}</span>
+          <span className="xls-sr-num">{index + 1}</span>
         </div>
       </td>
 
-      {/* Type Toggle: Addition (+) vs LESS (-) */}
-      <td className="text-center align-middle" style={{ width: '90px' }}>
+      {/* ADD / LESS Toggle */}
+      <td className="xls-cell xls-cell--type">
         <button
           type="button"
-          className={`btn btn-xs fw-bold px-2 py-1 w-100 ${item.isLess ? 'btn-danger' : 'btn-outline-secondary'}`}
+          className={`xls-type-btn ${item.isLess ? 'xls-type-btn--less' : 'xls-type-btn--add'}`}
           onClick={toggleLess}
-          title={item.isLess ? 'Deduction item (Click to switch to Addition)' : 'Addition item (Click to switch to LESS / Deduction)'}
+          title={item.isLess ? 'Deduction (click to switch to Addition)' : 'Addition (click to switch to Deduction)'}
         >
-          {item.isLess ? '- LESS' : '+ ADD'}
+          {item.isLess ? '− Less' : '+ Add'}
         </button>
       </td>
 
-      {/* Remark Dropdown (just like work category) */}
-      <td className="align-middle" style={{ minWidth: '175px' }}>
-        <div className="d-flex align-items-center gap-1">
+      {/* Remark */}
+      <td className="xls-cell xls-cell--remark">
+        <div className="xls-remark-wrap">
           <select
-            className="form-select form-select-sm fw-semibold"
+            className="xls-select xls-select--remark"
             value={item.remark || ''}
             onChange={(e) => {
               if (e.target.value === '__ADD_NEW__') {
                 const custom = window.prompt('Enter custom remark / note:', item.remark || '');
-                if (custom && custom.trim()) {
-                  handleFieldChange('remark', custom.trim());
-                }
+                if (custom && custom.trim()) handleFieldChange('remark', custom.trim());
               } else if (e.target.value === 'Other') {
                 const custom = window.prompt('Enter custom remark for Other:', '');
                 handleFieldChange('remark', custom && custom.trim() ? custom.trim() : 'Other');
@@ -110,57 +111,50 @@ export default function LineItemRow({
             {Object.entries(CATEGORIZED_REMARKS).map(([groupTitle, list]) => (
               <optgroup key={groupTitle} label={groupTitle}>
                 {list.map((opt) => (
-                  <option key={opt} value={opt}>
-                    {opt}
-                  </option>
+                  <option key={opt} value={opt}>{opt}</option>
                 ))}
               </optgroup>
             ))}
-            <option value="__ADD_NEW__" className="text-primary fw-bold">
-              + Custom Remark...
-            </option>
+            <option value="__ADD_NEW__">+ Custom Remark...</option>
           </select>
           {item.remark && !REMARK_OPTIONS.includes(item.remark) && (
             <button
               type="button"
-              className="btn btn-outline-secondary btn-sm p-1 d-flex align-items-center"
-              style={{ fontSize: '11px', height: '30px', flexShrink: 0 }}
+              className="xls-icon-btn"
               onClick={() => {
                 const edited = window.prompt('Edit remark / note:', item.remark);
                 if (edited !== null) handleFieldChange('remark', edited.trim());
               }}
               title="Edit custom remark"
             >
-              <i className="bi bi-pencil-square"></i>
+              <i className="bi bi-pencil" />
             </button>
           )}
         </div>
       </td>
 
-      {/* Unit Dropdown */}
-      <td className="align-middle" style={{ width: '110px' }}>
+      {/* Unit */}
+      <td className="xls-cell xls-cell--unit">
         <select
-          className="form-select form-select-sm"
+          className="xls-select"
           value={item.unit || 'SFT'}
           onChange={(e) => handleFieldChange('unit', e.target.value)}
         >
           {UNIT_OPTIONS.map(opt => (
-            <option key={opt.value} value={opt.value}>
-              {opt.value}
-            </option>
+            <option key={opt.value} value={opt.value}>{opt.value}</option>
           ))}
         </select>
       </td>
 
       {/* Qty */}
-      <td className="align-middle" style={{ width: '80px' }}>
+      <td className="xls-cell xls-cell--num">
         <input
           type="number"
           step="any"
           min="0"
           data-field="quantity"
-          className="form-control form-control-sm text-center"
-          placeholder="Qty"
+          className="xls-input xls-input--center"
+          placeholder="—"
           value={item.quantity === 0 || item.quantity ? item.quantity : ''}
           onChange={(e) => handleFieldChange('quantity', e.target.value)}
           onKeyDown={(e) => handleKeyDown(e, 'quantity')}
@@ -168,35 +162,33 @@ export default function LineItemRow({
       </td>
 
       {/* Length */}
-      <td className="align-middle" style={{ width: '105px' }}>
+      <td className="xls-cell xls-cell--num">
         <input
           type="number"
           step="any"
           min="0"
           disabled={isCount}
           data-field="length"
-          className={`form-control form-control-sm text-end ${isCount ? 'bg-light text-muted' : ''}`}
-          placeholder={isCount ? '-' : 'Length'}
+          className={`xls-input xls-input--right ${isCount ? 'xls-input--disabled' : ''}`}
+          placeholder={isCount ? '—' : '0.00'}
           value={item.length === 0 || item.length ? item.length : ''}
           onChange={(e) => handleFieldChange('length', e.target.value)}
           onKeyDown={(e) => handleKeyDown(e, 'length')}
         />
       </td>
 
-      {/* Height / Width (Conditionally active based on formula rules) */}
-      <td className="align-middle" style={{ width: '115px' }}>
+      {/* Height / Width */}
+      <td className="xls-cell xls-cell--num">
         {isLength || isCount ? (
-          <div className="text-center text-muted small py-1 bg-light rounded border border-light-subtle">
-            <span className="extra-small text-secondary">- N/A -</span>
-          </div>
+          <span className="xls-na">N/A</span>
         ) : (
           <input
             type="number"
             step="any"
             min="0"
             data-field="height"
-            className="form-control form-control-sm text-end"
-            placeholder="Height"
+            className="xls-input xls-input--right"
+            placeholder="0.00"
             value={item.height === 0 || item.height ? item.height : ''}
             onChange={(e) => handleFieldChange('height', e.target.value)}
             onKeyDown={(e) => handleKeyDown(e, 'height')}
@@ -205,78 +197,78 @@ export default function LineItemRow({
       </td>
 
       {/* Calculated Total */}
-      <td className="align-middle text-end fw-bold" style={{ width: '120px' }}>
-        <span className={item.isLess ? 'text-danger' : 'text-primary'}>
-          {item.isLess ? '-' : ''}{formatNumber(lineTotal)}
+      <td className="xls-cell xls-cell--total">
+        <span className={`xls-total-val ${item.isLess ? 'xls-total-val--less' : 'xls-total-val--add'}`}>
+          {item.isLess ? '−' : ''}{formatNumber(lineTotal)}
         </span>
-        <span className="ms-1 text-muted extra-small fw-normal">{item.unit || 'SFT'}</span>
+        <span className="xls-total-unit">{item.unit || 'SFT'}</span>
       </td>
 
-      {/* Optional Rate & Amount (RA Bill Mode) */}
+      {/* Rate & Amount (RA Bill Mode) */}
       {billingMode && (
         <>
-          <td className="align-middle" style={{ width: '105px' }}>
-            <div className="input-group input-group-sm">
-              <span className="input-group-text px-1 text-muted extra-small">{currencySymbol}</span>
+          <td className="xls-cell xls-cell--num">
+            <div className="xls-currency-input">
+              <span className="xls-currency-prefix">{currencySymbol}</span>
               <input
                 type="number"
                 step="any"
                 min="0"
-                className="form-control form-control-sm text-end"
-                placeholder="Rate"
+                className="xls-input xls-input--right"
+                placeholder="0.00"
                 value={item.rate === 0 || item.rate ? item.rate : ''}
                 onChange={(e) => handleFieldChange('rate', e.target.value)}
               />
             </div>
           </td>
-          <td className="align-middle text-end fw-bold text-dark" style={{ width: '125px' }}>
-            <span className={item.isLess ? 'text-danger' : 'text-dark'}>
-              {item.isLess ? '-' : ''}{formatCurrency(lineAmount, currencySymbol)}
+          <td className="xls-cell xls-cell--amount">
+            <span className={`xls-amount-val ${item.isLess ? 'xls-amount-val--less' : ''}`}>
+              {item.isLess ? '−' : ''}{formatCurrency(lineAmount, currencySymbol)}
             </span>
           </td>
         </>
       )}
 
       {/* Actions */}
-      <td className="text-center align-middle" style={{ width: '110px' }}>
-        <div className="btn-group btn-group-sm">
+      <td className="xls-cell xls-cell--actions">
+        <div className="xls-action-group">
           {onMoveItemUp && (
             <button
               type="button"
-              className="btn btn-outline-secondary btn-xs"
+              className="xls-action-btn"
               disabled={index === 0}
               onClick={() => onMoveItemUp(item.id)}
-              title="Move Row Up"
+              title="Move Up"
             >
-              <i className="bi bi-arrow-up"></i>
+              <i className="bi bi-chevron-up" />
             </button>
           )}
           {onMoveItemDown && (
             <button
               type="button"
-              className="btn btn-outline-secondary btn-xs"
+              className="xls-action-btn"
               disabled={totalItems !== undefined && index >= totalItems - 1}
               onClick={() => onMoveItemDown(item.id)}
-              title="Move Row Down"
+              title="Move Down"
             >
-              <i className="bi bi-arrow-down"></i>
+              <i className="bi bi-chevron-down" />
             </button>
           )}
           <button
             type="button"
-            className="btn btn-outline-secondary btn-xs"
+            className="xls-action-btn"
             onClick={() => onDuplicateItem(item.id)}
-            title="Duplicate this line item"
+            title="Duplicate Row"
           >
-            <i className="bi bi-copy"></i>
+            <i className="bi bi-copy" />
           </button>
           <button
             type="button"
-            className="btn btn-outline-danger btn-xs"
+            className="xls-action-btn xls-action-btn--danger"
             onClick={() => onDeleteItem(item.id)}
-            title="Delete this line item"
+            title="Delete Row"
           >
-            <i className="bi bi-x-lg"></i>
+            <i className="bi bi-trash3" />
           </button>
         </div>
       </td>

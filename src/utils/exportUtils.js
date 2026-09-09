@@ -20,7 +20,7 @@ export function exportToExcel(projectData, billingMode = false, options = {}) {
   sheetRows.push([]); // blank row
 
   // Table header
-  const tableHeaders = ['SR.', 'LOCATION', 'REMARK', 'UNIT', 'QTY.', 'LENGTH', 'HIGHT', 'TOTAL'];
+  const tableHeaders = ['SR.', 'DESCRIPTION', 'REMARK', 'UNIT', 'QTY.', 'LENGTH', 'HEIGHT', 'TOTAL'];
   if (billingMode) {
     tableHeaders.push('RATE', 'AMOUNT');
   }

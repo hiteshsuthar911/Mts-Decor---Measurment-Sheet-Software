@@ -109,8 +109,43 @@ export default function Header({
           )}
         </div>
 
+        {/* CENTER: Clean Enterprise Sheet Switcher (Tabs) */}
+        <div className="ms-tc d-none d-md-flex align-items-center">
+          <div className="ms-nav-segmented">
+            <button
+              type="button"
+              className={`ms-nav-seg-btn ${activeSection === 'info' ? 'active' : ''}`}
+              onClick={() => onChangeSection('info')}
+              title="Project Details & Specifications (Page 1)"
+            >
+              <i className="bi bi-card-heading" />
+              <span>1. Info</span>
+            </button>
+            <button
+              type="button"
+              className={`ms-nav-seg-btn ${activeSection === 'measurements' ? 'active' : ''}`}
+              onClick={() => onChangeSection('measurements')}
+              title="Measurement Book & Areas (Page 2)"
+            >
+              <i className="bi bi-grid-3x3" />
+              <span>2. Measurements</span>
+              {areasCount > 0 && <span className="ms-nav-seg-count">{areasCount}</span>}
+            </button>
+            <button
+              type="button"
+              className={`ms-nav-seg-btn ${activeSection === 'summary' ? 'active' : ''}`}
+              onClick={() => onChangeSection('summary')}
+              title="Financial Abstract & Grand Totals (Page 3)"
+            >
+              <i className="bi bi-pie-chart-fill text-warning" />
+              <span>3. Summary</span>
+            </button>
+          </div>
+        </div>
+
         {/* RIGHT: Action buttons */}
         <div className="ms-tr">
+
           {/* Save Button — Always Accessible & High Priority */}
           {!readOnly && (
             <button
@@ -124,15 +159,22 @@ export default function Header({
             </button>
           )}
 
-          {/* Add Area Button — Always Accessible */}
+          {/* Add Area Button — Stably positioned to prevent header layout shift */}
           {!readOnly && (
-            <button className="ms-btn ms-btn-add shadow-sm" onClick={onAddNewArea} title="Add new area">
+            <button
+              className="ms-btn ms-btn-add shadow-sm"
+              onClick={() => {
+                if (activeSection !== 'measurements') onChangeSection('measurements');
+                onAddNewArea();
+              }}
+              title={activeSection === 'measurements' ? 'Add new area' : 'Go to Measurements & Add Area'}
+            >
               <i className="bi bi-plus-lg" />
               <span className="d-none d-sm-inline">ADD AREA</span>
             </button>
           )}
 
-          {/* Undo / Redo — Always Accessible */}
+          {/* Undo / Redo */}
           {!readOnly && (
             <div className="d-flex align-items-center gap-1">
               <button
@@ -164,7 +206,19 @@ export default function Header({
             </div>
           )}
 
-          {/* PRIMARY SETTINGS / TOOLS BUTTON — 1-Click Access to ALL Settings on Mobile & Desktop */}
+          {/* Print */}
+          <button className="ms-btn ms-btn-ghost d-none d-sm-inline-flex" onClick={onOpenPrintView} title={isPrintView ? 'Back to Edit' : 'Print / PDF'}>
+            <i className={`bi ${isPrintView ? 'bi-pencil-square text-primary' : 'bi-printer-fill'}`} />
+            <span>{isPrintView ? 'EDIT' : 'PRINT'}</span>
+          </button>
+
+          {/* Excel */}
+          <button className="ms-btn ms-btn-ghost d-none d-sm-inline-flex" onClick={onExportExcel} title="Export to Microsoft Excel (.xlsx)">
+            <i className="bi bi-file-earmark-excel-fill" style={{ color: '#107c41', fontSize: '13px' }} />
+            <span className="text-success fw-bold">EXCEL</span>
+          </button>
+
+          {/* PRIMARY SETTINGS / TOOLS BUTTON */}
           <button
             type="button"
             className={`ms-btn ${showSettingsPanel ? 'btn-dark text-white' : 'ms-btn-ghost'} position-relative fw-bold shadow-sm`}
@@ -172,8 +226,7 @@ export default function Header({
             title="Open all sheet settings, tools & exports"
           >
             <i className="bi bi-gear-fill text-success" />
-            <span className="d-none d-sm-inline">SETTINGS</span>
-            <span className="d-inline d-sm-none">SET</span>
+            <span className="d-none d-sm-inline">TOOLS</span>
             {pendingEngineerQueriesCount > 0 && (
               <span
                 className="position-absolute badge rounded-pill bg-danger"
@@ -203,57 +256,6 @@ export default function Header({
                 <span> RA BILL</span>
               </span>
             </label>
-
-            {/* Print */}
-            <button className="ms-btn ms-btn-ghost" onClick={onOpenPrintView} title={isPrintView ? 'Back to Edit' : 'Print / PDF'}>
-              <i className={`bi ${isPrintView ? 'bi-pencil-square text-primary' : 'bi-printer-fill'}`} />
-              <span>{isPrintView ? 'EDIT' : 'PRINT'}</span>
-            </button>
-
-            {/* Excel */}
-            <button className="ms-btn ms-btn-ghost" onClick={onExportExcel} title="Export to Microsoft Excel (.xlsx)">
-              <i className="bi bi-file-earmark-excel-fill" style={{ color: '#107c41', fontSize: '13px' }} />
-              <span className="text-success fw-bold">EXCEL</span>
-            </button>
-
-            {/* Site Engineer */}
-            {onOpenEngineerReview && (
-              <button
-                className={`ms-btn ms-btn-ghost position-relative ${pendingEngineerQueriesCount > 0 ? 'border-warning text-warning fw-bold bg-warning-subtle' : 'text-primary'}`}
-                onClick={onOpenEngineerReview}
-                title="Site Engineer Review & Measurement Queries"
-              >
-                <i className="bi bi-person-badge-fill" />
-                <span>ENGINEER</span>
-                {pendingEngineerQueriesCount > 0 && (
-                  <span
-                    className="position-absolute badge rounded-pill bg-danger"
-                    style={{ top: '-4px', right: '-4px', fontSize: '9px', padding: '2px 5px' }}
-                  >
-                    {pendingEngineerQueriesCount}
-                  </span>
-                )}
-              </button>
-            )}
-
-            {/* Client Approval */}
-            {onOpenClientApproval && (
-              <button
-                className={`ms-btn ms-btn-ghost ${clientApproval?.approved ? 'border-success text-success fw-bold bg-success-subtle' : ''}`}
-                onClick={onOpenClientApproval}
-                title={clientApproval?.approved ? `Approved by ${clientApproval.signerName}` : 'Client Digital Sign-Off & Seal'}
-              >
-                <i className={`bi ${clientApproval?.approved ? 'bi-patch-check-fill text-success' : 'bi-shield-check text-muted'}`} />
-                <span>{clientApproval?.approved ? 'APPROVED' : 'SIGN-OFF'}</span>
-              </button>
-            )}
-
-            {/* Clear */}
-            {!readOnly && (
-              <button className="ms-btn ms-btn-danger" onClick={onResetSheet} title="Clear all data">
-                <i className="bi bi-trash3" />
-              </button>
-            )}
 
             <div className="ms-vsep" />
             <ThemeToggle />
@@ -499,90 +501,6 @@ export default function Header({
           </div>
         </div>
       )}
-
-      {/* ══════════════════════════════════════════════════
-          ROW 2 — SECTION TAB BAR
-      ══════════════════════════════════════════════════ */}
-      <div className="ms-tabbar">
-        <div className="ms-tabs">
-
-          <button
-            className={`ms-tab ${activeSection === 'info' ? 'ms-tab-on ms-tab-info' : ''}`}
-            onClick={() => onChangeSection('info')}
-          >
-            <span className="ms-tnum">1</span>
-            <i className="bi bi-card-heading d-none d-sm-inline" />
-            <span className="ms-ttext">Project Info</span>
-          </button>
-
-          <button
-            className={`ms-tab ${activeSection === 'measurements' ? 'ms-tab-on ms-tab-sheet' : ''}`}
-            onClick={() => onChangeSection('measurements')}
-          >
-            <span className="ms-tnum">2</span>
-            <i className="bi bi-grid-3x3-gap-fill d-none d-sm-inline" />
-            <span className="ms-ttext">Measurements</span>
-            {areasCount > 0 && <span className="ms-tcount">{areasCount}</span>}
-          </button>
-
-          <button
-            className={`ms-tab ${activeSection === 'summary' ? 'ms-tab-on ms-tab-sum' : ''}`}
-            onClick={() => onChangeSection('summary')}
-          >
-            <span className="ms-tnum">3</span>
-            <i className="bi bi-pie-chart-fill d-none d-sm-inline" />
-            <span className="ms-ttext">Summary</span>
-          </button>
-
-          <button
-            className={`ms-tab ms-tab-all ${activeSection === 'all' ? 'ms-tab-on ms-tab-all-on' : ''}`}
-            onClick={() => onChangeSection('all')}
-            title="View all 3 sections"
-          >
-            <i className="bi bi-layout-split" />
-            <span className="ms-ttext d-none d-sm-inline">All</span>
-          </button>
-        </div>
-
-        <div className="ms-tabbar-end d-none d-md-flex align-items-center gap-2">
-          <button
-            type="button"
-            className={`ms-btn ${showSettingsPanel ? 'btn-dark text-white' : 'ms-btn-ghost'} py-1 px-2.5 rounded`}
-            style={{ height: '27px', fontSize: '10.5px' }}
-            onClick={() => setShowSettingsPanel(!showSettingsPanel)}
-            title="Open all sheet settings & tools"
-          >
-            <i className="bi bi-gear-fill text-success me-1" />
-            <span className="fw-bold">Settings</span>
-            {pendingEngineerQueriesCount > 0 && (
-              <span className="badge rounded-pill bg-danger ms-1" style={{ fontSize: '8.5px', padding: '1px 4px' }}>
-                {pendingEngineerQueriesCount}
-              </span>
-            )}
-          </button>
-
-          {showMetadataForm && (
-            <button
-              type="button"
-              className="ms-btn ms-btn-ghost py-1 px-2.5 rounded text-secondary"
-              style={{ height: '27px', fontSize: '10.5px' }}
-              onClick={() => setShowDetails(!showDetails)}
-              title={showDetails ? 'Hide Project Details Formula Panel' : 'Show Project Details Formula Panel'}
-            >
-              <i className="bi bi-layout-text-window-reverse text-primary me-1" />
-              <span>{showDetails ? 'Hide Details' : 'Show Details'}</span>
-              <i className={`bi bi-chevron-${showDetails ? 'up' : 'down'} ms-1`} />
-            </button>
-          )}
-
-          <span className="ms-page-pill d-none d-md-inline-flex">
-            {activeSection === 'info' && <><i className="bi bi-1-circle-fill text-primary" /> PROJECT INFO</>}
-            {activeSection === 'measurements' && <><i className="bi bi-2-circle-fill text-success" /> MEASUREMENTS</>}
-            {activeSection === 'summary' && <><i className="bi bi-3-circle-fill text-warning" /> SUMMARY</>}
-            {activeSection === 'all' && <><i className="bi bi-layout-split text-info" /> ALL SECTIONS</>}
-          </span>
-        </div>
-      </div>
 
       {/* ══════════════════════════════════════════════════
           ROW 3 — METADATA FORM (Page 1 / View All only)

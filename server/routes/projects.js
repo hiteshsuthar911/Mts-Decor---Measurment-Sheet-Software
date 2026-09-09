@@ -105,6 +105,8 @@ router.get('/:id', auth, async (req, res) => {
 router.post('/', auth, async (req, res) => {
   try {
     const { data } = req.body;
+    const areas = Array.isArray(data?.areas) ? data.areas : [];
+    const totalItems = areas.reduce((sum, a) => sum + (Array.isArray(a.items) ? a.items.length : 0), 0);
     const project = await Project.create({
       name: data?.header?.projectName || 'NEW PROJECT',
       ownerUsername: req.user.username,
@@ -113,6 +115,10 @@ router.post('/', auth, async (req, res) => {
       companySlug: req.user.companySlug || 'mts-decor',
       lastEditedBy: req.user.name,
       lastEditedAt: new Date(),
+      clientName: data?.header?.clientName || '',
+      location: data?.header?.location || data?.header?.siteAddress || '',
+      areasCount: areas.length,
+      totalItemsCount: totalItems,
       data: data || {},
       isDeleted: false,
     });
@@ -156,7 +162,14 @@ router.put('/:id', auth, async (req, res) => {
       newData.clientApproval = oldData.clientApproval;
     }
 
+    const areas = Array.isArray(newData?.areas) ? newData.areas : [];
+    const totalItems = areas.reduce((sum, a) => sum + (Array.isArray(a.items) ? a.items.length : 0), 0);
+
     existing.name = newData?.header?.projectName || existing.name || 'UNTITLED PROJECT';
+    existing.clientName = newData?.header?.clientName || existing.clientName || '';
+    existing.location = newData?.header?.location || newData?.header?.siteAddress || existing.location || '';
+    existing.areasCount = areas.length || existing.areasCount || 0;
+    existing.totalItemsCount = totalItems || existing.totalItemsCount || 0;
     existing.lastEditedBy = req.user.name;
     existing.lastEditedAt = new Date();
     existing.data = newData;
@@ -221,6 +234,9 @@ router.post('/:id/duplicate', auth, async (req, res) => {
       clonedData.header.projectName = newName;
     }
 
+    const areas = Array.isArray(clonedData?.areas) ? clonedData.areas : [];
+    const totalItems = areas.reduce((sum, a) => sum + (Array.isArray(a.items) ? a.items.length : 0), 0);
+
     const duplicate = await Project.create({
       name: newName,
       ownerUsername: req.user.username,
@@ -229,6 +245,10 @@ router.post('/:id/duplicate', auth, async (req, res) => {
       companySlug: req.user.companySlug || original.companySlug || 'mts-decor',
       lastEditedBy: req.user.name,
       lastEditedAt: new Date(),
+      clientName: clonedData?.header?.clientName || original.clientName || '',
+      location: clonedData?.header?.location || clonedData?.header?.siteAddress || original.location || '',
+      areasCount: areas.length || original.areasCount || 0,
+      totalItemsCount: totalItems || original.totalItemsCount || 0,
       data: clonedData,
       isDeleted: false,
     });

@@ -73,19 +73,19 @@ export default function SummaryDashboard({
   };
 
   return (
-    <div className="card summary-dashboard shadow-sm border-0 border-top border-4 border-dark my-3 my-md-4 rounded-3 overflow-hidden">
+    <div className="card summary-dashboard shadow-sm border rounded-3 overflow-hidden my-2">
       {/* Top Header & Actions Bar */}
-      <div className="card-header bg-white py-3 px-3 px-md-4 border-bottom">
-        <div className="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
+      <div className="card-header bg-white py-2.5 px-3 px-md-4 border-bottom">
+        <div className="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-2">
           <div>
             <div className="d-flex align-items-center gap-2">
-              <span className="badge bg-dark text-warning fw-bold px-2 py-1">EXECUTIVE ABSTRACT</span>
-              <h5 className="card-title fw-bolder text-dark mb-0 d-flex align-items-center gap-2">
+              <span className="badge bg-primary text-white fw-bold px-2 py-0.5" style={{ fontSize: '10px', letterSpacing: '0.4px' }}>ABSTRACT</span>
+              <h6 className="card-title fw-bold text-dark mb-0 d-flex align-items-center gap-2">
                 <i className="bi bi-pie-chart-fill text-primary"></i>
                 Measurement Summary &amp; Bill Abstract
-              </h5>
+              </h6>
             </div>
-            <div className="text-muted small mt-1">
+            <div className="text-muted extra-small mt-0.5">
               Consolidated measurements, in-place rate editing, and progressive Running Account (RA) billing
             </div>
           </div>
@@ -95,11 +95,12 @@ export default function SummaryDashboard({
             {onOpenSummaryPrint && (
               <button
                 type="button"
-                className="btn btn-sm btn-dark fw-bold d-inline-flex align-items-center gap-1 shadow-xs px-3"
+                className="btn btn-sm btn-outline-dark fw-bold d-inline-flex align-items-center gap-1 px-2.5 py-1"
+                style={{ fontSize: '11px' }}
                 onClick={onOpenSummaryPrint}
                 title="Print official A4 Abstract of Measurement"
               >
-                <i className="bi bi-printer-fill text-warning"></i>
+                <i className="bi bi-printer-fill text-primary"></i>
                 <span>Print Abstract</span>
               </button>
             )}
@@ -107,7 +108,8 @@ export default function SummaryDashboard({
             {billingMode && onOpenGstInvoice && (
               <button
                 type="button"
-                className="btn btn-sm btn-outline-primary fw-bold d-inline-flex align-items-center gap-1 shadow-xs px-3"
+                className="btn btn-sm btn-outline-primary fw-bold d-inline-flex align-items-center gap-1 px-2.5 py-1"
+                style={{ fontSize: '11px' }}
                 onClick={onOpenGstInvoice}
                 title="Generate GST Tax Invoice"
               >
@@ -119,7 +121,8 @@ export default function SummaryDashboard({
             {onOpenRateMaster && (
               <button
                 type="button"
-                className="btn btn-sm btn-outline-secondary fw-semibold d-inline-flex align-items-center gap-1 px-2"
+                className="btn btn-sm btn-outline-secondary fw-semibold d-inline-flex align-items-center gap-1 px-2 py-1"
+                style={{ fontSize: '11px' }}
                 onClick={onOpenRateMaster}
                 title="Manage Rate Master Library"
               >
@@ -131,32 +134,32 @@ export default function SummaryDashboard({
         </div>
 
         {/* View Switcher Tabs Strip */}
-        <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3 pt-2 border-top">
-          <div className="btn-group btn-group-sm shadow-xs" role="group">
+        <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-2 pt-2 border-top">
+          <div className="ms-nav-segmented" role="tablist">
             <button
               type="button"
-              className={`btn px-3 py-1 ${activeTab === 'category' ? 'btn-primary fw-bold' : 'btn-outline-secondary'}`}
+              className={`ms-nav-seg-btn ${activeTab === 'category' ? 'active' : ''}`}
               onClick={() => setActiveTab('category')}
             >
-              <i className="bi bi-layers-half me-1"></i> Category Abstract (Editable Rates)
+              <i className="bi bi-layers-half me-1"></i> Category Abstract
             </button>
             <button
               type="button"
-              className={`btn px-3 py-1 ${activeTab === 'raBilling' ? 'btn-primary fw-bold' : 'btn-outline-secondary'}`}
+              className={`ms-nav-seg-btn ${activeTab === 'raBilling' ? 'active' : ''}`}
               onClick={() => setActiveTab('raBilling')}
             >
               <i className="bi bi-receipt me-1"></i> Progressive RA Billing
             </button>
             <button
               type="button"
-              className={`btn px-3 py-1 ${activeTab === 'unit' ? 'btn-primary fw-bold' : 'btn-outline-secondary'}`}
+              className={`ms-nav-seg-btn ${activeTab === 'unit' ? 'active' : ''}`}
               onClick={() => setActiveTab('unit')}
             >
               <i className="bi bi-rulers me-1"></i> By Unit
             </button>
             <button
               type="button"
-              className={`btn px-3 py-1 ${activeTab === 'floor' ? 'btn-primary fw-bold' : 'btn-outline-secondary'}`}
+              className={`ms-nav-seg-btn ${activeTab === 'floor' ? 'active' : ''}`}
               onClick={() => setActiveTab('floor')}
             >
               <i className="bi bi-building me-1"></i> By Floor
@@ -165,7 +168,7 @@ export default function SummaryDashboard({
 
           <div className="d-flex align-items-center gap-2">
             <span className="badge bg-light text-dark border extra-small">
-              Total Net Work: <strong>{formatNumber(grandTotals.totalNetQty)}</strong>
+              Total Net Qty: <strong>{formatNumber(grandTotals.totalNetQty)}</strong>
             </span>
             {billingMode && (
               <span className="badge bg-success-subtle text-success border border-success extra-small">
@@ -181,8 +184,8 @@ export default function SummaryDashboard({
         {activeTab === 'category' && (
           <div className="summary-tab-category">
             <div className="d-flex flex-wrap justify-content-between align-items-center mb-2 px-1">
-              <span className="text-secondary extra-small fw-bold text-uppercase">
-                <i className="bi bi-pencil-square me-1 text-primary"></i> Tip: You can edit Unit Rates directly in this table below. All sheet items will update automatically.
+              <span className="text-secondary extra-small fw-semibold">
+                <i className="bi bi-pencil-square me-1 text-primary"></i> Edit Unit Rates directly in the table below to automatically update sheet line items.
               </span>
               <span className="badge bg-secondary-subtle text-secondary extra-small">
                 {grandTotals.categoryRollup.length} WORK CATEGORIES
@@ -190,8 +193,8 @@ export default function SummaryDashboard({
             </div>
 
             <div className="table-responsive border rounded-2 shadow-xs">
-              <table className="table table-hover table-bordered align-middle mb-0" style={{ fontSize: '13px' }}>
-                <thead className="table-dark text-uppercase small text-center">
+              <table className="table table-hover table-bordered align-middle mb-0" style={{ fontSize: '12.5px' }}>
+                <thead className="xls-summary-thead text-uppercase extra-small text-center">
                   <tr>
                     <th style={{ width: '40px' }}>#</th>
                     <th style={{ width: '28%' }} className="text-start">Work Category</th>
@@ -611,7 +614,7 @@ export default function SummaryDashboard({
           <div className="summary-tab-floor">
             <div className="table-responsive border rounded">
               <table className="table table-bordered table-hover align-middle mb-0">
-                <thead className="table-dark small text-uppercase text-center">
+                <thead className="xls-summary-thead text-uppercase extra-small text-center">
                   <tr>
                     <th style={{ width: '30%' }} className="text-start">Floor Level</th>
                     <th style={{ width: '25%' }}>Line Items Measured</th>

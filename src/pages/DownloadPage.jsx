@@ -13,7 +13,7 @@ export default function DownloadPage() {
   };
 
   return (
-    <div className="download-page min-vh-100 d-flex flex-column bg-light" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
+    <div className="download-page min-vh-100 d-flex flex-column bg-light" style={{ fontFamily: 'var(--ms-font-family)' }}>
       {/* ── Top Navbar ── */}
       <nav className="navbar navbar-expand-lg navbar-dark bg-dark py-3 px-3 px-md-5 border-bottom border-secondary border-opacity-25 sticky-top">
         <div className="container-fluid max-w-7xl d-flex justify-content-between align-items-center">
