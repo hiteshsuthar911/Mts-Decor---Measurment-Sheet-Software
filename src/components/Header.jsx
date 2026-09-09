@@ -73,6 +73,11 @@ export default function Header({
             <span className="ms-proj-name">
               {headerData.projectName || 'MEASUREMENT SHEET'}
             </span>
+            {(headerData.projectName || '').includes('(COPY)') && (
+              <span className="badge bg-warning text-dark extra-small fw-bold ms-1" style={{ fontSize: '10px' }} title="You are viewing a duplicate copy of this project">
+                <i className="bi bi-copy me-1" />COPY
+              </span>
+            )}
             {!isOwn && (
               <span className="ms-owner-chip d-none d-sm-inline-flex">
                 <i className="bi bi-eye-fill" />
@@ -191,9 +196,9 @@ export default function Header({
           </button>
 
           {/* Duplicate Project */}
-          <button className="ms-btn ms-btn-ghost" onClick={onDuplicateProject} title="Duplicate This Project (Make a Copy)">
-            <i className="bi bi-copy" />
-            <span className="d-none d-xl-inline">COPY</span>
+          <button className="ms-btn ms-btn-ghost" onClick={onDuplicateProject} title="Save As New File (Duplicate entire project)">
+            <i className="bi bi-files" />
+            <span className="d-none d-xl-inline">DUPLICATE</span>
           </button>
 
           {/* Clear */}

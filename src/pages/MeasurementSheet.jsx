@@ -124,7 +124,32 @@ export default function MeasurementSheet() {
           ? rawData.areas
           : [createEmptyArea()]
       };
-      setProjectData(safeData);
+
+      // ── Local Storage Safety Net: Check for newer local backup ──
+      let finalData = safeData;
+      try {
+        const rawBackup = localStorage.getItem(`mts_local_backup_${projectId}`);
+        if (rawBackup) {
+          const backup = JSON.parse(rawBackup);
+          const serverItemsCount = (safeData.areas || []).reduce((sum, a) => sum + (a.items?.length || 0), 0);
+          const backupItemsCount = backup.itemCount || (backup.data?.areas || []).reduce((sum, a) => sum + (a.items?.length || 0), 0);
+          const serverTime = proj?.updatedAt ? new Date(proj.updatedAt).getTime() : 0;
+
+          // If local backup has MORE items or was saved more recently by >2s
+          if (backup.data && (backupItemsCount > serverItemsCount || (backup.savedAt && backup.savedAt > serverTime + 3000))) {
+            console.log(`[Auto-Recovery] Found local backup with ${backupItemsCount} items vs server ${serverItemsCount} items.`);
+            finalData = backup.data;
+            isDirtyRef.current = true; // schedule immediate sync to cloud
+            setTimeout(() => {
+              showToast(`RESTORED ${backupItemsCount} ITEMS FROM LOCAL BACKUP`);
+            }, 500);
+          }
+        }
+      } catch (err) {
+        console.warn('Backup recovery check failed', err);
+      }
+
+      setProjectData(finalData);
       window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
       if (proj?.updatedAt) setLastSavedAt(new Date(proj.updatedAt));
       if (proj?.ownerUsername === session?.username || session?.role === 'ADMIN') setEditUnlocked(true);
@@ -162,6 +187,45 @@ export default function MeasurementSheet() {
   const [canRedo, setCanRedo] = useState(false);
   const lastSnapshotTimeRef = useRef(0);
 
+  // ── Synchronous local storage backup (zero-loss guarantee on every keystroke) ──
+  useEffect(() => {
+    if (!projectId || !projectData || !projectData.areas) return;
+    try {
+      const payload = {
+        projectId,
+        savedAt: Date.now(),
+        itemCount: (projectData.areas || []).reduce((sum, a) => sum + (a.items?.length || 0), 0),
+        data: projectData
+      };
+      localStorage.setItem(`mts_local_backup_${projectId}`, JSON.stringify(payload));
+    } catch (e) {
+      console.warn('Local draft storage error', e);
+    }
+  }, [projectId, projectData]);
+
+  // ── Cross-tab synchronization via BroadcastChannel ──
+  useEffect(() => {
+    if (!projectId) return;
+    let channel;
+    try {
+      channel = new BroadcastChannel(`mts_sheet_sync_${projectId}`);
+      channel.onmessage = (event) => {
+        if (event.data?.type === 'CLOUD_SAVED' && event.data?.data) {
+          const incomingCount = (event.data.data.areas || []).reduce((sum, a) => sum + (a.items?.length || 0), 0);
+          const currentCount = (projectData?.areas || []).reduce((sum, a) => sum + (a.items?.length || 0), 0);
+          if (incomingCount >= currentCount && !isDirtyRef.current) {
+            setProjectData(event.data.data);
+            showToast('SYNCED UPDATES FROM ANOTHER TAB');
+          }
+        }
+      };
+    } catch {}
+
+    return () => {
+      if (channel) channel.close();
+    };
+  }, [projectId, projectData]);
+
   // Auto-save every 1 second if changes were detected
   useEffect(() => {
     if (readOnly || !projectId) return;
@@ -173,6 +237,13 @@ export default function MeasurementSheet() {
         try {
           await saveProject(projectId, latestDataRef.current);
           setLastSavedAt(new Date());
+
+          // Broadcast to other open tabs of this project
+          try {
+            const ch = new BroadcastChannel(`mts_sheet_sync_${projectId}`);
+            ch.postMessage({ type: 'CLOUD_SAVED', data: latestDataRef.current });
+            ch.close();
+          } catch {}
         } catch {
           // If save failed, re-mark dirty to retry on next 1-second tick
           isDirtyRef.current = true;
@@ -182,10 +253,32 @@ export default function MeasurementSheet() {
       }
     }, 1000);
 
-    // Save on beforeunload if dirty
+    // Save on beforeunload synchronously to localStorage + keepalive fetch
     const handleBeforeUnload = () => {
       if (isDirtyRef.current && latestDataRef.current) {
-        saveProject(projectId, latestDataRef.current).catch(() => {});
+        // 1. Synchronous localStorage write
+        try {
+          localStorage.setItem(`mts_local_backup_${projectId}`, JSON.stringify({
+            projectId,
+            savedAt: Date.now(),
+            itemCount: (latestDataRef.current.areas || []).reduce((sum, a) => sum + (a.items?.length || 0), 0),
+            data: latestDataRef.current
+          }));
+        } catch {}
+
+        // 2. Keepalive fetch (browser guarantees completion even after page unloads)
+        try {
+          const token = localStorage.getItem('mts_token') || localStorage.getItem('token');
+          fetch(`/api/projects/${projectId}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { Authorization: `Bearer ${token}` } : {})
+            },
+            body: JSON.stringify({ data: latestDataRef.current }),
+            keepalive: true
+          }).catch(() => {});
+        } catch {}
       }
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
@@ -439,8 +532,19 @@ export default function MeasurementSheet() {
   const handleDuplicateProject = async () => {
     const pId = project?._id || projectId;
     if (!pId) return;
+
+    const currentName = project?.name || projectData?.header?.projectName || 'Project';
+    const confirmMsg = `Duplicate this entire project?\n\nThis will create a new separate project file "${currentName} (COPY)" and open it.\n\nYour current project will remain saved and intact.\n\nClick OK to duplicate, or Cancel to stay in this file.`;
+    if (!window.confirm(confirmMsg)) return;
+
     try {
-      showToast('DUPLICATING PROJECT...');
+      showToast('SAVING CURRENT FILE & DUPLICATING...');
+      // 1. Save pending changes to cloud first
+      const toSave = latestDataRef.current || projectData;
+      if (toSave) {
+        await saveProject(pId, toSave);
+      }
+      // 2. Duplicate on backend
       const duplicated = await duplicateProject(pId);
       showToast('PROJECT DUPLICATED SUCCESSFULLY');
       if (duplicated && duplicated._id) {
