@@ -20,7 +20,7 @@ export default function ClientSignPortal() {
   const [designation, setDesignation] = useState('Client Representative');
   const [company, setCompany] = useState('');
   const [notes, setNotes] = useState('');
-  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [agreeTerms, setAgreeTerms] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Signature canvas
@@ -143,11 +143,15 @@ export default function ClientSignPortal() {
   const handleSubmitSignature = async (e) => {
     e.preventDefault();
     if (!signerName.trim()) {
-      alert('Please enter your full name');
+      alert('Please enter your full name as the authorized signer.');
       return;
     }
     if (!hasDrawnSignature) {
-      alert('Please provide your signature on the pad');
+      alert('Please draw your signature in the signature box before confirming.');
+      return;
+    }
+    if (!agreeTerms) {
+      alert('Please check the confirmation box to authorize digital approval.');
       return;
     }
 
@@ -446,16 +450,21 @@ export default function ClientSignPortal() {
                     </div>
 
                     <div className="col-12">
-                      <div className="form-check">
+                      <div
+                        className={`p-2.5 rounded-3 border d-flex align-items-center gap-2.5 transition-all ${agreeTerms ? 'bg-success-subtle border-success' : 'bg-light border-secondary-subtle'}`}
+                        onClick={() => setAgreeTerms(!agreeTerms)}
+                        style={{ cursor: 'pointer' }}
+                      >
                         <input
-                          className="form-check-input"
+                          className="form-check-input mt-0 flex-shrink-0"
                           type="checkbox"
                           id="agreeTermsCheck"
                           checked={agreeTerms}
                           onChange={(e) => setAgreeTerms(e.target.checked)}
-                          required
+                          style={{ cursor: 'pointer', width: '18px', height: '18px' }}
                         />
-                        <label className="form-check-label extra-small text-muted" htmlFor="agreeTermsCheck">
+                        <label className="form-check-label extra-small fw-semibold mb-0 text-dark" htmlFor="agreeTermsCheck" style={{ cursor: 'pointer' }}>
+                          <i className="bi bi-shield-check me-1 text-success fs-6"></i>
                           I confirm that I have reviewed the measurements in this sheet and authorize digital approval with legal validity.
                         </label>
                       </div>
@@ -463,33 +472,47 @@ export default function ClientSignPortal() {
                   </div>
                 </div>
 
-                <div className="modal-footer bg-light py-3 px-4 border-top">
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-secondary fw-bold px-3"
-                    onClick={() => setShowSignModal(false)}
-                    disabled={isSubmitting}
-                  >
-                    Cancel
-                  </button>
-
-                  <button
-                    type="submit"
-                    className="btn btn-sm btn-success fw-bold px-4 shadow d-flex align-items-center gap-2"
-                    disabled={isSubmitting || !hasDrawnSignature || !agreeTerms || !signerName.trim()}
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <span className="spinner-border spinner-border-sm" role="status"></span>
-                        <span>Sealing Approval...</span>
-                      </>
+                <div className="modal-footer bg-light py-3 px-4 border-top d-flex flex-wrap justify-content-between align-items-center gap-2">
+                  <div className="extra-small">
+                    {!signerName.trim() ? (
+                      <span className="text-muted"><i className="bi bi-pencil me-1 text-primary"></i>Enter your full name above</span>
+                    ) : !hasDrawnSignature ? (
+                      <span className="text-muted"><i className="bi bi-pen me-1 text-primary"></i>Draw your signature in the box</span>
+                    ) : !agreeTerms ? (
+                      <span className="text-warning-emphasis fw-bold"><i className="bi bi-exclamation-circle me-1"></i>Check the confirmation box</span>
                     ) : (
-                      <>
-                        <i className="bi bi-check-circle-fill"></i>
-                        <span>Confirm &amp; Stamp Signature</span>
-                      </>
+                      <span className="text-success fw-bold"><i className="bi bi-check-circle-fill me-1"></i>Ready to confirm &amp; seal document</span>
                     )}
-                  </button>
+                  </div>
+
+                  <div className="d-flex align-items-center gap-2">
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline-secondary fw-bold px-3"
+                      onClick={() => setShowSignModal(false)}
+                      disabled={isSubmitting}
+                    >
+                      Cancel
+                    </button>
+
+                    <button
+                      type="submit"
+                      className={`btn btn-sm fw-bold px-4 shadow d-flex align-items-center gap-2 ${hasDrawnSignature && signerName.trim() && agreeTerms ? 'btn-success' : 'btn-primary'}`}
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <span className="spinner-border spinner-border-sm" role="status"></span>
+                          <span>Sealing Approval...</span>
+                        </>
+                      ) : (
+                        <>
+                          <i className="bi bi-patch-check-fill"></i>
+                          <span>Confirm &amp; Stamp Signature</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
               </form>
             </div>

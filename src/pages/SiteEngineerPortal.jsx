@@ -863,7 +863,7 @@ export default function SiteEngineerPortal() {
                   <button
                     type="submit"
                     className="btn btn-primary btn-sm fw-bold px-4 shadow d-flex align-items-center gap-2"
-                    disabled={isSubmitting || !engineerName.trim()}
+                    disabled={isSubmitting}
                   >
                     {isSubmitting ? (
                       <>
