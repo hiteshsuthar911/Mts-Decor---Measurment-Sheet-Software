@@ -7,6 +7,11 @@ import SummaryDashboard from '../components/SummaryDashboard';
 import PrintSheetView from '../components/PrintSheetView';
 import VerifyModal from '../components/VerifyModal';
 import QuickMeasureModal from '../components/QuickMeasureModal';
+import RateMasterModal from '../components/RateMasterModal';
+import ClientApprovalModal from '../components/ClientApprovalModal';
+import SiteEngineerReviewModal from '../components/SiteEngineerReviewModal';
+import { applyRatesToProject } from '../utils/rateMaster';
+import { saveRevision } from '../utils/revisionHistory';
 import { getSession, logout } from '../utils/auth';
 import { calculateProjectGrandTotals, groupAreasIntoPages, calculateSheetPageTotals, formatNumber } from '../utils/calculations';
 import { exportToExcel } from '../utils/exportUtils';
@@ -26,6 +31,9 @@ export default function MeasurementSheet() {
   const [showVerify, setShowVerify]     = useState(false);
   const [isPrintView, setIsPrintView]   = useState(false);
   const [showQuickMeasure, setShowQuickMeasure] = useState(false);
+  const [showRateMaster, setShowRateMaster] = useState(false);
+  const [showClientApproval, setShowClientApproval] = useState(false);
+  const [showEngineerReview, setShowEngineerReview] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [notFound, setNotFound]         = useState(false);
   const [fetchError, setFetchError]     = useState('');
@@ -122,7 +130,9 @@ export default function MeasurementSheet() {
         },
         areas: Array.isArray(rawData.areas) && rawData.areas.length > 0
           ? rawData.areas
-          : [createEmptyArea()]
+          : [createEmptyArea()],
+        engineerQueries: Array.isArray(rawData.engineerQueries) ? rawData.engineerQueries : [],
+        clientApproval: rawData.clientApproval || null
       };
 
       // ── Local Storage Safety Net: Check for newer local backup ──
@@ -138,7 +148,19 @@ export default function MeasurementSheet() {
           // If local backup has MORE items or was saved more recently by >2s
           if (backup.data && (backupItemsCount > serverItemsCount || (backup.savedAt && backup.savedAt > serverTime + 3000))) {
             console.log(`[Auto-Recovery] Found local backup with ${backupItemsCount} items vs server ${serverItemsCount} items.`);
-            finalData = backup.data;
+            // Merge queries so local backup never drops server queries
+            const serverQueries = safeData.engineerQueries || [];
+            const backupQueries = Array.isArray(backup.data.engineerQueries) ? backup.data.engineerQueries : [];
+            const queryMap = new Map();
+            [...serverQueries, ...backupQueries].forEach(q => {
+              if (q && q.id) queryMap.set(q.id, q);
+            });
+
+            finalData = {
+              ...backup.data,
+              engineerQueries: Array.from(queryMap.values()),
+              clientApproval: safeData.clientApproval || backup.data.clientApproval || null
+            };
             isDirtyRef.current = true; // schedule immediate sync to cloud
             setTimeout(() => {
               showToast(`RESTORED ${backupItemsCount} ITEMS FROM LOCAL BACKUP`);
@@ -203,6 +225,42 @@ export default function MeasurementSheet() {
     }
   }, [projectId, projectData]);
 
+  // ── Background Polling for Site Engineer Queries (Live Inbox Sync) ──
+  const fetchEngineerQueries = async () => {
+    if (!projectId) return;
+    try {
+      const res = await fetch(`/api/projects/engineer-portal/${projectId}`);
+      if (res.ok) {
+        const json = await res.json();
+        if (json && Array.isArray(json.engineerQueries)) {
+          setProjectData(prev => {
+            if (!prev) return prev;
+            const prevQueries = prev.engineerQueries || [];
+            const prevStr = JSON.stringify(prevQueries);
+            const newStr = JSON.stringify(json.engineerQueries);
+            if (prevStr !== newStr) {
+              const updated = {
+                ...prev,
+                engineerQueries: json.engineerQueries
+              };
+              latestDataRef.current = updated;
+              return updated;
+            }
+            return prev;
+          });
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to background-refresh engineer queries', err);
+    }
+  };
+
+  useEffect(() => {
+    if (!projectId) return;
+    const timer = setInterval(fetchEngineerQueries, 3000);
+    return () => clearInterval(timer);
+  }, [projectId]);
+
   // ── Cross-tab synchronization via BroadcastChannel ──
   useEffect(() => {
     if (!projectId) return;
@@ -210,7 +268,21 @@ export default function MeasurementSheet() {
     try {
       channel = new BroadcastChannel(`mts_sheet_sync_${projectId}`);
       channel.onmessage = (event) => {
-        if (event.data?.type === 'CLOUD_SAVED' && event.data?.data) {
+        if (event.data?.type === 'ENGINEER_QUERY_SUBMITTED' && event.data?.query) {
+          const newQ = event.data.query;
+          setProjectData(prev => {
+            if (!prev) return prev;
+            const existing = Array.isArray(prev.engineerQueries) ? prev.engineerQueries : [];
+            const filtered = existing.filter(q => q.id !== newQ.id);
+            const updated = {
+              ...prev,
+              engineerQueries: [newQ, ...filtered]
+            };
+            latestDataRef.current = updated;
+            return updated;
+          });
+          showToast(`NEW SITE QUERY FROM ${newQ.engineerName || 'SITE ENGINEER'}`);
+        } else if (event.data?.type === 'CLOUD_SAVED' && event.data?.data) {
           const incomingCount = (event.data.data.areas || []).reduce((sum, a) => sum + (a.items?.length || 0), 0);
           const currentCount = (projectData?.areas || []).reduce((sum, a) => sum + (a.items?.length || 0), 0);
           if (incomingCount >= currentCount && !isDirtyRef.current) {
@@ -529,6 +601,94 @@ export default function MeasurementSheet() {
     showToast('SHEET CLEARED');
   };
 
+  const handleApplyRates = (rateMaster, overwriteExisting) => {
+    if (!projectData) return;
+    const updated = applyRatesToProject(projectData, rateMaster, overwriteExisting);
+    const finalProject = {
+      ...updated,
+      settings: { ...updated.settings, billingMode: true }
+    };
+    setAndSave(finalProject);
+    showToast('STANDARD RATES APPLIED & BILLING MODE ACTIVATED');
+  };
+
+  const handleSaveClientApproval = (approvalData) => {
+    if (!projectData) return;
+    const updated = {
+      ...projectData,
+      clientApproval: approvalData
+    };
+    setAndSave(updated);
+    saveRevision(projectId || 'default', updated, `Client Sign-Off: ${approvalData.signerName}`, approvalData.signerName);
+    showToast(`DIGITAL APPROVAL SAVED FOR ${approvalData.signerName.toUpperCase()}`);
+  };
+
+  const handleRevokeClientApproval = () => {
+    if (!projectData) return;
+    const updated = {
+      ...projectData,
+      clientApproval: null
+    };
+    setAndSave(updated);
+    showToast('CLIENT APPROVAL REVOKED');
+  };
+
+  const handleUpdateSignPortalPin = (pin) => {
+    if (!projectData) return;
+    const updated = {
+      ...projectData,
+      signPortalPin: pin || null
+    };
+    setAndSave(updated);
+    showToast(pin ? 'SIGN-OFF PORTAL PIN SAVED' : 'PIN PROTECTION REMOVED');
+  };
+
+  const handleCommitEngineerQuery = (queryId) => {
+    if (!projectData) return;
+    const queries = projectData.engineerQueries || [];
+    const targetQuery = queries.find(q => q.id === queryId);
+    if (!targetQuery) return;
+
+    // Deep copy areas
+    const updatedAreas = JSON.parse(JSON.stringify(projectData.areas || []));
+
+    (targetQuery.changes || []).forEach(change => {
+      const area = updatedAreas.find(a => a.id === change.areaId);
+      if (!area) return;
+      const item = (area.items || []).find(it => it.id === change.itemId);
+      if (!item) return;
+
+      if (change.proposed.length !== undefined && change.proposed.length !== '') item.length = change.proposed.length;
+      if (change.proposed.height !== undefined && change.proposed.height !== '') item.height = change.proposed.height;
+      if (change.proposed.quantity !== undefined && change.proposed.quantity !== '') item.quantity = change.proposed.quantity;
+      if (change.proposed.isLess !== undefined) item.isLess = change.proposed.isLess;
+      if (change.proposed.remark) item.remark = change.proposed.remark;
+      change.status = 'COMMITTED';
+    });
+
+    targetQuery.status = 'COMMITTED';
+
+    const updated = {
+      ...projectData,
+      areas: updatedAreas,
+      engineerQueries: queries.map(q => q.id === queryId ? targetQuery : q)
+    };
+
+    setAndSave(updated);
+    showToast('SITE ENGINEER CORRECTIONS COMMITTED TO MEASUREMENT SHEET');
+  };
+
+  const handleRejectEngineerQuery = (queryId) => {
+    if (!projectData) return;
+    const queries = projectData.engineerQueries || [];
+    const updated = {
+      ...projectData,
+      engineerQueries: queries.map(q => q.id === queryId ? { ...q, status: 'REJECTED' } : q)
+    };
+    setAndSave(updated);
+    showToast('SITE QUERY REJECTED');
+  };
+
   const handleDuplicateProject = async () => {
     const pId = project?._id || projectId;
     if (!pId) return;
@@ -701,6 +861,14 @@ export default function MeasurementSheet() {
         canUndo={canUndo}
         canRedo={canRedo}
         onDuplicateProject={handleDuplicateProject}
+        onOpenRateMaster={() => setShowRateMaster(true)}
+        onOpenEngineerReview={() => {
+          fetchEngineerQueries();
+          setShowEngineerReview(true);
+        }}
+        pendingEngineerQueriesCount={(projectData?.engineerQueries || []).filter(q => q.status === 'PENDING').length}
+        onOpenClientApproval={() => setShowClientApproval(true)}
+        clientApproval={projectData?.clientApproval}
         isSaving={isSaving}
         lastSavedAt={lastSavedAt}
         isPrintView={isPrintView}
@@ -996,50 +1164,61 @@ export default function MeasurementSheet() {
                           <div className={isFullscreen ? 'fullscreen-focus-content p-3 p-md-4' : ''}>
 
                           {/* Focused Sheet Page Card Banner */}
-                          <div className="sheet-page-header-enterprise single-view d-flex flex-wrap justify-content-between align-items-center gap-2 px-3 py-2.5 mb-3">
-                            {/* Left details */}
-                            <div className="d-flex align-items-center flex-wrap gap-2">
-                              <span className="badge bg-primary text-white px-2.5 py-1 rounded-pill fw-bold text-uppercase extra-small">
-                                <i className="bi bi-file-earmark-text-fill me-1"></i>
-                                PAGE #{currentPage.pageNumber} OF {pagesList.length}
-                              </span>
-                              <h5 className="mb-0 fw-bold text-dark text-uppercase">{currentPage.category}</h5>
-                              <span className="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill extra-small fw-semibold">
-                                {currentPage.areas.length} {currentPage.areas.length === 1 ? 'Location Area' : 'Location Areas'}
-                              </span>
-                            </div>
-
-                            {/* Right: Totals & Quick Add */}
-                            <div className="d-flex align-items-center flex-wrap gap-2">
-                              <span className="sheet-page-total-pill">
-                                <i className="bi bi-calculator text-primary"></i>
-                                <span>PAGE TOTAL: <strong>{pageTotals.netQty}</strong> {pageTotals.dominantUnit}</span>
-                              </span>
-                              {projectData?.settings?.billingMode && (
-                                <span className="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1.5 extra-small fw-bold">
-                                  ₹{formatNumber(pageTotals.netAmount)}
+                          <div className="sheet-page-header-enterprise single-view p-2.5 p-sm-3 mb-3">
+                            <div className="d-flex flex-column flex-md-row justify-content-between align-items-stretch align-items-md-center gap-2">
+                              {/* Row 1 on mobile, Left details on desktop */}
+                              <div className="d-flex align-items-center justify-content-between justify-content-md-start flex-grow-1 min-w-0 gap-2">
+                                <div className="d-flex align-items-center gap-2 min-w-0">
+                                  <span className="badge bg-primary text-white px-2.5 py-1 rounded-pill fw-bold text-uppercase extra-small flex-shrink-0">
+                                    <i className="bi bi-file-earmark-text-fill me-1"></i>
+                                    PAGE #{currentPage.pageNumber}{pagesList.length > 1 ? ` OF ${pagesList.length}` : ''}
+                                  </span>
+                                  <h5 className="mb-0 fw-bold text-dark text-uppercase tracking-tight text-truncate" title={currentPage.category}>
+                                    {currentPage.category}
+                                  </h5>
+                                </div>
+                                <span className="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill extra-small fw-semibold flex-shrink-0">
+                                  {currentPage.areas.length} {currentPage.areas.length === 1 ? 'Area' : 'Areas'}
                                 </span>
-                              )}
-                              {!readOnly && (
-                                <button
-                                  type="button"
-                                  className="btn btn-sm btn-primary extra-small fw-bold text-uppercase d-flex align-items-center gap-1 shadow-xs px-3 py-1.5 rounded"
-                                  onClick={() => handleAddAreaToPage(currentPage)}
-                                  title="Add another area to this sheet page"
-                                >
-                                  <i className="bi bi-plus-lg"></i>
-                                  <span>+ Add Area to Page #{currentPage.pageNumber}</span>
-                                </button>
-                              )}
-                              <button
-                                type="button"
-                                className="btn btn-sm btn-outline-secondary extra-small fw-bold text-uppercase px-2.5 py-1.5 rounded d-flex align-items-center gap-1"
-                                onClick={() => enterFocusFullscreen(currentPage.pageNumber)}
-                                title="Open in fullscreen focus mode"
-                              >
-                                <i className="bi bi-arrows-fullscreen"></i>
-                                <span className="d-none d-sm-inline">Focus</span>
-                              </button>
+                              </div>
+
+                              {/* Row 2 on mobile, Right details & actions on desktop */}
+                              <div className="d-flex align-items-center justify-content-between justify-content-md-end flex-wrap gap-2 flex-shrink-0 pt-1.5 pt-md-0 border-top border-md-0 border-light-subtle">
+                                <div className="d-flex align-items-center gap-1.5 flex-wrap">
+                                  <span className="sheet-page-total-pill">
+                                    <i className="bi bi-calculator text-primary"></i>
+                                    <span>PAGE TOTAL: <strong>{pageTotals.netQty}</strong> {pageTotals.dominantUnit}</span>
+                                  </span>
+                                  {projectData?.settings?.billingMode && (
+                                    <span className="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 extra-small fw-bold">
+                                      ₹{formatNumber(pageTotals.netAmount)}
+                                    </span>
+                                  )}
+                                </div>
+
+                                <div className="d-flex align-items-center gap-1.5">
+                                  {!readOnly && (
+                                    <button
+                                      type="button"
+                                      className="btn btn-sm btn-outline-primary extra-small fw-bold text-uppercase d-flex align-items-center gap-1 px-2.5 py-1 rounded shadow-2xs"
+                                      onClick={() => handleAddAreaToPage(currentPage)}
+                                      title="Add another area to this sheet page"
+                                    >
+                                      <i className="bi bi-plus-lg"></i>
+                                      <span>+ AREA</span>
+                                    </button>
+                                  )}
+                                  <button
+                                    type="button"
+                                    className="btn btn-sm btn-outline-secondary extra-small fw-bold text-uppercase px-2 py-1 rounded d-flex align-items-center gap-1"
+                                    onClick={() => enterFocusFullscreen(currentPage.pageNumber)}
+                                    title="Open in fullscreen focus mode"
+                                  >
+                                    <i className="bi bi-arrows-fullscreen"></i>
+                                    <span className="d-none d-lg-inline">Focus</span>
+                                  </button>
+                                </div>
+                              </div>
                             </div>
                           </div>
 
@@ -1123,49 +1302,60 @@ export default function MeasurementSheet() {
                           return (
                             <div key={pg.pageNumber} className="sheet-page-section-block mb-4">
                               {/* Enterprise Page Break Header Banner */}
-                              <div className="sheet-page-header-enterprise d-flex flex-wrap justify-content-between align-items-center gap-2 px-3 py-2.5">
-                                <div className="d-flex align-items-center flex-wrap gap-2">
-                                  <span className="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1 extra-small fw-bold text-uppercase rounded-pill">
-                                    <i className="bi bi-file-earmark-text me-1"></i>PAGE #{pg.pageNumber}
-                                  </span>
-                                  <h6 className="mb-0 fw-bold text-dark text-uppercase tracking-wide">
-                                    {pg.category}
-                                  </h6>
-                                  <span className="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill extra-small fw-semibold">
-                                    {pg.areas.length} {pg.areas.length === 1 ? 'Area' : 'Areas'}
-                                  </span>
-                                </div>
-
-                                <div className="d-flex align-items-center flex-wrap gap-2">
-                                  <span className="sheet-page-total-pill">
-                                    <i className="bi bi-calculator text-primary"></i>
-                                    <span>PAGE TOTAL: <strong>{pageTotals.netQty}</strong> {pageTotals.dominantUnit}</span>
-                                  </span>
-                                  {projectData?.settings?.billingMode && (
-                                    <span className="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1.5 extra-small fw-bold">
-                                      ₹{formatNumber(pageTotals.netAmount)}
+                              <div className="sheet-page-header-enterprise p-2.5 p-sm-3">
+                                <div className="d-flex flex-column flex-md-row justify-content-between align-items-stretch align-items-md-center gap-2">
+                                  {/* Row 1 on mobile, Left details on desktop */}
+                                  <div className="d-flex align-items-center justify-content-between justify-content-md-start flex-grow-1 min-w-0 gap-2">
+                                    <div className="d-flex align-items-center gap-2 min-w-0">
+                                      <span className="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1 extra-small fw-bold text-uppercase rounded-pill flex-shrink-0">
+                                        <i className="bi bi-file-earmark-text me-1"></i>PAGE #{pg.pageNumber}
+                                      </span>
+                                      <h6 className="mb-0 fw-bold text-dark text-uppercase tracking-tight text-truncate" title={pg.category}>
+                                        {pg.category}
+                                      </h6>
+                                    </div>
+                                    <span className="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill extra-small fw-semibold flex-shrink-0">
+                                      {pg.areas.length} {pg.areas.length === 1 ? 'Area' : 'Areas'}
                                     </span>
-                                  )}
-                                  {!readOnly && (
-                                    <button
-                                      type="button"
-                                      className="btn btn-xs btn-outline-primary extra-small fw-bold text-uppercase px-2.5 py-1 rounded d-flex align-items-center gap-1"
-                                      onClick={() => handleAddAreaToPage(pg)}
-                                      title="Add area to this sheet page"
-                                    >
-                                      <i className="bi bi-plus-lg"></i>
-                                      <span>Area</span>
-                                    </button>
-                                  )}
-                                  <button
-                                    type="button"
-                                    className="btn btn-xs btn-outline-secondary extra-small fw-bold text-uppercase px-2.5 py-1 rounded d-flex align-items-center gap-1"
-                                    onClick={() => enterFocusFullscreen(pg.pageNumber)}
-                                    title="Open this page in fullscreen focus mode"
-                                  >
-                                    <i className="bi bi-arrows-fullscreen"></i>
-                                    <span className="d-none d-sm-inline">Focus</span>
-                                  </button>
+                                  </div>
+
+                                  {/* Row 2 on mobile, Right details & actions on desktop */}
+                                  <div className="d-flex align-items-center justify-content-between justify-content-md-end flex-wrap gap-2 flex-shrink-0 pt-1.5 pt-md-0 border-top border-md-0 border-light-subtle">
+                                    <div className="d-flex align-items-center gap-1.5 flex-wrap">
+                                      <span className="sheet-page-total-pill">
+                                        <i className="bi bi-calculator text-primary"></i>
+                                        <span>PAGE TOTAL: <strong>{pageTotals.netQty}</strong> {pageTotals.dominantUnit}</span>
+                                      </span>
+                                      {projectData?.settings?.billingMode && (
+                                        <span className="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 extra-small fw-bold">
+                                          ₹{formatNumber(pageTotals.netAmount)}
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    <div className="d-flex align-items-center gap-1.5">
+                                      {!readOnly && (
+                                        <button
+                                          type="button"
+                                          className="btn btn-sm btn-outline-primary extra-small fw-bold text-uppercase d-flex align-items-center gap-1 px-2.5 py-1 rounded shadow-2xs"
+                                          onClick={() => handleAddAreaToPage(pg)}
+                                          title="Add area to this sheet page"
+                                        >
+                                          <i className="bi bi-plus-lg"></i>
+                                          <span>+ AREA</span>
+                                        </button>
+                                      )}
+                                      <button
+                                        type="button"
+                                        className="btn btn-sm btn-outline-secondary extra-small fw-bold text-uppercase px-2 py-1 rounded d-flex align-items-center gap-1"
+                                        onClick={() => enterFocusFullscreen(pg.pageNumber)}
+                                        title="Open this page in fullscreen focus mode"
+                                      >
+                                        <i className="bi bi-arrows-fullscreen"></i>
+                                        <span className="d-none d-lg-inline">Focus</span>
+                                      </button>
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
 
@@ -1398,6 +1588,37 @@ export default function MeasurementSheet() {
         projectData={projectData}
         onUpdateProjectData={setAndSave}
         projectName={projectData?.header?.projectName || project?.name}
+      />
+
+      {/* Rate Master Library Modal */}
+      <RateMasterModal
+        show={showRateMaster}
+        onClose={() => setShowRateMaster(false)}
+        currencySymbol={projectData?.settings?.currencySymbol || '₹'}
+        onApplyRates={handleApplyRates}
+      />
+
+      {/* Client Approval & Sign-Off Modal */}
+      <ClientApprovalModal
+        show={showClientApproval}
+        onClose={() => setShowClientApproval(false)}
+        approvalData={projectData?.clientApproval}
+        projectId={projectId || 'default'}
+        projectData={projectData}
+        onSaveApproval={handleSaveClientApproval}
+        onRevokeApproval={handleRevokeClientApproval}
+        onUpdatePin={handleUpdateSignPortalPin}
+      />
+
+      {/* Site Engineer Review & Query Modal */}
+      <SiteEngineerReviewModal
+        show={showEngineerReview}
+        onClose={() => setShowEngineerReview(false)}
+        projectId={projectId || 'default'}
+        projectData={projectData}
+        onCommitQuery={handleCommitEngineerQuery}
+        onRejectQuery={handleRejectEngineerQuery}
+        onRefresh={fetchEngineerQueries}
       />
 
       <footer className="bg-white border-top py-2 text-center text-muted extra-small mt-auto no-print text-uppercase">

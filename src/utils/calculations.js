@@ -83,16 +83,32 @@ export function calculateAreaTotals(area = {}) {
     unitBreakdown[unit].net = roundNumber(unitBreakdown[unit].gross - unitBreakdown[unit].less, 2);
   });
 
-  const netQty = roundNumber(grossQty - lessQty, 2);
-  const netAmount = roundNumber(grossAmount - lessAmount, 2);
+  const baseNetQty = roundNumber(grossQty - lessQty, 2);
+  const baseNetAmount = roundNumber(grossAmount - lessAmount, 2);
+  const multiplier = Math.max(1, parseFloat(area?.multiplier) || 1);
+
+  const finalGrossQty = roundNumber(grossQty * multiplier, 2);
+  const finalLessQty = roundNumber(lessQty * multiplier, 2);
+  const finalNetQty = roundNumber(baseNetQty * multiplier, 2);
+
+  const finalGrossAmount = roundNumber(grossAmount * multiplier, 2);
+  const finalLessAmount = roundNumber(lessAmount * multiplier, 2);
+  const finalNetAmount = roundNumber(baseNetAmount * multiplier, 2);
 
   return {
-    grossQty: roundNumber(grossQty, 2),
-    lessQty: roundNumber(lessQty, 2),
-    netQty,
-    grossAmount: roundNumber(grossAmount, 2),
-    lessAmount: roundNumber(lessAmount, 2),
-    netAmount,
+    multiplier,
+    baseGrossQty: roundNumber(grossQty, 2),
+    baseLessQty: roundNumber(lessQty, 2),
+    baseNetQty,
+    baseGrossAmount: roundNumber(grossAmount, 2),
+    baseLessAmount: roundNumber(lessAmount, 2),
+    baseNetAmount,
+    grossQty: finalGrossQty,
+    lessQty: finalLessQty,
+    netQty: finalNetQty,
+    grossAmount: finalGrossAmount,
+    lessAmount: finalLessAmount,
+    netAmount: finalNetAmount,
     unitBreakdown
   };
 }
@@ -194,6 +210,8 @@ export function calculateProjectGrandTotals(rawAreas = [], billingMode = false, 
     floorRollup
   };
 }
+
+export { calculateProjectGrandTotals as calculateProjectTotals };
 
 export function roundNumber(num, decimals = 2) {
   if (isNaN(num) || num === null || num === undefined) return 0;

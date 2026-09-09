@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   calculateLineItemTotal,
   calculateLineItemAmount,
@@ -12,20 +12,43 @@ import {
 } from '../utils/calculations';
 import { generatePdfBase64FromPages } from '../utils/pdfExport';
 import { savePdfFile } from '../utils/storage';
+import { generateVerificationQRCode } from '../utils/qrCode';
 
 // ── Signature Block Component ─────────────────────────────────────────────────
-function SignatureBlock({ signatories }) {
-  if (!signatories || signatories.length === 0) return null;
+function SignatureBlock({ signatories, clientApproval }) {
   return (
     <div className="mt-4 pt-2 border-top signature-block-print">
-      <div className="d-flex flex-wrap justify-content-around align-items-end" style={{ gap: '2rem' }}>
-        {signatories.map((sig, i) => (
-          <div key={i} className="text-center" style={{ minWidth: '180px', flex: '1 1 160px', maxWidth: '260px' }}>
-            <div style={{ height: '40px', borderBottom: '1.5px solid #222', marginBottom: '6px' }}></div>
-            <div className="fw-bold text-uppercase sig-label" style={{ fontSize: '11.5px' }}>{sig.label}</div>
-            {sig.sub && <div className="text-muted sig-sub" style={{ fontSize: '9.5px' }}>{sig.sub}</div>}
+      <div className="d-flex flex-wrap justify-content-between align-items-end" style={{ gap: '1.5rem' }}>
+        {/* If client approval is stamped */}
+        {clientApproval?.approved && (
+          <div className="p-2 border border-2 border-success rounded text-center bg-success-subtle shadow-sm" style={{ minWidth: '190px', maxWidth: '240px' }}>
+            <div className="text-success fw-bold text-uppercase d-flex align-items-center justify-content-center gap-1" style={{ fontSize: '9.5px' }}>
+              <i className="bi bi-patch-check-fill text-success"></i> DIGITALLY VERIFIED & APPROVED
+            </div>
+            {clientApproval.signatureDataUrl && (
+              <div className="my-1">
+                <img src={clientApproval.signatureDataUrl} alt="Signature" style={{ height: '36px', maxWidth: '100%', objectFit: 'contain' }} />
+              </div>
+            )}
+            <div className="fw-bold text-dark" style={{ fontSize: '11px' }}>{clientApproval.signerName}</div>
+            <div className="text-secondary extra-small" style={{ fontSize: '9px' }}>
+              {clientApproval.designation} {clientApproval.company ? `• ${clientApproval.company}` : ''}
+            </div>
+            <div className="text-muted extra-small" style={{ fontSize: '8.5px' }}>
+              Approved: {new Date(clientApproval.signedAt || clientApproval.approvalDate).toLocaleDateString()}
+            </div>
           </div>
-        ))}
+        )}
+
+        <div className="d-flex flex-wrap justify-content-around align-items-end flex-grow-1" style={{ gap: '2rem' }}>
+          {signatories && signatories.map((sig, i) => (
+            <div key={i} className="text-center" style={{ minWidth: '160px', flex: '1 1 140px', maxWidth: '240px' }}>
+              <div style={{ height: '36px', borderBottom: '1.5px solid #222', marginBottom: '6px' }}></div>
+              <div className="fw-bold text-uppercase sig-label" style={{ fontSize: '11px' }}>{sig.label}</div>
+              {sig.sub && <div className="text-muted sig-sub" style={{ fontSize: '9px' }}>{sig.sub}</div>}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -36,6 +59,8 @@ export default function PrintSheetView({
   projectId,
   billingMode,
   currencySymbol = '₹',
+  isClientPortal = false,
+  onOpenSignModal,
   onClose
 }) {
   const header = projectData?.header || {};
@@ -53,12 +78,56 @@ export default function PrintSheetView({
   ]);
   const [showSigEditor, setShowSigEditor] = useState(false);
   const [showAbstract, setShowAbstract] = useState(false);
+  const [qrCodeUrl, setQrCodeUrl] = useState('');
+
+  useEffect(() => {
+    generateVerificationQRCode(projectData).then(url => {
+      if (url) setQrCodeUrl(url);
+    });
+  }, [projectData]);
 
   const [savingPdf, setSavingPdf] = useState(false);
   const [savePdfProgress, setSavePdfProgress] = useState('');
   const [saveSuccessMsg, setSaveSuccessMsg] = useState('');
 
   const handlePrint = () => window.print();
+
+  const handleDirectDownloadPdf = async () => {
+    try {
+      setSavingPdf(true);
+      setSavePdfProgress('Rendering PDF pages...');
+      setSaveSuccessMsg('');
+
+      const pageEls = document.querySelectorAll('.contractor-sheet-page');
+      if (!pageEls || pageEls.length === 0) {
+        throw new Error('No sheet pages found to export');
+      }
+
+      const cleanProjectName = (header.projectName || 'MEASUREMENT_SHEET').trim().replace(/[^a-zA-Z0-9_\- ]/g, '_');
+      const dateStr = new Date().toISOString().split('T')[0];
+      const fileName = `${cleanProjectName}_${dateStr}.pdf`;
+
+      const result = await generatePdfBase64FromPages(Array.from(pageEls), (cur, total) => {
+        setSavePdfProgress(`Rendering page ${cur} of ${total}...`);
+      });
+
+      const link = document.createElement('a');
+      link.href = result.dataUri;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      setSaveSuccessMsg(`OFFICIAL BILL PDF DOWNLOADED (${(result.fileSize / 1024).toFixed(1)} KB)`);
+      setTimeout(() => setSaveSuccessMsg(''), 6000);
+    } catch (err) {
+      console.error('Download PDF error:', err);
+      alert('Failed to generate PDF: ' + (err.message || 'Unknown error'));
+    } finally {
+      setSavingPdf(false);
+      setSavePdfProgress('');
+    }
+  };
 
   const handleSavePdfToDashboard = async () => {
     try {
@@ -117,20 +186,35 @@ export default function PrintSheetView({
     return dateStr;
   };
 
+  const isApproved = Boolean(projectData?.clientApproval?.approved);
+
   return (
     <div className="print-view-wrapper py-2 py-sm-3 py-md-4 px-1 px-sm-2 px-md-4">
 
       {/* ACTION BAR */}
       <div className="no-print mb-3 d-flex flex-wrap justify-content-between align-items-center gap-2 bg-white p-2 p-sm-3 rounded shadow-sm border">
         <div className="d-flex align-items-center gap-2 flex-wrap">
-          <button type="button" className="btn btn-outline-secondary btn-sm" onClick={onClose}>
-            <i className="bi bi-arrow-left me-1"></i> Back to Editor
-          </button>
-          <span className="badge bg-dark d-none d-sm-inline-block">Contractor Measurement Book</span>
+          {onClose && (
+            <button type="button" className="btn btn-outline-secondary btn-sm" onClick={onClose}>
+              <i className="bi bi-arrow-left me-1"></i> Back to Editor
+            </button>
+          )}
+          {isClientPortal ? (
+            <span className="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 fw-bold text-uppercase d-flex align-items-center gap-1">
+              <i className="bi bi-patch-check-fill"></i> Official Verified Client Portal
+            </span>
+          ) : (
+            <span className="badge bg-dark d-none d-sm-inline-block">Contractor Measurement Book</span>
+          )}
           <span className="badge bg-primary text-white text-uppercase">
             <i className="bi bi-files me-1"></i>
             {pages.length} A4 Sheet Page{pages.length !== 1 ? 's' : ''}
           </span>
+          {isApproved && (
+            <span className="badge bg-success py-1 px-2 fw-bold d-inline-flex align-items-center gap-1">
+              <i className="bi bi-check-all"></i> Digitally Approved
+            </span>
+          )}
         </div>
 
         {/* ORDERING & PAGINATION OPTIONS */}
@@ -144,7 +228,7 @@ export default function PrintSheetView({
               onClick={() => setOrderMode('sequential')}
               title="Print items in exact order entered (1-14 Add -> 15-20 Less -> 21-26 Add)"
             >
-              <i className="bi bi-list-ol me-1"></i> As Entered (Sequential)
+              <i className="bi bi-list-ol me-1"></i> Sequential
             </button>
             <button
               type="button"
@@ -166,15 +250,19 @@ export default function PrintSheetView({
             <i className="bi bi-file-earmark-text me-1"></i> Abstract {showAbstract ? 'ON' : 'OFF'}
           </button>
 
-          <button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => setShowSigEditor(v => !v)}>
-            <i className="bi bi-pen me-1"></i> Signatures
-          </button>
+          {!isClientPortal && (
+            <button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => setShowSigEditor(v => !v)}>
+              <i className="bi bi-pen me-1"></i> Signatures
+            </button>
+          )}
+
+          {/* Direct PDF Download */}
           <button
             type="button"
             className="btn btn-danger btn-sm px-3 fw-bold shadow-sm text-uppercase d-flex align-items-center gap-1"
-            onClick={handleSavePdfToDashboard}
+            onClick={handleDirectDownloadPdf}
             disabled={savingPdf}
-            title="Render and save clean PDF document to user dashboard"
+            title="Download clean official PDF document to your device"
           >
             {savingPdf ? (
               <>
@@ -183,13 +271,40 @@ export default function PrintSheetView({
               </>
             ) : (
               <>
-                <i className="bi bi-file-earmark-pdf-fill"></i>
-                <span>SAVE PDF TO DASHBOARD</span>
+                <i className="bi bi-file-earmark-arrow-down-fill"></i>
+                <span>Download PDF</span>
               </>
             )}
           </button>
+
+          {/* Save to contractor dashboard if logged in contractor */}
+          {!isClientPortal && (
+            <button
+              type="button"
+              className="btn btn-outline-danger btn-sm px-2 fw-bold text-uppercase d-none d-lg-inline-flex align-items-center gap-1"
+              onClick={handleSavePdfToDashboard}
+              disabled={savingPdf}
+              title="Save copy to local dashboard"
+            >
+              <i className="bi bi-folder-check"></i>
+              <span>Save in App</span>
+            </button>
+          )}
+
+          {/* Client Sign Button if in portal */}
+          {isClientPortal && !isApproved && onOpenSignModal && (
+            <button
+              type="button"
+              className="btn btn-success btn-sm px-3 fw-bold shadow-sm d-flex align-items-center gap-1"
+              onClick={onOpenSignModal}
+            >
+              <i className="bi bi-pen-fill"></i>
+              <span>Sign &amp; Approve Bill</span>
+            </button>
+          )}
+
           <button type="button" className="btn btn-primary btn-sm px-3 fw-bold shadow-sm" onClick={handlePrint}>
-            <i className="bi bi-printer-fill me-1"></i> Print / Browser PDF
+            <i className="bi bi-printer-fill me-1"></i> Print / Save as PDF
           </button>
         </div>
       </div>
@@ -265,12 +380,31 @@ export default function PrintSheetView({
               <i className="bi bi-arrow-left-right me-1 text-primary"></i> SWIPE TABLE TO VIEW ALL COLUMNS
             </div>
 
-            {/* Company Header */}
-            <div className="text-center mb-2 company-header-block">
-              <h3 className="fw-bold text-uppercase mb-0" style={{ letterSpacing: '2px', fontSize: '1.05rem' }}>
-                {header.contractorName || 'MTS DECOR'}
-              </h3>
-              {header.clientName && <div className="text-muted client-subtitle" style={{ fontSize: '11px' }}>Client: {header.clientName}</div>}
+            {/* Company Header with Site Verification QR Code */}
+            <div className="d-flex justify-content-between align-items-center mb-2 company-header-block">
+              <div style={{ width: '56px' }}></div>
+              <div className="text-center flex-grow-1">
+                <h3 className="fw-bold text-uppercase mb-0" style={{ letterSpacing: '2px', fontSize: '1.05rem' }}>
+                  {header.contractorName || 'MTS DECOR'}
+                </h3>
+                {header.clientName && <div className="text-muted client-subtitle" style={{ fontSize: '11px' }}>Client: {header.clientName}</div>}
+              </div>
+              <div className="text-center" style={{ width: '56px' }}>
+                {qrCodeUrl ? (
+                  <div>
+                    <img
+                      src={qrCodeUrl}
+                      alt="Verified Copy QR"
+                      style={{ width: '46px', height: '46px', border: '1px solid #d1d5db', borderRadius: '3px', padding: '2px', background: '#fff' }}
+                    />
+                    <div className="text-muted extra-small text-uppercase fw-semibold" style={{ fontSize: '6.5px', lineHeight: 1.1, marginTop: '1px' }}>
+                      SCAN VERIFY
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ width: '46px', height: '46px' }}></div>
+                )}
+              </div>
             </div>
 
             {/* Measurement Table */}
@@ -521,7 +655,7 @@ export default function PrintSheetView({
                             <tr className="fw-bold bg-light-subtle border-top border-2 border-dark">
                               <td></td>
                               <td colSpan={6} className="text-end pe-2 text-uppercase fw-bolder" style={{ fontSize: '11px' }}>
-                                NET AREA TOTAL — {mainLocation}:
+                                NET AREA TOTAL — {mainLocation}{areaTotals.multiplier > 1 ? ` (1-FLR: ${formatNumber(areaTotals.baseNetQty)} × ${areaTotals.multiplier} FLRS)` : ''}:
                               </td>
                               <td className="text-end fw-bolder fs-6 text-dark">{formatNumber(areaTotals.netQty)}</td>
                               {billingMode && <><td></td><td className="text-end fw-bolder fs-6 text-dark">{formatCurrency(areaTotals.netAmount, currencySymbol)}</td></>}
@@ -686,7 +820,7 @@ export default function PrintSheetView({
 
             {/* Signature on the final sheet page */}
             {(isSinglePage || (!showAbstract && pageIdx === pages.length - 1)) && (
-              <SignatureBlock signatories={signatories} />
+              <SignatureBlock signatories={signatories} clientApproval={projectData?.clientApproval} />
             )}
           </div>
         );
@@ -754,7 +888,7 @@ export default function PrintSheetView({
           </div>
 
           {/* SIGNATURE BLOCK — Only on this final/abstract page */}
-          <SignatureBlock signatories={signatories} />
+          <SignatureBlock signatories={signatories} clientApproval={projectData?.clientApproval} />
         </div>
       )}
     </div>

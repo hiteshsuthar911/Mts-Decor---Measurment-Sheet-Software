@@ -118,39 +118,48 @@ body {
 
 
 /* ══════════════════════════════════════════════════════════
-   MS HEADER — UNIFIED DESIGN SYSTEM
-   Single dark toolbar + tab bar + metadata panel
+   MS HEADER — EXCEL SOFTWARE LIGHT THEME
+   Crisp Light Spreadsheet Ribbon + Title Bar + Formula Panel
 ══════════════════════════════════════════════════════════ */
 
 .ms-header {
-  background: #0d1526;
+  background: #ffffff;
   position: sticky;
   top: 0;
   z-index: 200;
-  box-shadow: 0 2px 20px rgba(0,0,0,0.4);
+  border-bottom: 1px solid #d1d5db;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
-/* ── TOOLBAR ROW ─────────────────────────────────────── */
+/* ── TOOLBAR ROW (Excel Quick Access / Title Bar) ───────── */
 .ms-toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 14px;
+  padding: 0 12px;
   height: 48px;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
-  gap: 6px;
-  overflow: hidden;
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  gap: 8px;
+  position: relative;
 }
+
 .ms-tl, .ms-tr {
   display: flex;
   align-items: center;
   gap: 6px;
   flex-shrink: 0;
 }
-.ms-tl { flex: 1; min-width: 0; overflow: hidden; }
-.ms-tr { flex-shrink: 0; }
+.ms-tl {
+  flex: 1;
+  min-width: 0;
+}
+.ms-tr {
+  flex-shrink: 0;
+}
 
-/* Brand */
+/* Excel Brand */
 .ms-brand {
   display: flex;
   align-items: center;
@@ -159,29 +168,28 @@ body {
   flex-shrink: 0;
 }
 .ms-brand-logo {
-  height: 20px;
+  height: 22px;
   object-fit: contain;
-  filter: brightness(0) invert(1);
-  opacity: 0.85;
 }
 .ms-brand-pill {
-  background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
-  color: #fff;
-  font-size: 9.5px;
+  background: linear-gradient(135deg, #107c41 0%, #0b6a37 100%);
+  color: #ffffff;
+  font-size: 10px;
   font-weight: 800;
-  letter-spacing: 0.7px;
+  letter-spacing: 0.6px;
   padding: 3px 8px;
-  border-radius: 5px;
+  border-radius: 4px;
   white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(16, 124, 65, 0.25);
 }
 
 /* Vertical separator */
 .ms-vsep {
   width: 1px;
-  height: 18px;
-  background: rgba(255,255,255,0.1);
+  height: 20px;
+  background: #e2e8f0;
   flex-shrink: 0;
-  margin: 0 2px;
+  margin: 0 3px;
 }
 
 /* Project info */
@@ -189,74 +197,73 @@ body {
   display: flex;
   align-items: center;
   gap: 6px;
-  overflow: hidden;
   min-width: 0;
 }
 .ms-proj-name {
-  color: #e2e8f0;
-  font-size: 12px;
+  color: #0f172a;
+  font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0.4px;
-  text-transform: uppercase;
+  letter-spacing: 0.2px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 200px;
+  max-width: 220px;
 }
 .ms-mine-chip {
-  background: rgba(99,102,241,0.2);
-  border: 1px solid rgba(99,102,241,0.4);
-  color: #a5b4fc;
+  background: #e0e7ff;
+  border: 1px solid #c7d2fe;
+  color: #3730a3;
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.5px;
   padding: 2px 7px;
-  border-radius: 20px;
+  border-radius: 4px;
   white-space: nowrap;
   display: flex;
   align-items: center;
   gap: 3px;
 }
 .ms-owner-chip {
-  background: rgba(251,191,36,0.15);
-  border: 1px solid rgba(251,191,36,0.3);
-  color: #fbbf24;
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  color: #92400e;
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.5px;
   padding: 2px 7px;
-  border-radius: 20px;
+  border-radius: 4px;
   white-space: nowrap;
   display: flex;
   align-items: center;
   gap: 3px;
 }
 
-/* Save pill */
+/* Save status pill */
 .ms-save-pill {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  background: rgba(34,197,94,0.12);
-  border: 1px solid rgba(34,197,94,0.25);
-  color: #4ade80;
-  font-size: 9.5px;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #065f46;
+  font-size: 10px;
   font-weight: 700;
   padding: 3px 9px;
-  border-radius: 20px;
+  border-radius: 4px;
   white-space: nowrap;
   flex-shrink: 0;
 }
 .ms-save-pill--saving {
-  background: rgba(250,204,21,0.12);
-  border-color: rgba(250,204,21,0.3);
-  color: #facc15;
+  background: #fffbeb;
+  border-color: #fde68a;
+  color: #92400e;
 }
 
 /* Spinner */
 .ms-spin {
   display: inline-block;
-  width: 9px; height: 9px;
+  width: 10px;
+  height: 10px;
   border: 2px solid currentColor;
   border-top-color: transparent;
   border-radius: 50%;
@@ -265,265 +272,351 @@ body {
 .ms-spin-sm { width: 11px; height: 11px; }
 @keyframes msSpin { to { transform: rotate(360deg); } }
 
-/* ── BUTTONS ─────────────────────────────────────────── */
+/* ── TOOLBAR ACTION BUTTONS ──────────────────────────── */
 .ms-btn {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  border: none;
-  border-radius: 7px;
-  font-size: 10.5px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.3px;
   text-transform: uppercase;
-  padding: 5px 11px;
+  padding: 5px 10px;
   cursor: pointer;
   white-space: nowrap;
-  transition: all 0.13s ease;
-  line-height: 1;
+  transition: all 0.15s ease;
+  line-height: 1.1;
   text-decoration: none;
 }
 .ms-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
+/* Excel Green Save Button */
 .ms-btn-save {
-  background: linear-gradient(135deg, #16a34a, #15803d);
-  color: #fff;
-  box-shadow: 0 2px 8px rgba(22,163,74,0.3);
+  background: linear-gradient(135deg, #107c41 0%, #0b6a37 100%);
+  color: #ffffff !important;
+  border: 1px solid #0b6a37;
+  box-shadow: 0 1px 4px rgba(16, 124, 65, 0.25);
+  font-weight: 800;
+  flex-shrink: 0 !important;
+  display: inline-flex !important;
+  align-items: center;
 }
 .ms-btn-save:hover:not(:disabled) {
-  background: linear-gradient(135deg, #15803d, #166534);
-  box-shadow: 0 3px 12px rgba(22,163,74,0.4);
+  background: linear-gradient(135deg, #0b6a37 0%, #08522b 100%);
+  color: #ffffff !important;
+  box-shadow: 0 2px 6px rgba(16, 124, 65, 0.35);
   transform: translateY(-1px);
 }
 
+/* Add Area Button */
 .ms-btn-add {
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
-  color: #fff;
-  box-shadow: 0 2px 8px rgba(59,130,246,0.3);
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
 }
 .ms-btn-add:hover:not(:disabled) {
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  background: #dbeafe;
+  border-color: #93c5fd;
+  color: #1e40af;
   transform: translateY(-1px);
 }
 
+/* Field Mode Button */
 .ms-btn-field {
-  background: rgba(251,191,36,0.15);
-  border: 1px solid rgba(251,191,36,0.3);
-  color: #fbbf24;
+  background: #fefce8;
+  border: 1px solid #fef08a;
+  color: #a16207;
 }
-.ms-btn-field:hover { background: rgba(251,191,36,0.25); transform: translateY(-1px); }
+.ms-btn-field:hover {
+  background: #fef9c3;
+  color: #854d0e;
+  transform: translateY(-1px);
+}
 
+/* Ghost / Excel Neutral Button */
 .ms-btn-ghost {
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.09);
-  color: #94a3b8;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #334155;
 }
-.ms-btn-ghost:hover { background: rgba(255,255,255,0.11); color: #e2e8f0; transform: translateY(-1px); }
+.ms-btn-ghost:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #0f172a;
+  transform: translateY(-1px);
+}
 
+/* Danger Button */
 .ms-btn-danger {
-  background: rgba(239,68,68,0.1);
-  border: 1px solid rgba(239,68,68,0.2);
-  color: #f87171;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
 }
-.ms-btn-danger:hover { background: rgba(239,68,68,0.2); transform: translateY(-1px); }
+.ms-btn-danger:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #b91c1c;
+  transform: translateY(-1px);
+}
 
+/* Logout Button */
 .ms-btn-logout {
-  background: rgba(239,68,68,0.08);
-  border: 1px solid rgba(239,68,68,0.18);
-  color: #fca5a5;
-  border-radius: 7px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+  border-radius: 5px;
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 700;
-  padding: 5px 11px;
+  padding: 5px 10px;
   cursor: pointer;
-  transition: all 0.13s ease;
+  transition: all 0.15s ease;
 }
-.ms-btn-logout:hover { background: rgba(239,68,68,0.18); color: #ef4444; transform: translateY(-1px); }
+.ms-btn-logout:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #dc2626;
+  transform: translateY(-1px);
+}
 
-/* ── RA BILL TOGGLE ──────────────────────────────────── */
+/* ── RA BILL TOGGLE (Excel Style) ─────────────────────── */
 .ms-toggle {
   display: flex;
   align-items: center;
   gap: 6px;
   cursor: pointer;
   user-select: none;
-  padding: 4px 9px;
-  border-radius: 7px;
-  border: 1px solid rgba(255,255,255,0.09);
-  transition: background 0.13s;
+  padding: 3px 8px;
+  border-radius: 5px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  transition: background 0.15s;
 }
-.ms-toggle:hover { background: rgba(255,255,255,0.05); }
+.ms-toggle:hover { background: #f1f5f9; border-color: #cbd5e1; }
 .ms-toggle input { display: none; }
 
 .ms-track {
   position: relative;
-  width: 30px;
-  height: 17px;
-  background: rgba(255,255,255,0.12);
+  width: 32px;
+  height: 18px;
+  background: #cbd5e1;
   border-radius: 9px;
   transition: background 0.2s;
   flex-shrink: 0;
 }
 .ms-toggle input:checked + .ms-track {
-  background: linear-gradient(135deg, #f59e0b, #d97706);
+  background: linear-gradient(135deg, #107c41, #0b6a37);
 }
 .ms-thumb {
   position: absolute;
   top: 2px;
   left: 2px;
-  width: 13px;
-  height: 13px;
-  background: #fff;
+  width: 14px;
+  height: 14px;
+  background: #ffffff;
   border-radius: 50%;
   transition: left 0.18s;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
 }
-.ms-toggle input:checked + .ms-track .ms-thumb { left: 15px; }
+.ms-toggle input:checked + .ms-track .ms-thumb { left: 16px; }
 .ms-tlbl {
-  color: #64748b;
+  color: #334155;
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.3px;
   text-transform: uppercase;
 }
 
-/* ── TAB BAR ─────────────────────────────────────────── */
+/* ── EXCEL RIBBON TAB BAR ────────────────────────────── */
 .ms-tabbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #0a1020;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
   padding: 0 14px;
-  height: 37px;
+  height: 38px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.ms-tabbar::-webkit-scrollbar {
+  display: none;
 }
 
 .ms-tabs {
   display: flex;
   align-items: stretch;
-  gap: 0;
+  gap: 3px;
   height: 100%;
 }
 
 .ms-tab {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   background: transparent;
-  border: none;
-  border-bottom: 2px solid transparent;
+  border: 1px solid transparent;
+  border-bottom: 3px solid transparent;
   color: #475569;
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.3px;
-  text-transform: uppercase;
-  padding: 0 13px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  padding: 0 14px;
   cursor: pointer;
   transition: all 0.13s ease;
   white-space: nowrap;
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
 }
-.ms-tab:hover:not(.ms-tab-on) { color: #64748b; background: rgba(255,255,255,0.03); }
+.ms-tab:hover:not(.ms-tab-on) {
+  color: #0f172a;
+  background: #f1f5f9;
+}
+
+/* Active Excel Sheet Tab */
+.ms-tab-on {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #e2e8f0 #e2e8f0 transparent #e2e8f0 !important;
+  border-bottom: 3px solid #107c41 !important;
+  font-weight: 800 !important;
+  box-shadow: 0 -1px 4px rgba(0, 0, 0, 0.03);
+}
 
 .ms-tnum {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 15px;
-  height: 15px;
-  background: rgba(255,255,255,0.08);
+  width: 17px;
+  height: 17px;
+  background: #e2e8f0;
+  color: #475569;
   border-radius: 50%;
-  font-size: 8.5px;
+  font-size: 9px;
   font-weight: 800;
   flex-shrink: 0;
 }
-.ms-ttext { font-size: 10.5px; }
-.ms-tcount {
-  background: rgba(255,255,255,0.1);
-  color: #64748b;
-  font-size: 8.5px;
-  font-weight: 800;
-  padding: 1px 6px;
-  border-radius: 9px;
+.ms-tab-on .ms-tnum {
+  background: #107c41;
+  color: #ffffff;
 }
 
-/* Active tab colors */
-.ms-tab-info.ms-tab-on    { color: #93c5fd; border-bottom-color: #3b82f6; }
-.ms-tab-sheet.ms-tab-on   { color: #a5b4fc; border-bottom-color: #6366f1; }
-.ms-tab-sum.ms-tab-on     { color: #86efac; border-bottom-color: #22c55e; }
-.ms-tab-all-on            { color: #cbd5e1; border-bottom-color: #475569; }
-
-.ms-tab-info.ms-tab-on .ms-tnum  { background: #3b82f6; color: #fff; }
-.ms-tab-sheet.ms-tab-on .ms-tnum { background: #6366f1; color: #fff; }
-.ms-tab-sum.ms-tab-on .ms-tnum   { background: #22c55e; color: #fff; }
-.ms-tab-sheet.ms-tab-on .ms-tcount { background: #6366f1; color: #fff; }
+.ms-ttext {
+  font-size: 11px;
+}
+.ms-tcount {
+  background: #e2e8f0;
+  color: #334155;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 10px;
+}
+.ms-tab-on .ms-tcount {
+  background: #107c41;
+  color: #ffffff;
+}
 
 .ms-page-pill {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.8px;
-  color: #334155;
+  letter-spacing: 0.6px;
+  color: #64748b;
   text-transform: uppercase;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  padding: 3px 8px;
+  border-radius: 4px;
 }
-.ms-tabbar-end { padding-left: 8px; }
+.ms-tabbar-end {
+  padding-left: 8px;
+  flex-shrink: 0;
+}
 
-/* ── METADATA PANEL ──────────────────────────────────── */
+/* ── EXCEL FORMULA / METADATA PANEL ──────────────────── */
 .ms-meta-panel {
-  background: #111827;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
   padding: 10px 16px;
 }
 
 .ms-flabel {
   display: block;
-  font-size: 9.5px;
+  font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.4px;
   text-transform: uppercase;
-  color: #475569;
-  margin-bottom: 4px;
+  color: #334155;
+  margin-bottom: 3px;
 }
 
+/* Excel Cell Input */
 .ms-finput {
   width: 100%;
-  background: #0d1526;
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 7px;
-  color: #cbd5e1;
-  font-size: 11.5px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  color: #0f172a;
+  font-size: 12px;
   font-weight: 600;
   padding: 6px 10px;
   outline: none;
-  transition: border-color 0.13s, box-shadow 0.13s;
+  transition: border-color 0.15s, box-shadow 0.15s;
   font-family: inherit;
 }
-.ms-finput::placeholder { color: #1e293b; font-weight: 400; }
-.ms-finput:focus {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
-  color: #f1f5f9;
+.ms-finput::placeholder {
+  color: #94a3b8;
+  font-weight: 400;
 }
-.ms-finput-bold { font-weight: 700; color: #e2e8f0; }
+.ms-finput:focus {
+  border-color: #107c41;
+  box-shadow: 0 0 0 3px rgba(16, 124, 65, 0.15);
+  background: #ffffff;
+}
+.ms-finput-bold {
+  font-weight: 700;
+  color: #0f172a;
+}
 
 .ms-addon {
-  background: #1e293b;
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 6px;
-  color: #64748b;
-  font-size: 10.5px;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  color: #334155;
+  font-size: 11px;
   font-weight: 700;
   padding: 5px 9px;
   white-space: nowrap;
 }
 .ms-hint {
-  color: #334155;
-  font-size: 9.5px;
+  color: #64748b;
+  font-size: 10px;
   white-space: nowrap;
+}
+
+/* ── EXCEL QUICK TOOLS & SETTINGS PANEL ─────────────── */
+.ms-tools-panel {
+  background: #ffffff;
+  border-bottom: 2px solid #cbd5e1;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.09);
+  animation: msSlideDown 0.18s ease-out;
+}
+@keyframes msSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* ─── MOBILE STICKY BAR ──────────────────────────── */
@@ -558,43 +651,61 @@ body {
 
   /* Header Toolbar Mobile Optimization */
   .ms-toolbar {
-    height: auto;
+    height: 48px;
     min-height: 48px;
-    padding: 6px 10px;
-    gap: 6px;
+    padding: 0 8px;
+    gap: 5px;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    overflow: visible;
   }
   .ms-tl {
-    flex: 0 0 auto;
-    max-width: 44%;
-    min-width: 0;
-  }
-  .ms-proj-name {
-    max-width: 105px;
-    font-size: 11px;
-    letter-spacing: 0.2px;
-  }
-  .ms-tr {
     flex: 1 1 auto;
     min-width: 0;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
+    max-width: none;
+    overflow: hidden;
+  }
+  .ms-brand {
+    gap: 4px;
+  }
+  .ms-brand-logo {
+    height: 20px;
+  }
+  .ms-brand-pill {
+    font-size: 9.5px;
+    padding: 2px 6px;
+  }
+  .ms-proj-name {
+    max-width: 90px;
+    font-size: 11px;
+    letter-spacing: 0.2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .ms-tr {
+    flex: 0 0 auto;
+    min-width: 0;
+    overflow: visible;
     display: flex;
     align-items: center;
     gap: 4px;
-    justify-content: flex-end;
-    padding: 2px 0;
-  }
-  .ms-tr::-webkit-scrollbar {
-    display: none;
+    margin-left: auto;
+    padding: 0;
   }
   .ms-btn {
-    padding: 5px 8px;
+    padding: 5px 7px;
     font-size: 10px;
     flex-shrink: 0;
+  }
+  .ms-btn-save {
+    padding: 5px 9px !important;
+    font-size: 10.5px !important;
+    font-weight: 800 !important;
+    flex-shrink: 0 !important;
+    display: inline-flex !important;
+    visibility: visible !important;
   }
   .ms-toggle {
     padding: 3px 6px;
@@ -1648,14 +1759,15 @@ input::placeholder {
 .sheet-page-total-pill {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  font-size: 0.73rem;
+  gap: 5px;
+  padding: 3.5px 9px;
+  font-size: 0.72rem;
   font-weight: 600;
-  background: #f1f5f9;
-  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
   border-radius: 6px;
   color: #1e293b;
+  white-space: nowrap;
 }
 
 .sheet-page-total-pill strong {
@@ -1667,6 +1779,25 @@ input::placeholder {
   padding: 3px 8px;
   font-size: 0.7rem;
   line-height: 1.3;
+}
+
+@media (max-width: 767.98px) {
+  .sheet-page-header-enterprise {
+    padding: 8px 10px !important;
+  }
+  .sheet-page-header-enterprise h5,
+  .sheet-page-header-enterprise h6 {
+    font-size: 0.88rem !important;
+    max-width: 140px;
+  }
+  .sheet-page-total-pill {
+    padding: 3px 6px;
+    font-size: 0.67rem;
+    gap: 4px;
+  }
+  .sheet-page-total-pill strong {
+    font-size: 0.7rem;
+  }
 }
 
 

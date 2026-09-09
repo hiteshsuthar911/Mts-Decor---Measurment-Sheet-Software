@@ -8,6 +8,8 @@ export default function LineItemRow({
   totalItems,
   billingMode,
   currencySymbol = '₹',
+  isSelected = false,
+  onToggleSelect,
   onChangeItem,
   onDuplicateItem,
   onDeleteItem,
@@ -52,10 +54,21 @@ export default function LineItemRow({
   };
 
   return (
-    <tr className={`line-item-row ${item.isLess ? 'table-danger-subtle border-danger border-opacity-25' : ''}`}>
-      {/* SR Index */}
-      <td className="text-center align-middle text-muted fw-semibold small" style={{ width: '45px' }}>
-        {index + 1}
+    <tr className={`line-item-row ${isSelected ? 'table-primary bg-primary-subtle' : ''} ${item.isLess ? 'table-danger-subtle border-danger border-opacity-25' : ''}`}>
+      {/* SR Index & Select Checkbox */}
+      <td className="text-center align-middle" style={{ width: '60px' }}>
+        <div className="d-flex align-items-center justify-content-center gap-1">
+          {onToggleSelect && (
+            <input
+              type="checkbox"
+              className="form-check-input mt-0 cursor-pointer"
+              checked={isSelected}
+              onChange={() => onToggleSelect(item.id)}
+              title="Select for bulk actions"
+            />
+          )}
+          <span className="text-muted fw-semibold small">{index + 1}</span>
+        </div>
       </td>
 
       {/* Type Toggle: Addition (+) vs LESS (-) */}

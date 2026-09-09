@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { WORK_CATEGORIES, CATEGORIZED_WORK_TYPES, COMMON_ROOM_AREAS } from '../data/categories';
+import { WORK_CATEGORIES, CATEGORIZED_WORK_TYPES, COMMON_ROOM_AREAS, UNIT_OPTIONS, REMARK_OPTIONS, CATEGORIZED_REMARKS } from '../data/categories';
 import LineItemRow from './LineItemRow';
 import { calculateAreaTotals, formatNumber, formatCurrency } from '../utils/calculations';
 import { createEmptyItem } from '../data/sampleData';
@@ -20,6 +20,7 @@ export default function AreaBlock({
 }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showReplicateModal, setShowReplicateModal] = useState(false);
+  const [selectedItemIds, setSelectedItemIds] = useState([]);
   const [customCategories, setCustomCategories] = useState(() => {
     try {
       const saved = localStorage.getItem('mts_custom_work_categories');
@@ -192,6 +193,7 @@ export default function AreaBlock({
       if (!confirm('This is the last line item in this area. Remove it?')) return;
     }
     const updatedItems = (area.items || []).filter(i => i.id !== itemId);
+    setSelectedItemIds(prev => prev.filter(id => id !== itemId));
     onChangeArea(area.id, { ...area, items: updatedItems });
   };
 
@@ -205,6 +207,55 @@ export default function AreaBlock({
     const [moved] = newItems.splice(idx, 1);
     newItems.splice(targetIdx, 0, moved);
     onChangeArea(area.id, { ...area, items: newItems });
+  };
+
+  // Bulk Selection Handlers
+  const handleToggleSelectItem = (itemId) => {
+    setSelectedItemIds(prev =>
+      prev.includes(itemId) ? prev.filter(id => id !== itemId) : [...prev, itemId]
+    );
+  };
+
+  const allSelected = (area.items || []).length > 0 && selectedItemIds.length === (area.items || []).length;
+
+  const handleToggleSelectAll = () => {
+    if (allSelected) {
+      setSelectedItemIds([]);
+    } else {
+      setSelectedItemIds((area.items || []).map(i => i.id));
+    }
+  };
+
+  const handleBulkSetUnit = (unit) => {
+    if (!selectedItemIds.length) return;
+    const updatedItems = (area.items || []).map(i =>
+      selectedItemIds.includes(i.id) ? { ...i, unit } : i
+    );
+    onChangeArea(area.id, { ...area, items: updatedItems });
+  };
+
+  const handleBulkSetRemark = (remark) => {
+    if (!selectedItemIds.length) return;
+    const updatedItems = (area.items || []).map(i =>
+      selectedItemIds.includes(i.id) ? { ...i, remark } : i
+    );
+    onChangeArea(area.id, { ...area, items: updatedItems });
+  };
+
+  const handleBulkSetRate = (rate) => {
+    if (!selectedItemIds.length) return;
+    const updatedItems = (area.items || []).map(i =>
+      selectedItemIds.includes(i.id) ? { ...i, rate } : i
+    );
+    onChangeArea(area.id, { ...area, items: updatedItems });
+  };
+
+  const handleBulkDelete = () => {
+    if (!selectedItemIds.length) return;
+    if (!confirm(`Delete ${selectedItemIds.length} selected line item(s)?`)) return;
+    const updatedItems = (area.items || []).filter(i => !selectedItemIds.includes(i.id));
+    setSelectedItemIds([]);
+    onChangeArea(area.id, { ...area, items: updatedItems });
   };
 
   return (
@@ -348,7 +399,7 @@ export default function AreaBlock({
           {/* Work Category (Work Detail) Dropdown */}
           <div className="col-12 col-md-4">
             <div className="d-flex justify-content-between align-items-center mb-1">
-              <label className="form-label extra-small text-muted fw-bold mb-0">Work Category (Work Detail)</label>
+              <label className="form-label extra-small text-muted fw-bold mb-0">Work Category (Detail)</label>
               <button
                 type="button"
                 className="btn btn-link p-0 text-primary extra-small text-decoration-none fw-semibold"
@@ -481,11 +532,114 @@ export default function AreaBlock({
             <span className="badge bg-secondary extra-small">{area.items?.length || 0} ITEMS</span>
           </div>
 
+          {/* Bulk Selection Action Toolbar */}
+          {selectedItemIds.length > 0 && (
+            <div className="bg-primary-subtle border-bottom border-primary border-opacity-25 px-3 py-2 d-flex flex-wrap align-items-center justify-content-between gap-2">
+              <div className="d-flex align-items-center gap-2">
+                <span className="badge bg-primary fs-6 fw-bold">
+                  <i className="bi bi-check2-square me-1"></i>
+                  {selectedItemIds.length} item{selectedItemIds.length > 1 ? 's' : ''} selected
+                </span>
+                <span className="text-secondary small fw-medium d-none d-sm-inline">Batch update:</span>
+              </div>
+              <div className="d-flex align-items-center flex-wrap gap-2">
+                {/* Batch Set Unit */}
+                <div className="input-group input-group-sm" style={{ width: '135px' }}>
+                  <span className="input-group-text bg-white small fw-bold">Unit</span>
+                  <select
+                    className="form-select form-select-sm"
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        handleBulkSetUnit(e.target.value);
+                        e.target.value = '';
+                      }
+                    }}
+                    defaultValue=""
+                  >
+                    <option value="" disabled>Apply...</option>
+                    {UNIT_OPTIONS.map(opt => (
+                      <option key={opt.value} value={opt.value}>{opt.value}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Batch Set Remark */}
+                <div className="input-group input-group-sm" style={{ width: '175px' }}>
+                  <span className="input-group-text bg-white small fw-bold">Remark</span>
+                  <select
+                    className="form-select form-select-sm"
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        handleBulkSetRemark(e.target.value);
+                        e.target.value = '';
+                      }
+                    }}
+                    defaultValue=""
+                  >
+                    <option value="" disabled>Apply...</option>
+                    {Object.entries(CATEGORIZED_REMARKS).map(([grp, list]) => (
+                      <optgroup key={grp} label={grp}>
+                        {list.map(r => (
+                          <option key={r} value={r}>{r}</option>
+                        ))}
+                      </optgroup>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Batch Set Rate */}
+                {billingMode && (
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-dark fw-semibold"
+                    onClick={() => {
+                      const r = window.prompt(`Enter rate (${currencySymbol}) for ${selectedItemIds.length} selected items:`);
+                      if (r !== null && !isNaN(parseFloat(r))) {
+                        handleBulkSetRate(parseFloat(r));
+                      }
+                    }}
+                  >
+                    <i className="bi bi-tag me-1"></i>Set Rate
+                  </button>
+                )}
+
+                {/* Bulk Delete */}
+                <button
+                  type="button"
+                  className="btn btn-sm btn-danger fw-semibold"
+                  onClick={handleBulkDelete}
+                >
+                  <i className="bi bi-trash me-1"></i>Delete ({selectedItemIds.length})
+                </button>
+
+                {/* Deselect All */}
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-secondary"
+                  onClick={() => setSelectedItemIds([])}
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="table-responsive">
             <table className={`table table-sm table-hover align-middle mb-0 line-items-table ${billingMode ? 'billing-active' : ''}`}>
               <thead className="table-light text-secondary small text-uppercase">
                 <tr>
-                  <th className="text-center" style={{ width: '45px' }}>SR.</th>
+                  <th className="text-center" style={{ width: '60px' }}>
+                    <div className="d-flex align-items-center justify-content-center gap-1">
+                      <input
+                        type="checkbox"
+                        className="form-check-input mt-0 cursor-pointer"
+                        checked={allSelected}
+                        onChange={handleToggleSelectAll}
+                        title="Select or deselect all items in this area"
+                      />
+                      <span>SR.</span>
+                    </div>
+                  </th>
                   <th className="text-center" style={{ width: '90px' }}>TYPE</th>
                   <th>REMARK</th>
                   <th style={{ width: '110px' }}>UNIT</th>
@@ -513,6 +667,8 @@ export default function AreaBlock({
                     totalItems={area.items?.length || 0}
                     billingMode={billingMode}
                     currencySymbol={currencySymbol}
+                    isSelected={selectedItemIds.includes(item.id)}
+                    onToggleSelect={handleToggleSelectItem}
                     onChangeItem={handleChangeItem}
                     onDuplicateItem={handleDuplicateItem}
                     onDeleteItem={handleDeleteItem}
@@ -599,13 +755,17 @@ export default function AreaBlock({
               )}
 
               <div className="text-end bg-white px-3 py-1 rounded border border-primary-subtle shadow-sm">
-                <span className="text-primary extra-small d-block text-uppercase fw-bold">TOTAL AFTER LESS:</span>
+                <span className="text-primary extra-small d-block text-uppercase fw-bold">
+                  TOTAL AFTER LESS:
+                </span>
                 <span className="fw-bold text-primary fs-6">{formatNumber(totals.netQty)}</span>
               </div>
 
               {billingMode && (
                 <div className="text-end bg-warning-subtle px-3 py-1 rounded border border-warning shadow-sm">
-                  <span className="text-dark extra-small d-block text-uppercase fw-bold">NET AMOUNT:</span>
+                  <span className="text-dark extra-small d-block text-uppercase fw-bold">
+                    NET AMOUNT:
+                  </span>
                   <span className="fw-bold text-dark fs-6">{formatCurrency(totals.netAmount, currencySymbol)}</span>
                 </div>
               )}

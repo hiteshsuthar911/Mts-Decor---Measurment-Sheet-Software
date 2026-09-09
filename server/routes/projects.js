@@ -1,4 +1,5 @@
 const router = require('express').Router();
+const mongoose = require('mongoose');
 const auth = require('../middleware/authMiddleware');
 const Project = require('../models/Project');
 const { triggerAutoBackup } = require('../utils/googleDrive');
@@ -133,10 +134,30 @@ router.put('/:id', auth, async (req, res) => {
     }
 
     const { data } = req.body;
-    existing.name = data?.header?.projectName || 'UNTITLED PROJECT';
+    const oldData = existing.data || {};
+    const newData = data ? { ...data } : {};
+
+    // Preserve engineerQueries: do not let an autosave that lacks queries erase DB queries
+    if (!newData.engineerQueries && oldData.engineerQueries) {
+      newData.engineerQueries = oldData.engineerQueries;
+    } else if (Array.isArray(oldData.engineerQueries) && Array.isArray(newData.engineerQueries)) {
+      // Merge queries if server has ones client hasn't fetched yet
+      const clientQueryIds = new Set(newData.engineerQueries.map(q => q.id));
+      const missingFromServer = oldData.engineerQueries.filter(q => !clientQueryIds.has(q.id));
+      if (missingFromServer.length > 0) {
+        newData.engineerQueries = [...newData.engineerQueries, ...missingFromServer];
+      }
+    }
+
+    // Preserve clientApproval if not present in payload
+    if (!newData.clientApproval && oldData.clientApproval) {
+      newData.clientApproval = oldData.clientApproval;
+    }
+
+    existing.name = newData?.header?.projectName || existing.name || 'UNTITLED PROJECT';
     existing.lastEditedBy = req.user.name;
     existing.lastEditedAt = new Date();
-    existing.data = data;
+    existing.data = newData;
     await existing.save();
 
     res.json(existing);
@@ -247,6 +268,199 @@ router.delete('/:id', auth, async (req, res) => {
     res.json({ message: 'PROJECT MOVED TO RECENTLY DELETED' });
     triggerAutoBackup();
   } catch (err) {
+    res.status(500).json({ message: 'SERVER ERROR' });
+  }
+});
+
+// ── DIGITAL CLIENT SIGN-OFF PORTAL (Public with optional PIN protection) ──
+
+// GET /api/projects/sign-portal/:id
+router.get('/sign-portal/:id', async (req, res) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(404).json({ message: 'MEASUREMENT SHEET NOT FOUND OR INVALID LINK' });
+    }
+    const project = await Project.findById(req.params.id);
+    if (!project || project.isDeleted) {
+      return res.status(404).json({ message: 'MEASUREMENT SHEET NOT FOUND OR HAS BEEN DELETED' });
+    }
+
+    const data = project.data || {};
+    const configuredPin = data.signPortalPin ? String(data.signPortalPin).trim() : '';
+    const providedPin = String(req.query.pin || req.headers['x-sign-pin'] || '').trim();
+
+    if (configuredPin) {
+      if (!providedPin || providedPin !== configuredPin) {
+        return res.json({
+          requiresPin: true,
+          projectName: project.name || data.header?.projectName || 'Measurement Sheet',
+          contractorName: data.header?.contractorName || 'MTS DECOR',
+          date: data.header?.date || '',
+          companySlug: project.companySlug
+        });
+      }
+    }
+
+    res.json({
+      requiresPin: false,
+      id: project._id,
+      projectName: project.name || data.header?.projectName || 'Measurement Sheet',
+      companySlug: project.companySlug,
+      header: data.header || {},
+      areas: data.areas || [],
+      settings: data.settings || {},
+      clientApproval: data.clientApproval || null
+    });
+  } catch (err) {
+    console.error('Sign portal fetch error:', err);
+    res.status(500).json({ message: 'SERVER ERROR' });
+  }
+});
+
+// POST /api/projects/sign-portal/:id/submit
+router.post('/sign-portal/:id/submit', async (req, res) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(404).json({ message: 'INVALID PROJECT IDENTIFIER' });
+    }
+    const project = await Project.findById(req.params.id);
+    if (!project || project.isDeleted) {
+      return res.status(404).json({ message: 'PROJECT NOT FOUND' });
+    }
+
+    const data = project.data || {};
+    const configuredPin = data.signPortalPin ? String(data.signPortalPin).trim() : '';
+    const providedPin = String(req.body.pin || req.headers['x-sign-pin'] || '').trim();
+
+    if (configuredPin && (!providedPin || providedPin !== configuredPin)) {
+      return res.status(401).json({ message: 'INVALID PASSCODE / PIN' });
+    }
+
+    const { signerName, company, designation, approvalDate, notes, signatureDataUrl } = req.body;
+    if (!signerName || !signerName.trim()) {
+      return res.status(400).json({ message: 'SIGNER NAME IS REQUIRED' });
+    }
+
+    const clientApproval = {
+      approved: true,
+      signerName: signerName.trim(),
+      company: (company || '').trim(),
+      designation: (designation || 'Client Representative').trim(),
+      approvalDate: approvalDate || new Date().toISOString().split('T')[0],
+      signedAt: new Date().toISOString(),
+      notes: (notes || '').trim(),
+      signatureDataUrl: signatureDataUrl || null,
+      verificationSource: 'DIGITAL_PORTAL',
+      ip: req.ip || req.headers['x-forwarded-for'] || '',
+      userAgent: req.headers['user-agent'] || ''
+    };
+
+    project.data = {
+      ...data,
+      clientApproval
+    };
+    project.lastEditedAt = new Date();
+    project.lastEditedBy = `${signerName} (Client Digital Sign-Off)`;
+    await project.save();
+
+    res.json({
+      success: true,
+      message: 'MEASUREMENT SHEET APPROVED & SEALED',
+      clientApproval
+    });
+    triggerAutoBackup();
+  } catch (err) {
+    console.error('Sign portal submit error:', err);
+    res.status(500).json({ message: 'SERVER ERROR' });
+  }
+});
+
+// GET /api/projects/engineer-portal/:id — Site Engineer review data
+router.get('/engineer-portal/:id', async (req, res) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(404).json({ message: 'MEASUREMENT SHEET NOT FOUND OR INVALID LINK' });
+    }
+    const project = await Project.findById(req.params.id);
+    if (!project || project.isDeleted) {
+      return res.status(404).json({ message: 'MEASUREMENT SHEET NOT FOUND OR HAS BEEN DELETED' });
+    }
+
+    const data = project.data || {};
+    res.json({
+      id: project._id,
+      projectName: project.name || data.header?.projectName || 'Measurement Sheet',
+      companySlug: project.companySlug,
+      header: data.header || {},
+      areas: data.areas || [],
+      settings: data.settings || {},
+      clientApproval: data.clientApproval || null,
+      engineerQueries: data.engineerQueries || []
+    });
+  } catch (err) {
+    console.error('Engineer portal fetch error:', err);
+    res.status(500).json({ message: 'SERVER ERROR' });
+  }
+});
+
+// POST /api/projects/engineer-portal/:id/query — Submit proposed site measurement changes
+router.post('/engineer-portal/:id/query', async (req, res) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(404).json({ message: 'MEASUREMENT SHEET NOT FOUND' });
+    }
+    const project = await Project.findById(req.params.id);
+    if (!project || project.isDeleted) {
+      return res.status(404).json({ message: 'PROJECT NOT FOUND' });
+    }
+
+    const { engineerName, engineerRole, phone, overallNote, changes } = req.body;
+    if (!engineerName || !engineerName.trim()) {
+      return res.status(400).json({ message: 'ENGINEER NAME IS REQUIRED' });
+    }
+    if (!Array.isArray(changes) || changes.length === 0) {
+      return res.status(400).json({ message: 'AT LEAST 1 PROPOSED CHANGE OR QUERY IS REQUIRED' });
+    }
+
+    const queryObj = {
+      id: `query-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+      engineerName: engineerName.trim(),
+      engineerRole: (engineerRole || 'Site Engineer').trim(),
+      phone: (phone || '').trim(),
+      overallNote: (overallNote || '').trim(),
+      submittedAt: new Date().toISOString(),
+      status: 'PENDING',
+      changes: changes.map(c => ({
+        areaId: c.areaId,
+        areaLabel: c.areaLabel || '',
+        itemId: c.itemId,
+        itemRemark: c.itemRemark || '',
+        original: c.original || {},
+        proposed: c.proposed || {},
+        reason: c.reason || '',
+        status: 'PENDING'
+      }))
+    };
+
+    const data = project.data || {};
+    const existingQueries = Array.isArray(data.engineerQueries) ? data.engineerQueries : [];
+
+    project.data = {
+      ...data,
+      engineerQueries: [queryObj, ...existingQueries]
+    };
+    project.lastEditedAt = new Date();
+    project.lastEditedBy = `${engineerName} (Site Engineer Query)`;
+    await project.save();
+
+    res.json({
+      success: true,
+      message: 'SITE QUERY SUBMITTED TO MEASUREMENT PORTAL',
+      query: queryObj
+    });
+    triggerAutoBackup();
+  } catch (err) {
+    console.error('Engineer query submit error:', err);
     res.status(500).json({ message: 'SERVER ERROR' });
   }
 });

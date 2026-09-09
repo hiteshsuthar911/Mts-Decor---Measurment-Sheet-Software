@@ -7,6 +7,8 @@ import ProjectsPage from './pages/ProjectsPage';
 import MeasurementSheet from './pages/MeasurementSheet';
 import ProfilePage from './pages/ProfilePage';
 import UnderConstructionPage from './pages/UnderConstructionPage';
+import ClientSignPortal from './pages/ClientSignPortal';
+import SiteEngineerPortal from './pages/SiteEngineerPortal';
 import { getSession, isLoggedIn } from './utils/auth';
 
 const isFileProtocol = typeof window !== 'undefined' && (window.location.protocol === 'file:' || window.isElectron);
@@ -51,6 +53,10 @@ export default function App() {
       <Routes>
         {/* Public */}
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/sign/:projectId" element={<ClientSignPortal />} />
+        <Route path="/review/:projectId" element={<ClientSignPortal />} />
+        <Route path="/engineer/:projectId" element={<SiteEngineerPortal />} />
+        <Route path="/site-review/:projectId" element={<SiteEngineerPortal />} />
         <Route path="/c/:companySlug" element={<UnderConstructionPage />} />
         <Route path="/construction" element={<UnderConstructionPage />} />
         <Route path="/download" element={<DownloadPage />} />
