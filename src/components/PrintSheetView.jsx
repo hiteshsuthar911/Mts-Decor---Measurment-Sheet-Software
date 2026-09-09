@@ -8,8 +8,10 @@ import {
   groupAreasIntoPages,
   formatNumber,
   formatCurrency,
-  roundNumber
+  roundNumber,
+  formatDateDisplay
 } from '../utils/calculations';
+import { numberToIndianWords } from '../utils/numberToWords';
 import { generatePdfBase64FromPages } from '../utils/pdfExport';
 import { savePdfFile } from '../utils/storage';
 import { generateVerificationQRCode } from '../utils/qrCode';
@@ -61,20 +63,31 @@ export default function PrintSheetView({
   currencySymbol = '₹',
   isClientPortal = false,
   onOpenSignModal,
-  onClose
+  onClose,
+  initialViewMode = 'full'
 }) {
   const header = projectData?.header || {};
   const areas = Array.isArray(projectData?.areas) ? projectData.areas : [];
   const grandTotals = calculateProjectGrandTotals(areas, billingMode, projectData?.settings?.taxPercent || 0);
+  const raBilling = projectData?.raBilling || projectData?.data?.raBilling || {};
+
+  // View Mode: 'summary' | 'full' | 'category'
+  const [viewMode, setViewMode] = useState(initialViewMode);
+  const [selectedCategory, setSelectedCategory] = useState('ALL');
+  const [summaryType, setSummaryType] = useState('category'); // 'category' | 'sheets'
 
   // Print item ordering mode: 'sequential' (as entered 1-14 Add -> 15-20 Less -> 21-26 Add) vs 'grouped'
   const [orderMode, setOrderMode] = useState('sequential');
 
   const pages = groupAreasIntoPages(areas);
+  const displayedPages = viewMode === 'category'
+    ? (selectedCategory === 'ALL' ? pages : pages.filter(p => p.category === selectedCategory))
+    : pages;
 
   const [signatories, setSignatories] = useState([
-    { label: header.checkedBy || 'Checked & Approved By', sub: 'Signature / Stamp' },
-    { label: 'Contractor / Supervisor', sub: 'Signature' },
+    { label: header.preparedBy || 'Site Engineer', sub: 'Measured & Recorded' },
+    { label: header.checkedBy || 'Contractor / Project Manager', sub: 'Checked & Certified' },
+    { label: header.clientName || 'Client / Architect', sub: 'Approved & Accepted' },
   ]);
   const [showSigEditor, setShowSigEditor] = useState(false);
   const [showAbstract, setShowAbstract] = useState(false);
@@ -105,7 +118,8 @@ export default function PrintSheetView({
 
       const cleanProjectName = (header.projectName || 'MEASUREMENT_SHEET').trim().replace(/[^a-zA-Z0-9_\- ]/g, '_');
       const dateStr = new Date().toISOString().split('T')[0];
-      const fileName = `${cleanProjectName}_${dateStr}.pdf`;
+      const suffix = viewMode === 'summary' ? '_SUMMARY' : (viewMode === 'category' ? `_${selectedCategory.replace(/[^a-zA-Z0-9_\- ]/g, '_')}` : '');
+      const fileName = `${cleanProjectName}${suffix}_${dateStr}.pdf`;
 
       const result = await generatePdfBase64FromPages(Array.from(pageEls), (cur, total) => {
         setSavePdfProgress(`Rendering page ${cur} of ${total}...`);
@@ -188,6 +202,309 @@ export default function PrintSheetView({
 
   const isApproved = Boolean(projectData?.clientApproval?.approved);
 
+  const renderSummarySheet = () => {
+    const categoryRollup = grandTotals?.categoryRollup || [];
+    const totalNetQty = grandTotals?.totalNetQty || 0;
+    const totalNetAmount = grandTotals?.totalNetAmount || 0;
+    const totalGrossAmount = grandTotals?.totalGrossAmount || totalNetAmount;
+    const taxPercent = parseFloat(projectData?.settings?.taxPercent) || 0;
+    const taxAmount = grandTotals?.taxAmount || 0;
+    const grandTotalPayable = grandTotals?.grandTotalPayable || totalNetAmount;
+
+    const raEnabled = Boolean(raBilling?.enabled);
+    const raNumber = raBilling?.raBillNumber || 'FINAL PROJECT ABSTRACT';
+    const retentionPercent = parseFloat(raBilling?.retentionPercent) || 0;
+    const retentionAmount = Math.round(((totalNetAmount * retentionPercent) / 100) * 100) / 100;
+    const advanceRecovery = parseFloat(raBilling?.mobilizationAdvanceRecovery) || 0;
+    const tdsPercent = parseFloat(raBilling?.tdsPercent) || 0;
+    const tdsAmount = Math.round(((totalNetAmount * tdsPercent) / 100) * 100) / 100;
+    const otherDeductions = parseFloat(raBilling?.otherDeductions) || 0;
+    const previousPaid = parseFloat(raBilling?.previousPaidAmount || raBilling?.previousCertifiedAmount) || 0;
+    const netDeductions = retentionAmount + advanceRecovery + tdsAmount + otherDeductions;
+    const currentNetPayable = Math.max(0, grandTotalPayable - netDeductions - previousPaid);
+
+    return (
+      <div className="contractor-sheet-page bg-white p-2 p-sm-3 p-md-4 mx-auto shadow-sm mb-4 mb-md-5">
+        {/* Screen badge */}
+        <div className="d-print-none d-flex flex-wrap justify-content-between align-items-center mb-2 pb-2 border-bottom gap-2">
+          <div className="d-flex align-items-center gap-2">
+            <span className="badge bg-dark px-3 py-1 text-uppercase fw-bold">
+              <i className="bi bi-file-earmark-check me-1"></i> EXECUTIVE ABSTRACT OF MEASUREMENT
+            </span>
+            <span className="badge bg-success text-white text-uppercase fw-bold">
+              {summaryType === 'category' ? `${categoryRollup.length} WORK CATEGORIES` : `${pages.length} SHEET PAGES`}
+            </span>
+            {raEnabled && (
+              <span className="badge bg-primary text-white text-uppercase fw-bold">
+                {raNumber}
+              </span>
+            )}
+          </div>
+          <div className="d-flex align-items-center gap-1 bg-light border p-1 rounded">
+            <span className="text-secondary extra-small fw-bold px-1 text-uppercase">Summary View:</span>
+            <button
+              type="button"
+              className={`btn btn-xs fw-bold ${summaryType === 'category' ? 'btn-primary shadow-xs' : 'btn-outline-secondary border-0'}`}
+              onClick={() => setSummaryType('category')}
+              title="Consolidated roll-up by work category"
+            >
+              Category Roll-Up ({categoryRollup.length})
+            </button>
+            <button
+              type="button"
+              className={`btn btn-xs fw-bold ${summaryType === 'sheets' ? 'btn-primary shadow-xs' : 'btn-outline-secondary border-0'}`}
+              onClick={() => setSummaryType('sheets')}
+              title="Sheet-by-sheet detailed abstract"
+            >
+              Sheet Pages ({pages.length})
+            </button>
+          </div>
+        </div>
+
+        {/* Company Header with Site Verification QR Code */}
+        <div className="d-flex justify-content-between align-items-center mb-2 company-header-block">
+          <div style={{ width: '56px' }}></div>
+          <div className="text-center flex-grow-1">
+            <h3 className="fw-bold text-uppercase mb-0" style={{ letterSpacing: '2px', fontSize: '1.05rem' }}>
+              {header.contractorName || 'MTS DECOR'}
+            </h3>
+            {header.clientName && (
+              <div className="text-muted client-subtitle" style={{ fontSize: '11px' }}>
+                Client: {header.clientName}
+              </div>
+            )}
+          </div>
+          <div className="text-center" style={{ width: '56px' }}>
+            {qrCodeUrl ? (
+              <div>
+                <img
+                  src={qrCodeUrl}
+                  alt="Verified Copy QR"
+                  style={{ width: '46px', height: '46px', border: '1px solid #d1d5db', borderRadius: '3px', padding: '2px', background: '#fff' }}
+                />
+                <div className="text-muted extra-small text-uppercase fw-semibold" style={{ fontSize: '6.5px', lineHeight: 1.1, marginTop: '1px' }}>
+                  SCAN VERIFY
+                </div>
+              </div>
+            ) : (
+              <div style={{ width: '46px', height: '46px' }}></div>
+            )}
+          </div>
+        </div>
+
+        {/* Measurement Table */}
+        <div className="table-responsive">
+          <table className="table table-bordered border-dark sheet-grid-table align-middle mb-0" style={{ fontSize: '11px' }}>
+            <thead className="text-center text-uppercase fw-bold">
+              <tr className="bg-light-subtle align-middle project-header-row" style={{ borderBottom: '2px solid #000' }}>
+                <th colSpan={billingMode ? 4 : 3} className="text-start py-1 px-2 align-middle">
+                  <div className="mb-0.5 project-name">
+                    <span className="fw-bolder" style={{ fontSize: '12px', letterSpacing: '0.5px' }}>
+                      {header.projectName || 'MTS DECOR PROJECT'}
+                    </span>
+                  </div>
+                  <div className="d-flex align-items-center gap-2 text-uppercase fw-bold meta-item" style={{ fontSize: '9.5px', color: '#111827' }}>
+                    <span><strong>SCOPE:</strong> ALL FLOORS &amp; UNITS</span>
+                    <span className="text-muted">|</span>
+                    <span><strong>AREAS:</strong> {areas.length}</span>
+                    {header.siteAddress && (
+                      <>
+                        <span className="text-muted">|</span>
+                        <span><strong>SITE:</strong> {header.siteAddress}</span>
+                      </>
+                    )}
+                  </div>
+                </th>
+                <th colSpan={billingMode ? 2 : 1} className="text-center py-1 px-2 align-middle">
+                  <div className="fw-bolder text-uppercase" style={{ fontSize: '11.5px' }}>
+                    ABSTRACT OF MEASUREMENT
+                  </div>
+                  <div className="extra-small text-muted fw-normal">
+                    {raEnabled ? raNumber : 'BILLING SUMMARY & ROLL-UP'}
+                  </div>
+                </th>
+                <th colSpan={1} className="text-center fw-bold py-1 align-middle">
+                  <div style={{ fontSize: '10.5px' }}>DATE: {formatDateDisplay(header.date) || '—'}</div>
+                </th>
+              </tr>
+              <tr className="bg-light-subtle text-center">
+                <th style={{ width: '5%' }}>SR.</th>
+                <th style={{ width: billingMode ? '34%' : '48%' }}>
+                  {summaryType === 'category' ? 'WORK CATEGORY / WORK DESCRIPTION' : 'WORK CATEGORY & TITLE'}
+                </th>
+                <th style={{ width: billingMode ? '16%' : '25%' }}>
+                  {summaryType === 'category' ? 'LOCATIONS / COVERAGE' : 'FLOOR / FLAT'}
+                </th>
+                <th style={{ width: '8%' }}>UNIT</th>
+                <th style={{ width: '13%' }} className="text-end">NET MEASURED QTY</th>
+                {billingMode && <th style={{ width: '11%' }} className="text-end">RATE ({currencySymbol})</th>}
+                {billingMode && <th style={{ width: '13%' }} className="text-end">AMOUNT ({currencySymbol})</th>}
+              </tr>
+            </thead>
+            <tbody>
+              {summaryType === 'category' ? (
+                categoryRollup.map((row, idx) => {
+                  const effRate = row.totalQty > 0 ? (row.totalAmount / row.totalQty) : 0;
+                  return (
+                    <tr key={idx}>
+                      <td className="text-center fw-bold">{idx + 1}</td>
+                      <td className="px-2 fw-bold text-uppercase">{row.parentCategory}</td>
+                      <td className="px-2 extra-small text-muted">
+                        {row.flatsList ? `${row.flatsList} (${row.itemsCount} items)` : `${row.itemsCount} items`}
+                      </td>
+                      <td className="text-center fw-semibold">{row.unit}</td>
+                      <td className="text-end fw-bold font-monospace">{formatNumber(row.totalQty)}</td>
+                      {billingMode && (
+                        <td className="text-end font-monospace">
+                          {effRate > 0 ? formatNumber(effRate, 2) : '—'}
+                        </td>
+                      )}
+                      {billingMode && (
+                        <td className="text-end fw-bold font-monospace text-dark">
+                          {formatCurrency(row.totalAmount, currencySymbol)}
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })
+              ) : (
+                pages.map((p, idx) => {
+                  const pTotals = calculateSheetPageTotals(p);
+                  return (
+                    <tr key={p.pageNumber || idx}>
+                      <td className="text-center fw-bold">{p.pageNumber || idx + 1}</td>
+                      <td className="px-2 fw-bold text-uppercase">{p.category}</td>
+                      <td className="px-2 extra-small text-muted">
+                        {p.floor ? `FL: ${p.floor}` : ''} {p.flat ? `FLAT: ${p.flat}` : ''}
+                      </td>
+                      <td className="text-center fw-semibold">{pTotals.dominantUnit}</td>
+                      <td className="text-end fw-bold font-monospace">{formatNumber(pTotals.netQty)}</td>
+                      {billingMode && (
+                        <td className="text-end font-monospace">
+                          {pTotals.netQty > 0 && pTotals.netAmount > 0 ? formatNumber(pTotals.netAmount / pTotals.netQty, 2) : '—'}
+                        </td>
+                      )}
+                      {billingMode && (
+                        <td className="text-end fw-bold font-monospace text-dark">
+                          {formatCurrency(pTotals.netAmount, currencySymbol)}
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })
+              )}
+
+              {/* Total Net Measurements Row */}
+              <tr className="bg-light-subtle fw-bold" style={{ borderTop: '2px solid #000', fontSize: '11.5px' }}>
+                <td colSpan={3} className="text-end text-uppercase pe-2">TOTAL MEASURED WORKS (NET QUANTITY):</td>
+                <td className="text-center fw-bold">{summaryType === 'category' && categoryRollup.length === 1 ? categoryRollup[0].unit : ''}</td>
+                <td className="text-end font-monospace text-dark fw-bold">{formatNumber(totalNetQty)}</td>
+                {billingMode && <td></td>}
+                {billingMode && (
+                  <td className="text-end font-monospace text-dark fw-bold fs-6">
+                    {formatCurrency(totalNetAmount, currencySymbol)}
+                  </td>
+                )}
+              </tr>
+
+              {/* Progressive RA Billing & Financial Deductions */}
+              {billingMode && (
+                <>
+                  {retentionPercent > 0 && (
+                    <tr className="text-danger extra-small">
+                      <td colSpan={6} className="text-end pe-2">
+                        Less: Retention Money ({retentionPercent}%):
+                      </td>
+                      <td className="text-end font-monospace text-danger">
+                        -{formatCurrency(retentionAmount, currencySymbol)}
+                      </td>
+                    </tr>
+                  )}
+                  {advanceRecovery > 0 && (
+                    <tr className="text-danger extra-small">
+                      <td colSpan={6} className="text-end pe-2">
+                        Less: Mobilization Advance Recovery:
+                      </td>
+                      <td className="text-end font-monospace text-danger">
+                        -{formatCurrency(advanceRecovery, currencySymbol)}
+                      </td>
+                    </tr>
+                  )}
+                  {tdsPercent > 0 && (
+                    <tr className="text-danger extra-small">
+                      <td colSpan={6} className="text-end pe-2">
+                        Less: TDS Deductions ({tdsPercent}%):
+                      </td>
+                      <td className="text-end font-monospace text-danger">
+                        -{formatCurrency(tdsAmount, currencySymbol)}
+                      </td>
+                    </tr>
+                  )}
+                  {otherDeductions > 0 && (
+                    <tr className="text-danger extra-small">
+                      <td colSpan={6} className="text-end pe-2">
+                        Less: Other Deductions / Debits:
+                      </td>
+                      <td className="text-end font-monospace text-danger">
+                        -{formatCurrency(otherDeductions, currencySymbol)}
+                      </td>
+                    </tr>
+                  )}
+                  {taxAmount > 0 && (
+                    <tr className="extra-small">
+                      <td colSpan={6} className="text-end pe-2">
+                        Add: GST / Taxes ({taxPercent}%):
+                      </td>
+                      <td className="text-end font-monospace text-dark">
+                        +{formatCurrency(taxAmount, currencySymbol)}
+                      </td>
+                    </tr>
+                  )}
+                  {previousPaid > 0 && (
+                    <tr className="text-secondary extra-small">
+                      <td colSpan={6} className="text-end pe-2">
+                        Less: Amount Certified &amp; Paid in Previous Bills:
+                      </td>
+                      <td className="text-end font-monospace text-secondary">
+                        -{formatCurrency(previousPaid, currencySymbol)}
+                      </td>
+                    </tr>
+                  )}
+                  <tr className="bg-light fw-bolder" style={{ borderTop: '2px solid #000', borderBottom: '3px double #000', fontSize: '12px' }}>
+                    <td colSpan={billingMode ? 6 : 4} className="text-end pe-2 text-uppercase text-dark">
+                      NET CERTIFIED PAYABLE THIS BILL / CERTIFICATE:
+                    </td>
+                    <td className="text-end font-monospace text-dark fw-bolder fs-6">
+                      {formatCurrency(currentNetPayable, currencySymbol)}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colSpan={7} className="px-2 py-1 bg-light-subtle extra-small text-dark">
+                      <strong>AMOUNT IN WORDS:</strong> {numberToIndianWords(currentNetPayable)} ONLY
+                    </td>
+                  </tr>
+                </>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Abstract Sheet Footer */}
+        <div className="mt-2 pt-1 border-top d-flex justify-content-between align-items-center" style={{ fontSize: '9px', color: '#888' }}>
+          <span className="text-uppercase">{header.contractorName || 'MTS DECOR'}</span>
+          <span className="text-uppercase">EXECUTIVE SUMMARY &amp; ABSTRACT OF MEASUREMENT — 1 PAGE</span>
+          <span>DATE: {formatDateDisplay(header.date) || ''}</span>
+        </div>
+
+        {/* Signature Block */}
+        <SignatureBlock
+          signatories={signatories}
+          clientApproval={projectData?.clientApproval}
+        />
+      </div>
+    );
+  };
+
   return (
     <div className="print-view-wrapper py-2 py-sm-3 py-md-4 px-1 px-sm-2 px-md-4">
 
@@ -199,17 +516,62 @@ export default function PrintSheetView({
               <i className="bi bi-arrow-left me-1"></i> Back to Editor
             </button>
           )}
-          {isClientPortal ? (
-            <span className="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 fw-bold text-uppercase d-flex align-items-center gap-1">
-              <i className="bi bi-patch-check-fill"></i> Official Verified Client Portal
+
+          {/* VIEW / PRINT MODE TABS */}
+          <div className="btn-group shadow-xs">
+            <button
+              type="button"
+              className={`btn btn-sm fw-bold ${viewMode === 'summary' ? 'btn-primary' : 'btn-outline-secondary'}`}
+              onClick={() => setViewMode('summary')}
+              title="Print 1-page executive summary & abstract of all measurements"
+            >
+              <i className="bi bi-pie-chart-fill me-1 text-warning"></i> Summary Sheet (1 Page)
+            </button>
+            <button
+              type="button"
+              className={`btn btn-sm fw-bold ${viewMode === 'full' ? 'btn-primary' : 'btn-outline-secondary'}`}
+              onClick={() => setViewMode('full')}
+              title="Print full detailed measurement book with all areas"
+            >
+              <i className="bi bi-files me-1"></i> Full Book ({pages.length} Pages)
+            </button>
+            <button
+              type="button"
+              className={`btn btn-sm fw-bold ${viewMode === 'category' ? 'btn-primary' : 'btn-outline-secondary'}`}
+              onClick={() => setViewMode('category')}
+              title="Filter and print only a specific work category"
+            >
+              <i className="bi bi-funnel-fill me-1"></i> Filter Category
+            </button>
+          </div>
+
+          {viewMode === 'category' && (
+            <select
+              className="form-select form-select-sm fw-bold border-primary shadow-xs"
+              style={{ width: 'auto', maxWidth: '240px' }}
+              value={selectedCategory}
+              onChange={e => setSelectedCategory(e.target.value)}
+            >
+              <option value="ALL">All Categories ({pages.length} Pages)</option>
+              {Array.from(new Set(pages.map(p => p.category))).map(cat => (
+                <option key={cat} value={cat}>
+                  {cat} ({pages.filter(p => p.category === cat).length} {pages.filter(p => p.category === cat).length === 1 ? 'Page' : 'Pages'})
+                </option>
+              ))}
+            </select>
+          )}
+
+          {viewMode === 'summary' ? (
+            <span className="badge bg-success-subtle text-success border border-success-subtle px-2 py-1.5 fw-bold text-uppercase d-flex align-items-center gap-1">
+              <i className="bi bi-check2-circle"></i> Abstract (1 Page)
             </span>
           ) : (
-            <span className="badge bg-dark d-none d-sm-inline-block">Contractor Measurement Book</span>
+            <span className="badge bg-primary text-white text-uppercase">
+              <i className="bi bi-files me-1"></i>
+              {displayedPages.length} Sheet Page{displayedPages.length !== 1 ? 's' : ''}
+            </span>
           )}
-          <span className="badge bg-primary text-white text-uppercase">
-            <i className="bi bi-files me-1"></i>
-            {pages.length} A4 Sheet Page{pages.length !== 1 ? 's' : ''}
-          </span>
+
           {isApproved && (
             <span className="badge bg-success py-1 px-2 fw-bold d-inline-flex align-items-center gap-1">
               <i className="bi bi-check-all"></i> Digitally Approved
@@ -219,36 +581,60 @@ export default function PrintSheetView({
 
         {/* ORDERING & PAGINATION OPTIONS */}
         <div className="d-flex align-items-center gap-2 flex-wrap">
-          {/* Order Mode Toggle */}
-          <div className="d-flex align-items-center gap-1 bg-light border p-1 rounded">
-            <span className="text-secondary extra-small fw-bold px-1 d-none d-md-inline text-uppercase">Row Order:</span>
-            <button
-              type="button"
-              className={`btn btn-xs fw-bold ${orderMode === 'sequential' ? 'btn-primary shadow-xs' : 'btn-outline-secondary border-0'}`}
-              onClick={() => setOrderMode('sequential')}
-              title="Print items in exact order entered (1-14 Add -> 15-20 Less -> 21-26 Add)"
-            >
-              <i className="bi bi-list-ol me-1"></i> Sequential
-            </button>
-            <button
-              type="button"
-              className={`btn btn-xs fw-bold ${orderMode === 'grouped' ? 'btn-primary shadow-xs' : 'btn-outline-secondary border-0'}`}
-              onClick={() => setOrderMode('grouped')}
-              title="Group all additions at top and deductions at bottom"
-            >
-              <i className="bi bi-layers me-1"></i> Grouped
-            </button>
-          </div>
+          {viewMode === 'summary' ? (
+            /* Sub-toggle for Summary */
+            <div className="d-flex align-items-center gap-1 bg-light border p-1 rounded">
+              <span className="text-secondary extra-small fw-bold px-1 d-none d-md-inline text-uppercase">Roll-up:</span>
+              <button
+                type="button"
+                className={`btn btn-xs fw-bold ${summaryType === 'category' ? 'btn-primary shadow-xs' : 'btn-outline-secondary border-0'}`}
+                onClick={() => setSummaryType('category')}
+                title="Roll-up by Work Category (Executive bill format)"
+              >
+                Category Roll-Up
+              </button>
+              <button
+                type="button"
+                className={`btn btn-xs fw-bold ${summaryType === 'sheets' ? 'btn-primary shadow-xs' : 'btn-outline-secondary border-0'}`}
+                onClick={() => setSummaryType('sheets')}
+                title="List individual sheet pages"
+              >
+                Sheet Pages
+              </button>
+            </div>
+          ) : (
+            /* Order Mode Toggle */
+            <div className="d-flex align-items-center gap-1 bg-light border p-1 rounded">
+              <span className="text-secondary extra-small fw-bold px-1 d-none d-md-inline text-uppercase">Row Order:</span>
+              <button
+                type="button"
+                className={`btn btn-xs fw-bold ${orderMode === 'sequential' ? 'btn-primary shadow-xs' : 'btn-outline-secondary border-0'}`}
+                onClick={() => setOrderMode('sequential')}
+                title="Print items in exact order entered (1-14 Add -> 15-20 Less -> 21-26 Add)"
+              >
+                <i className="bi bi-list-ol me-1"></i> Sequential
+              </button>
+              <button
+                type="button"
+                className={`btn btn-xs fw-bold ${orderMode === 'grouped' ? 'btn-primary shadow-xs' : 'btn-outline-secondary border-0'}`}
+                onClick={() => setOrderMode('grouped')}
+                title="Group all additions at top and deductions at bottom"
+              >
+                <i className="bi bi-layers me-1"></i> Grouped
+              </button>
+            </div>
+          )}
 
-          {/* Abstract Summary Toggle */}
-          <button
-            type="button"
-            className={`btn btn-xs fw-bold ${showAbstract ? 'btn-primary shadow-xs' : 'btn-outline-secondary border'}`}
-            onClick={() => setShowAbstract(v => !v)}
-            title="Toggle separate Abstract & Summary page"
-          >
-            <i className="bi bi-file-earmark-text me-1"></i> Abstract {showAbstract ? 'ON' : 'OFF'}
-          </button>
+          {viewMode === 'full' && (
+            <button
+              type="button"
+              className={`btn btn-xs fw-bold ${showAbstract ? 'btn-primary shadow-xs' : 'btn-outline-secondary border'}`}
+              onClick={() => setShowAbstract(v => !v)}
+              title="Toggle separate Abstract & Summary page at end"
+            >
+              <i className="bi bi-file-earmark-text me-1"></i> Abstract at End {showAbstract ? 'ON' : 'OFF'}
+            </button>
+          )}
 
           {!isClientPortal && (
             <button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => setShowSigEditor(v => !v)}>
@@ -360,17 +746,20 @@ export default function PrintSheetView({
         </div>
       )}
 
-      {/* SHEET PAGES */}
-      {pages.map((page, pageIdx) => {
+      {/* SUMMARY SHEET RENDERER */}
+      {viewMode === 'summary' && renderSummarySheet()}
+
+      {/* DETAILED MEASUREMENT SHEET PAGES */}
+      {viewMode !== 'summary' && displayedPages.map((page, pageIdx) => {
         const pageTotals = calculateSheetPageTotals(page);
-        const isSinglePage = pages.length === 1;
+        const isSinglePage = displayedPages.length === 1;
 
         return (
           <div key={page.pageNumber} className="contractor-sheet-page bg-white p-2 p-sm-3 p-md-4 mx-auto shadow-sm mb-4 mb-md-5">
             {/* Screen badge */}
             <div className="d-print-none d-flex flex-wrap justify-content-between align-items-center mb-2 pb-2 border-bottom gap-2">
               <span className="badge bg-dark px-3 py-1 text-uppercase fw-bold">
-                <i className="bi bi-file-earmark-text me-1"></i> SHEET PAGE {page.pageNumber} OF {pages.length}
+                <i className="bi bi-file-earmark-text me-1"></i> SHEET PAGE {page.pageNumber} OF {displayedPages.length}
               </span>
               <span className="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 text-uppercase fw-bold">
                 WORK: {page.category}
@@ -819,78 +1208,15 @@ export default function PrintSheetView({
             </div>
 
             {/* Signature on the final sheet page */}
-            {(isSinglePage || (!showAbstract && pageIdx === pages.length - 1)) && (
+            {(isSinglePage || (!showAbstract && pageIdx === displayedPages.length - 1)) && (
               <SignatureBlock signatories={signatories} clientApproval={projectData?.clientApproval} />
             )}
           </div>
         );
       })}
 
-      {/* ABSTRACT / SUMMARY PAGE (Only if user toggles Abstract ON) */}
-      {showAbstract && (
-        <div className="contractor-sheet-page bg-white p-2 p-sm-3 p-md-4 mx-auto shadow-sm mb-4">
-          <div className="d-print-none d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
-            <span className="badge bg-dark px-3 py-1 text-uppercase fw-bold">
-              <i className="bi bi-file-earmark-check me-1"></i> FINAL PROJECT ABSTRACT
-            </span>
-            <span className="badge bg-success text-white text-uppercase fw-bold">
-              {pages.length} WORK CATEGORIES
-            </span>
-          </div>
-          <div className="text-center mb-3">
-            <h3 className="fw-bold text-uppercase mb-0" style={{ letterSpacing: '2px', fontSize: '1rem' }}>
-              {header.contractorName || 'CONTRACTOR NAME'}
-            </h3>
-            <h6 className="fw-bold text-uppercase text-secondary mb-1" style={{ fontSize: '11px' }}>
-              ABSTRACT OF MEASUREMENT &amp; SUMMARY OF SHEETS
-            </h6>
-            {header.clientName && <div className="text-muted" style={{ fontSize: '11px' }}>Client: {header.clientName}</div>}
-          </div>
-          <div className="table-responsive">
-            <table className="table table-bordered border-dark sheet-grid-table align-middle mb-0" style={{ fontSize: '11px' }}>
-              <thead className="text-center text-uppercase fw-bold bg-light-subtle">
-                <tr>
-                  <th style={{ width: '60px' }}>PAGE</th>
-                  <th>WORK CATEGORY</th>
-                  <th style={{ width: '70px' }}>UNIT</th>
-                  <th style={{ width: '120px' }}>MEASURED QTY</th>
-                  {billingMode && <th style={{ width: '130px' }}>AMOUNT ({currencySymbol})</th>}
-                </tr>
-              </thead>
-              <tbody>
-                {pages.map((p) => {
-                  const pTotals = calculateSheetPageTotals(p);
-                  return (
-                    <tr key={p.pageNumber}>
-                      <td className="text-center fw-bold">Sheet {p.pageNumber}</td>
-                      <td className="px-2 fw-bold text-uppercase">{p.category}</td>
-                      <td className="text-center fw-semibold">{pTotals.dominantUnit}</td>
-                      <td className="text-end fw-bold font-monospace">{formatNumber(pTotals.netQty)}</td>
-                      {billingMode && <td className="text-end fw-bold font-monospace">{formatCurrency(pTotals.netAmount, currencySymbol)}</td>}
-                    </tr>
-                  );
-                })}
-                {billingMode && (
-                  <tr className="fw-bolder bg-light" style={{ fontSize: '12px' }}>
-                    <td colSpan={4} className="text-end pe-2 text-uppercase">TOTAL PROJECT AMOUNT:</td>
-                    <td className="text-end fw-bold text-dark">{formatCurrency(grandTotals.totalNetAmount, currencySymbol)}</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Simple abstract footer */}
-          <div className="mt-2 pt-1 border-top d-flex justify-content-between align-items-center" style={{ fontSize: '9px', color: '#888' }}>
-            <span className="text-uppercase">{header.contractorName || ''}</span>
-            <span className="text-uppercase">Abstract — All {pages.length} Pages</span>
-            <span>{formatDateDisplay(header.date) || ''}</span>
-          </div>
-
-          {/* SIGNATURE BLOCK — Only on this final/abstract page */}
-          <SignatureBlock signatories={signatories} clientApproval={projectData?.clientApproval} />
-        </div>
-      )}
+      {/* ABSTRACT / SUMMARY PAGE (Rendered at end of full book if toggled ON) */}
+      {viewMode === 'full' && showAbstract && renderSummarySheet()}
     </div>
   );
 }

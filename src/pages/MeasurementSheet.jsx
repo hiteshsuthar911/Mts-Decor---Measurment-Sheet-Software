@@ -32,6 +32,7 @@ export default function MeasurementSheet() {
   const [editUnlocked, setEditUnlocked] = useState(false);
   const [showVerify, setShowVerify]     = useState(false);
   const [isPrintView, setIsPrintView]   = useState(false);
+  const [printInitialMode, setPrintInitialMode] = useState('full');
   const [showQuickMeasure, setShowQuickMeasure] = useState(false);
   const [showRateMaster, setShowRateMaster] = useState(false);
   const [showSummaryPrint, setShowSummaryPrint] = useState(false);
@@ -960,7 +961,12 @@ export default function MeasurementSheet() {
         onToggleBillingMode={readOnly ? () => {} : handleToggleBillingMode}
         onResetSheet={readOnly ? () => {} : handleResetSheet}
         onExportExcel={handleExportExcel}
-        onOpenPrintView={() => setIsPrintView(!isPrintView)}
+        onOpenPrintView={() => {
+          if (!isPrintView) {
+            setPrintInitialMode(activeSection === 'summary' ? 'summary' : 'full');
+          }
+          setIsPrintView(!isPrintView);
+        }}
         onAddNewArea={readOnly ? () => {} : () => {
           handleAddNewArea();
           setActiveSection('measurements');
@@ -1001,6 +1007,7 @@ export default function MeasurementSheet() {
           billingMode={projectData.settings?.billingMode}
           currencySymbol={projectData.settings?.currencySymbol}
           onClose={() => setIsPrintView(false)}
+          initialViewMode={printInitialMode}
         />
       ) : (
         <main className="container-fluid flex-grow-1 px-2 px-md-4 pt-4">
@@ -1590,7 +1597,10 @@ export default function MeasurementSheet() {
                 projectData={projectData}
                 onUpdateCategoryRate={handleUpdateCategoryRate}
                 onOpenRateMaster={() => setShowRateMaster(true)}
-                onOpenSummaryPrint={() => setShowSummaryPrint(true)}
+                onOpenSummaryPrint={() => {
+                  setPrintInitialMode('summary');
+                  setIsPrintView(true);
+                }}
                 onOpenGstInvoice={() => setShowGstInvoice(true)}
                 onUpdateRaBilling={handleUpdateRaBilling}
               />
@@ -1610,12 +1620,15 @@ export default function MeasurementSheet() {
                     <div className="d-flex flex-column flex-sm-row align-items-stretch align-items-sm-center gap-2">
                       <button
                         type="button"
-                        className="btn btn-dark fw-bold text-uppercase extra-small px-3 py-2 d-flex align-items-center justify-content-center gap-2 shadow-sm"
-                        onClick={() => setShowSummaryPrint(true)}
-                        title="Print standalone Abstract of Measurement"
+                        className="btn btn-primary fw-bold text-uppercase extra-small px-3 py-2 d-flex align-items-center justify-content-center gap-2 shadow-sm"
+                        onClick={() => {
+                          setPrintInitialMode('summary');
+                          setIsPrintView(true);
+                        }}
+                        title="Print 1-page executive summary & abstract of all measurements"
                       >
                         <i className="bi bi-printer-fill text-warning"></i>
-                        <span>Print Abstract / Summary</span>
+                        <span>Print Summary Sheet (1 Page)</span>
                       </button>
 
                       {projectData.settings?.billingMode && (
@@ -1632,11 +1645,15 @@ export default function MeasurementSheet() {
 
                       <button
                         type="button"
-                        className="btn btn-warning text-dark fw-bold text-uppercase extra-small px-3 py-2 d-flex align-items-center justify-content-center gap-2 shadow-sm"
-                        onClick={() => setIsPrintView(true)}
+                        className="btn btn-dark fw-bold text-uppercase extra-small px-3 py-2 d-flex align-items-center justify-content-center gap-2 shadow-sm"
+                        onClick={() => {
+                          setPrintInitialMode('full');
+                          setIsPrintView(true);
+                        }}
+                        title="Print full detailed measurement book with all areas"
                       >
                         <i className="bi bi-file-earmark-pdf-fill"></i>
-                        <span>Print Full Sheet</span>
+                        <span>Print Full Book</span>
                       </button>
                       <button
                         type="button"
