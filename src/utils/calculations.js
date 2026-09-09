@@ -319,3 +319,13 @@ export function calculateSheetPageTotals(page = {}) {
     unitBreakdown
   };
 }
+
+export function formatDateDisplay(dateStr) {
+  if (!dateStr) return '';
+  try {
+    const parts = dateStr.split('-');
+    if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0].slice(-2)}`;
+  } catch { /* ignore */ }
+  return dateStr;
+}
+

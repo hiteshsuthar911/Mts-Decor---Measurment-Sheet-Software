@@ -10,7 +10,9 @@ import QuickMeasureModal from '../components/QuickMeasureModal';
 import RateMasterModal from '../components/RateMasterModal';
 import ClientApprovalModal from '../components/ClientApprovalModal';
 import SiteEngineerReviewModal from '../components/SiteEngineerReviewModal';
-import { applyRatesToProject } from '../utils/rateMaster';
+import SummaryPrintModal from '../components/SummaryPrintModal';
+import GstInvoiceModal from '../components/GstInvoiceModal';
+import { applyRatesToProject, updateCategoryRateInProject } from '../utils/rateMaster';
 import { saveRevision } from '../utils/revisionHistory';
 import { getSession, logout } from '../utils/auth';
 import { calculateProjectGrandTotals, groupAreasIntoPages, calculateSheetPageTotals, formatNumber } from '../utils/calculations';
@@ -32,6 +34,8 @@ export default function MeasurementSheet() {
   const [isPrintView, setIsPrintView]   = useState(false);
   const [showQuickMeasure, setShowQuickMeasure] = useState(false);
   const [showRateMaster, setShowRateMaster] = useState(false);
+  const [showSummaryPrint, setShowSummaryPrint] = useState(false);
+  const [showGstInvoice, setShowGstInvoice]     = useState(false);
   const [showClientApproval, setShowClientApproval] = useState(false);
   const [showEngineerReview, setShowEngineerReview] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
@@ -610,6 +614,28 @@ export default function MeasurementSheet() {
     };
     setAndSave(finalProject);
     showToast('STANDARD RATES APPLIED & BILLING MODE ACTIVATED');
+  };
+
+  const handleUpdateCategoryRate = (categoryName, newRate, unit) => {
+    if (!projectData) return;
+    const updated = updateCategoryRateInProject(projectData, categoryName, newRate, unit);
+    const finalProject = {
+      ...updated,
+      settings: { ...updated.settings, billingMode: true }
+    };
+    setAndSave(finalProject);
+    const symbol = projectData.settings?.currencySymbol || '₹';
+    showToast(`RATE FOR "${categoryName.toUpperCase()}" UPDATED TO ${symbol}${newRate}`);
+  };
+
+  const handleUpdateRaBilling = (raBillingData) => {
+    if (!projectData) return;
+    const updated = {
+      ...projectData,
+      raBilling: raBillingData
+    };
+    setAndSave(updated);
+    showToast('RA BILLING PARAMETERS SAVED TO PROJECT');
   };
 
   const handleSaveClientApproval = (approvalData) => {
@@ -1476,6 +1502,12 @@ export default function MeasurementSheet() {
                 grandTotals={grandTotals}
                 billingMode={projectData.settings?.billingMode}
                 currencySymbol={projectData.settings?.currencySymbol}
+                projectData={projectData}
+                onUpdateCategoryRate={handleUpdateCategoryRate}
+                onOpenRateMaster={() => setShowRateMaster(true)}
+                onOpenSummaryPrint={() => setShowSummaryPrint(true)}
+                onOpenGstInvoice={() => setShowGstInvoice(true)}
+                onUpdateRaBilling={handleUpdateRaBilling}
               />
 
               {activeSection === 'summary' && (
@@ -1493,11 +1525,33 @@ export default function MeasurementSheet() {
                     <div className="d-flex flex-column flex-sm-row align-items-stretch align-items-sm-center gap-2">
                       <button
                         type="button"
+                        className="btn btn-dark fw-bold text-uppercase extra-small px-3 py-2 d-flex align-items-center justify-content-center gap-2 shadow-sm"
+                        onClick={() => setShowSummaryPrint(true)}
+                        title="Print standalone Abstract of Measurement"
+                      >
+                        <i className="bi bi-printer-fill text-warning"></i>
+                        <span>Print Abstract / Summary</span>
+                      </button>
+
+                      {projectData.settings?.billingMode && (
+                        <button
+                          type="button"
+                          className="btn btn-outline-primary fw-bold text-uppercase extra-small px-3 py-2 d-flex align-items-center justify-content-center gap-2 shadow-sm"
+                          onClick={() => setShowGstInvoice(true)}
+                          title="Generate official GST Tax Invoice"
+                        >
+                          <i className="bi bi-receipt-cutoff text-success"></i>
+                          <span>GST Tax Invoice</span>
+                        </button>
+                      )}
+
+                      <button
+                        type="button"
                         className="btn btn-warning text-dark fw-bold text-uppercase extra-small px-3 py-2 d-flex align-items-center justify-content-center gap-2 shadow-sm"
                         onClick={() => setIsPrintView(true)}
                       >
-                        <i className="bi bi-printer-fill"></i>
-                        <span>Print / PDF Sheet</span>
+                        <i className="bi bi-file-earmark-pdf-fill"></i>
+                        <span>Print Full Sheet</span>
                       </button>
                       <button
                         type="button"
@@ -1619,6 +1673,26 @@ export default function MeasurementSheet() {
         onCommitQuery={handleCommitEngineerQuery}
         onRejectQuery={handleRejectEngineerQuery}
         onRefresh={fetchEngineerQueries}
+      />
+
+      {/* Standalone Executive Summary / Abstract Print Modal */}
+      <SummaryPrintModal
+        show={showSummaryPrint}
+        onClose={() => setShowSummaryPrint(false)}
+        projectData={projectData}
+        grandTotals={grandTotals}
+        billingMode={projectData?.settings?.billingMode}
+        currencySymbol={projectData?.settings?.currencySymbol || '₹'}
+        raBilling={projectData?.raBilling || projectData?.data?.raBilling}
+      />
+
+      {/* Official GST Tax Invoice Modal */}
+      <GstInvoiceModal
+        show={showGstInvoice}
+        onClose={() => setShowGstInvoice(false)}
+        projectData={projectData}
+        grandTotals={grandTotals}
+        currencySymbol={projectData?.settings?.currencySymbol || '₹'}
       />
 
       <footer className="bg-white border-top py-2 text-center text-muted extra-small mt-auto no-print text-uppercase">
