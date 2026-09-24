@@ -241,3 +241,5 @@ export async function saveCivilLabourRatesRemote(data) {
 export async function resetCivilLabourRatesRemote(companySlug = 'mts-decor') {
   return api.post('/labour-rates/reset', { companySlug });
 }
+
+

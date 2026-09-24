@@ -18,11 +18,7 @@ import {
   triggerDriveBackup,
   getAllExcelFiles,
   deleteExcelFile,
-  downloadExcelFromBase64,
-  getAllCompanies,
-  createCompany,
-  updateCompany,
-  deleteCompany
+  downloadExcelFromBase64
 } from '../utils/storage';
 import ExcelViewerModal from '../components/ExcelViewerModal';
 import CivilLabourRatesManager from '../components/CivilLabourRatesManager';
@@ -38,34 +34,6 @@ export default function AdminPanel() {
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState('');
 
-  // Client Companies & Portals State
-  const [companiesList, setCompaniesList] = useState([]);
-  const [loadingCompanies, setLoadingCompanies] = useState(false);
-  const [companyFilter, setCompanyFilter] = useState('');
-  const [companyModal, setCompanyModal] = useState({
-    open: false,
-    mode: 'create', // 'create' or 'edit'
-    data: {
-      name: '',
-      slug: '',
-      tagline: 'Civil & Interior Contractor',
-      logo: '',
-      address: '',
-      phone: '',
-      email: '',
-      gstin: '',
-      plan: 'PRO',
-      annualFee: 12000,
-      subscriptionStatus: 'ACTIVE',
-      subscriptionExpiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      ownerName: '',
-      ownerEmail: '',
-      ownerPhone: '',
-      initialAdminUsername: '',
-      initialAdminPassword: '',
-    }
-  });
-
   // Dynamic Users State
   const [usersList, setUsersList] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
@@ -75,7 +43,6 @@ export default function AdminPanel() {
     username: '',
     password: '',
     role: 'USER',
-    companySlug: 'mts-decor',
   });
   const [resetModal, setResetModal] = useState({
     open: false,
@@ -209,22 +176,9 @@ export default function AdminPanel() {
     }
   };
 
-  const loadCompanies = async () => {
-    try {
-      setLoadingCompanies(true);
-      const data = await getAllCompanies();
-      setCompaniesList(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.warn('Failed to load companies:', err);
-    } finally {
-      setLoadingCompanies(false);
-    }
-  };
-
   useEffect(() => {
     if (!session || session.role !== 'ADMIN') { navigate('/login'); return; }
     loadData();
-    loadCompanies();
     loadUsers();
     loadFounderSlides();
     loadBackupStatus();
@@ -237,39 +191,14 @@ export default function AdminPanel() {
   const navItems = [
     { key: 'dashboard',    label: 'DASHBOARD',            icon: 'bi-speedometer2' },
     { key: 'labour-rates', label: 'CIVIL LABOUR RATES',   icon: 'bi-hammer', badge: '68 RATES' },
-    { key: 'projects',     label: 'ALL PROJECTS',          icon: 'bi-folder2-open' },
-    { key: 'excel',        label: 'EXCEL SPREADSHEETS',    icon: 'bi-file-earmark-excel-fill' },
-    { key: 'users',       label: 'USER MANAGEMENT',      icon: 'bi-people-fill'  },
-    { key: 'companies',   label: 'CLIENT PORTALS',      icon: 'bi-cone-striped', badge: 'ON HOLD' },
-    { key: 'slides',      label: 'FOUNDER SLIDES',       icon: 'bi-images'       },
-    { key: 'backup',      label: 'GOOGLE DRIVE BACKUP',  icon: 'bi-google'       },
-    { key: 'credentials', label: 'LOGIN CREDENTIALS',    icon: 'bi-key-fill'     },
-    { key: 'about',       label: 'SYSTEM INFO',          icon: 'bi-info-circle-fill' },
+    { key: 'projects',     label: 'ALL PROJECTS',         icon: 'bi-folder2-open' },
+    { key: 'excel',        label: 'EXCEL SPREADSHEETS',   icon: 'bi-file-earmark-excel-fill' },
+    { key: 'users',        label: 'USER MANAGEMENT',      icon: 'bi-people-fill'  },
+    { key: 'slides',       label: 'FOUNDER SLIDES',       icon: 'bi-images'       },
+    { key: 'backup',       label: 'GOOGLE DRIVE BACKUP',  icon: 'bi-google'       },
+    { key: 'credentials',  label: 'LOGIN CREDENTIALS',    icon: 'bi-key-fill'     },
+    { key: 'about',        label: 'SYSTEM INFO',          icon: 'bi-info-circle-fill' },
   ];
-
-  // ── COMPANY MANAGEMENT HANDLERS ──
-  const handleSaveCompany = async (e) => {
-    e.preventDefault();
-    const { mode, data } = companyModal;
-    if (!data.name?.trim() || !data.slug?.trim()) {
-      alert('COMPANY NAME AND PORTAL SLUG ARE REQUIRED');
-      return;
-    }
-    try {
-      if (mode === 'create') {
-        await createCompany(data);
-        showToast(`COMPANY "${data.name}" ONBOARDED SUCCESSFULLY!`);
-      } else {
-        await updateCompany(data._id, data);
-        showToast(`COMPANY "${data.name}" UPDATED!`);
-      }
-      setCompanyModal({ open: false, mode: 'create', data: {} });
-      await loadCompanies();
-      await loadUsers();
-    } catch (err) {
-      alert('FAILED TO SAVE COMPANY: ' + (err.message || 'SERVER ERROR'));
-    }
-  };
 
   // ── USER MANAGEMENT HANDLERS ──
   const handleCreateUser = async (e) => {
@@ -280,16 +209,15 @@ export default function AdminPanel() {
     }
     try {
       setCreatingUser(true);
-      const selectedComp = companiesList.find(c => c.slug === (newUserForm.companySlug || 'mts-decor'));
       await createUser({
-        ...newUserForm,
-        companyId: selectedComp?._id || null,
-        companySlug: newUserForm.companySlug || 'mts-decor',
+        name: newUserForm.name.trim().toUpperCase(),
+        username: newUserForm.username.trim().toLowerCase(),
+        password: newUserForm.password.trim(),
+        role: newUserForm.role || 'USER',
       });
       showToast('USER CREATED SUCCESSFULLY');
-      setNewUserForm({ name: '', username: '', password: '', role: 'USER', companySlug: 'mts-decor' });
+      setNewUserForm({ name: '', username: '', password: '', role: 'USER' });
       await loadUsers();
-      await loadCompanies();
     } catch (err) {
       alert('FAILED TO CREATE USER: ' + (err.message || 'SERVER ERROR'));
     } finally {
@@ -528,14 +456,24 @@ export default function AdminPanel() {
               onError={(e) => { e.target.onerror = null; e.target.src = '/logo.png'; }}
             />
             <span className="fw-bolder fs-6 text-uppercase d-none d-sm-inline tracking-wider">MTS DECOR</span>
-            <span className="badge bg-danger ms-1 extra-small">ADMIN</span>
+            <span className="badge bg-primary ms-1 extra-small">ADMINISTRATOR</span>
           </div>
 
           <div className="d-flex align-items-center gap-2 gap-md-3">
             <div className="text-end d-none d-md-block">
               <div className="fw-bold extra-small text-uppercase">{session.name}</div>
-              <div className="text-secondary extra-small">SUPER ADMIN</div>
+              <div className="text-secondary extra-small">ADMIN</div>
             </div>
+
+            <Link
+              to="/projects"
+              className="btn btn-outline-light btn-sm extra-small fw-bold text-uppercase d-flex align-items-center gap-1"
+              title="View Projects"
+            >
+              <i className="bi bi-folder2-open"></i>
+              <span className="d-none d-sm-inline">PROJECTS</span>
+            </Link>
+
             <Link to="/profile" className="btn btn-outline-warning btn-sm extra-small fw-bold text-uppercase d-flex align-items-center gap-1" title="My Profile">
               <i className="bi bi-person-circle"></i>
               <span className="d-none d-sm-inline">MY PROFILE</span>
@@ -613,17 +551,17 @@ export default function AdminPanel() {
           <div>
             <div className="row g-3 mb-4">
               {[
-                { label: 'CIVIL LABOUR RATES', value: '68 RATES', icon: 'bi-hammer', color: 'danger', isClickable: true },
-                { label: 'CLIENT COMPANIES',   value: companiesList.length || 1,      icon: 'bi-building-fill-gear',       color: 'primary'   },
-                { label: 'TOTAL PROJECTS',     value: projects.length,                icon: 'bi-folder2-open',             color: 'info'      },
-                { label: 'SAVED EXCEL FILES',  value: excelFiles.length,              icon: 'bi-file-earmark-excel-fill',  color: 'success'   },
+                { label: 'CIVIL LABOUR RATES', value: '68 RATES', icon: 'bi-hammer', color: 'danger', isClickable: true, section: 'labour-rates' },
+                { label: 'SYSTEM USERS',       value: usersList.length, icon: 'bi-people-fill', color: 'primary', isClickable: true, section: 'users' },
+                { label: 'TOTAL PROJECTS',     value: projects.length,                icon: 'bi-folder2-open',             color: 'info', isClickable: true, section: 'projects' },
+                { label: 'SAVED EXCEL FILES',  value: excelFiles.length,              icon: 'bi-file-earmark-excel-fill',  color: 'success', isClickable: true, section: 'excel' },
               ].map((kpi, i) => (
                 <div key={i} className="col-6 col-md-3">
                   <div 
                     className={`card border-0 border-start border-${kpi.color} border-4 shadow-sm position-relative overflow-hidden h-100 ${kpi.isClickable ? 'cursor-pointer' : ''}`}
-                    onClick={() => kpi.isClickable && setActiveSection('labour-rates')}
+                    onClick={() => kpi.isClickable && setActiveSection(kpi.section)}
                     style={kpi.isClickable ? { cursor: 'pointer' } : {}}
-                    title={kpi.isClickable ? 'Click to manage Civil Labour Rates' : ''}
+                    title={`Click to manage ${kpi.label}`}
                   >
                     <div className="card-body py-3">
                       <div className="text-muted extra-small fw-bold text-uppercase mb-1">
@@ -696,74 +634,7 @@ export default function AdminPanel() {
           </div>
         )}
 
-        {/* ── 1B. CLIENT COMPANIES & BRANDED PORTALS (UNDER CONSTRUCTION) ── */}
-        {activeSection === 'companies' && (
-          <div className="card border-0 shadow-sm p-4 p-md-5 text-center" style={{ borderRadius: '16px', backgroundColor: '#ffffff' }}>
-            <div
-              className="mx-auto mb-3 d-flex align-items-center justify-content-center"
-              style={{
-                width: '72px',
-                height: '72px',
-                borderRadius: '50%',
-                backgroundColor: '#fef3c7',
-                color: '#d97706',
-                fontSize: '32px',
-              }}
-            >
-              <i className="bi bi-cone-striped"></i>
-            </div>
 
-            <div className="mb-2">
-              <span
-                className="badge px-3 py-2 text-uppercase fw-bold"
-                style={{
-                  backgroundColor: '#fffbeb',
-                  color: '#b45309',
-                  border: '1px solid #fde68a',
-                  fontSize: '11px',
-                  letterSpacing: '0.8px',
-                }}
-              >
-                <i className="bi bi-tools me-1"></i> MODULE ON HOLD &bull; UNDER CONSTRUCTION
-              </span>
-            </div>
-
-            <h4 className="fw-bolder text-uppercase mb-2 text-dark" style={{ letterSpacing: '0.5px' }}>
-              CLIENT COMPANIES &amp; BRANDED PORTALS
-            </h4>
-
-            <p className="text-muted small mx-auto mb-4" style={{ maxWidth: '580px', lineHeight: 1.6 }}>
-              This multi-tenant client onboarding and portal management module is currently kept on hold and under construction.
-              All your core operations—<strong>All Projects</strong>, <strong>Excel Spreadsheets</strong>, <strong>User Management</strong>, and <strong>Google Drive Backups</strong>—remain 100% active, safe, and unaffected.
-            </p>
-
-            <div className="d-flex flex-wrap justify-content-center gap-2">
-              <button
-                className="btn btn-primary btn-sm fw-bold text-uppercase px-4 py-2"
-                style={{ borderRadius: '8px' }}
-                onClick={() => setActiveSection('dashboard')}
-              >
-                <i className="bi bi-speedometer2 me-1"></i> RETURN TO DASHBOARD
-              </button>
-              <button
-                className="btn btn-outline-secondary btn-sm fw-bold text-uppercase px-4 py-2"
-                style={{ borderRadius: '8px' }}
-                onClick={() => setActiveSection('projects')}
-              >
-                <i className="bi bi-folder2-open me-1"></i> VIEW ALL PROJECTS
-              </button>
-              <a
-                href="/construction"
-                target="_blank"
-                rel="noreferrer"
-                className="btn btn-outline-warning text-dark btn-sm fw-bold text-uppercase px-3 py-2"
-                style={{ borderRadius: '8px' }}
-              >
-                <i className="bi bi-eye me-1"></i> PREVIEW CLIENT PORTAL STATUS
-              </a>
-            </div>
-          </div>
-        )}
 
         {/* ── 2. ALL PROJECTS ── */}
         {activeSection === 'projects' && (
@@ -1690,7 +1561,10 @@ export default function AdminPanel() {
         {activeSection === 'labour-rates' && (
           <CivilLabourRatesManager companySlug={session?.companySlug || 'mts-decor'} />
         )}
+
       </main>
+
+
 
       {/* In-Browser Excel Viewer Modal */}
       {selectedExcelId && (

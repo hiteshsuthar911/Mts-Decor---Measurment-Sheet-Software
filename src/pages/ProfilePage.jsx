@@ -237,7 +237,7 @@ export default function ProfilePage() {
                       </h3>
                       <span className={`badge ${session?.role === 'ADMIN' ? 'bg-danger' : 'bg-primary'} extra-small text-uppercase px-2 py-1`}>
                         <i className={`bi ${session?.role === 'ADMIN' ? 'bi-shield-lock-fill' : 'bi-person-check-fill'} me-1`}></i>
-                        {session?.role === 'ADMIN' ? 'SUPER ADMIN' : 'FIELD USER'}
+                        {session?.role === 'ADMIN' ? 'ADMINISTRATOR' : 'FIELD USER'}
                       </span>
                     </div>
 
@@ -640,6 +640,8 @@ export default function ProfilePage() {
             </div>
           </>
         )}
+
+
       </main>
 
       {/* Footer */}

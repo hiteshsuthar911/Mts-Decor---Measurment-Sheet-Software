@@ -17,6 +17,9 @@ export async function loginVerify2FA(challengeId, code) {
     username: result.user.username,
     name: result.user.name,
     role: result.user.role,
+    companyId: result.user.companyId || null,
+    companySlug: result.user.companySlug || 'mts-decor',
+    company: result.user.company || null,
     loginTime: new Date().toISOString(),
   };
   localStorage.setItem(AUTH_KEY, JSON.stringify(session));
@@ -33,6 +36,9 @@ export async function login(username, password) {
       username: result.user.username,
       name: result.user.name,
       role: result.user.role,
+      companyId: result.user.companyId || null,
+      companySlug: result.user.companySlug || 'mts-decor',
+      company: result.user.company || null,
       loginTime: new Date().toISOString(),
     };
     localStorage.setItem(AUTH_KEY, JSON.stringify(session));

@@ -1,0 +1,133 @@
+/* ══════════════════════════════════════════════════════════════════════
+   MTS DECOR ULTRA-PREMIUM APPLE iOS SYSTEM (LIGHT & DARK DUAL THEME)
+   Scoped specifically to iOS elements — does NOT break global page themes
+══════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --ios-gold-primary: #d4af37;
+  --ios-gold-gradient: linear-gradient(135deg, #f5d77f 0%, #d4af37 50%, #aa820a 100%);
+  --ios-gold-glow: rgba(212, 175, 55, 0.25);
+  --ios-blue-accent: #0a84ff;
+}
+
+/* Safe Area Insets for iPhone Dynamic Island & Notch */
+.ios-safe-top {
+  padding-top: max(16px, env(safe-area-inset-top));
+}
+.ios-safe-bottom {
+  padding-bottom: max(24px, env(safe-area-inset-bottom));
+}
+
+/* Premium Glass Card */
+.ios-glass-card {
+  background: rgba(22, 28, 42, 0.75);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 22px;
+  box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.15);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Gold Metallic Badge */
+.ios-gold-badge {
+  background: var(--ios-gold-gradient);
+  color: #000000 !important;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  border-radius: 9999px;
+  padding: 4px 12px;
+  box-shadow: 0 4px 14px var(--ios-gold-glow);
+}
+
+/* Apple Floating Input */
+.ios-input-group {
+  position: relative;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 16px;
+  padding: 10px 16px;
+  transition: all 0.2s ease;
+}
+.ios-input-group:focus-within {
+  background: rgba(255, 255, 255, 0.10);
+  border-color: #d4af37;
+  box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.2);
+}
+.ios-input-group input {
+  background: transparent !important;
+  border: none !important;
+  color: #ffffff !important;
+  font-size: 16px;
+  outline: none !important;
+  width: 100%;
+}
+.ios-input-group input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* Liquid Gold Primary Button */
+.ios-btn-gold {
+  background: var(--ios-gold-gradient);
+  color: #000000 !important;
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: 0.5px;
+  border-radius: 16px;
+  padding: 12px 18px;
+  border: none;
+  box-shadow: 0 8px 20px var(--ios-gold-glow);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-transform: uppercase;
+}
+.ios-btn-gold:active {
+  transform: scale(0.97);
+  box-shadow: 0 4px 10px var(--ios-gold-glow);
+}
+
+/* Horizontal Segmented Sheet Selector (Pill tabs) */
+.ios-sheet-pills-bar {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 8px 4px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.ios-sheet-pills-bar::-webkit-scrollbar {
+  display: none;
+}
+.ios-sheet-pill {
+  padding: 8px 18px;
+  border-radius: 9999px;
+  font-size: 13.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.7);
+}
+.ios-sheet-pill.active {
+  background: var(--ios-gold-gradient);
+  color: #000000;
+  border-color: #f5d77f;
+  box-shadow: 0 4px 14px var(--ios-gold-glow);
+}
+
+/* Section Break Card */
+.ios-section-break-card {
+  background: rgba(255, 255, 255, 0.03);
+  border-left: 4px solid #d4af37;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 16px;
+}

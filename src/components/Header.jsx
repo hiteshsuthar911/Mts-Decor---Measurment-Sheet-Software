@@ -52,9 +52,9 @@ export default function Header({
   };
 
   return (
-    <header className="ms-header no-print">
+    <header className="ms-header no-print" style={{ paddingTop: "max(0px, env(safe-area-inset-top, 0px))" }}>
 
-      {/* ══════════════════════════════════════════════════
+        {/* ══════════════════════════════════════════════════
           ROW 1 — SINGLE UNIFIED TOOLBAR
       ══════════════════════════════════════════════════ */}
       <div className="ms-toolbar">
@@ -109,13 +109,15 @@ export default function Header({
           )}
         </div>
 
-        {/* CENTER: Clean Enterprise Sheet Switcher (Tabs) */}
-        <div className="ms-tc d-none d-md-flex align-items-center">
-          <div className="ms-nav-segmented">
+        {/* CENTER: Sheet Switcher Tabs — Visible on Desktop (>= 1200px) */}
+        <div className="ms-tc d-none d-xl-flex align-items-center" style={{ position: 'relative', zIndex: 100 }}>
+          <div className="ms-nav-segmented" style={{ touchAction: 'manipulation' }}>
             <button
               type="button"
               className={`ms-nav-seg-btn ${activeSection === 'info' ? 'active' : ''}`}
               onClick={() => onChangeSection('info')}
+              onTouchEnd={(e) => { e.preventDefault(); onChangeSection('info'); }}
+              style={{ touchAction: 'manipulation', cursor: 'pointer', minHeight: '34px', padding: '6px 12px' }}
               title="Project Details & Specifications (Page 1)"
             >
               <i className="bi bi-card-heading" />
@@ -125,6 +127,8 @@ export default function Header({
               type="button"
               className={`ms-nav-seg-btn ${activeSection === 'measurements' ? 'active' : ''}`}
               onClick={() => onChangeSection('measurements')}
+              onTouchEnd={(e) => { e.preventDefault(); onChangeSection('measurements'); }}
+              style={{ touchAction: 'manipulation', cursor: 'pointer', minHeight: '34px', padding: '6px 12px' }}
               title="Measurement Book & Areas (Page 2)"
             >
               <i className="bi bi-grid-3x3" />
@@ -135,6 +139,8 @@ export default function Header({
               type="button"
               className={`ms-nav-seg-btn ${activeSection === 'summary' ? 'active' : ''}`}
               onClick={() => onChangeSection('summary')}
+              onTouchEnd={(e) => { e.preventDefault(); onChangeSection('summary'); }}
+              style={{ touchAction: 'manipulation', cursor: 'pointer', minHeight: '34px', padding: '6px 12px' }}
               title="Financial Abstract & Grand Totals (Page 3)"
             >
               <i className="bi bi-pie-chart-fill text-warning" />
@@ -159,10 +165,32 @@ export default function Header({
             </button>
           )}
 
-          {/* Add Area Button — Stably positioned to prevent header layout shift */}
+          {/* Field Mode Keypad Button — High Priority for Mobile/Site Measurement */}
+          {!readOnly && onOpenQuickMeasure && (
+            <button
+              type="button"
+              className="ms-btn shadow-sm fw-bold d-inline-flex align-items-center gap-1"
+              onClick={onOpenQuickMeasure}
+              title="Open Field Mode / Keypad"
+              style={{
+                background: 'linear-gradient(135deg, #f5d77f 0%, #d4af37 100%)',
+                color: '#000000',
+                border: 'none',
+                padding: '5px 10px',
+                fontSize: '11px',
+                borderRadius: '8px',
+                fontWeight: 700
+              }}
+            >
+              <i className="bi bi-phone-fill" style={{ fontSize: '12px' }} />
+              <span>FIELD</span>
+            </button>
+          )}
+
+          {/* Add Area Button — Visible on tablet & desktop */}
           {!readOnly && (
             <button
-              className="ms-btn ms-btn-add shadow-sm"
+              className="ms-btn ms-btn-add shadow-sm d-none d-sm-inline-flex"
               onClick={() => {
                 if (activeSection !== 'measurements') onChangeSection('measurements');
                 onAddNewArea();
@@ -170,13 +198,13 @@ export default function Header({
               title={activeSection === 'measurements' ? 'Add new area' : 'Go to Measurements & Add Area'}
             >
               <i className="bi bi-plus-lg" />
-              <span className="d-none d-sm-inline">ADD AREA</span>
+              <span className="d-none d-md-inline">ADD AREA</span>
             </button>
           )}
 
-          {/* Undo / Redo */}
+          {/* Undo / Redo — Desktop (>= 1200px) */}
           {!readOnly && (
-            <div className="d-flex align-items-center gap-1">
+            <div className="d-none d-xl-flex align-items-center gap-1">
               <button
                 className="ms-btn ms-btn-ghost"
                 onClick={onUndo}
@@ -206,14 +234,14 @@ export default function Header({
             </div>
           )}
 
-          {/* Print */}
-          <button className="ms-btn ms-btn-ghost d-none d-sm-inline-flex" onClick={onOpenPrintView} title={isPrintView ? 'Back to Edit' : 'Print / PDF'}>
+          {/* Print — Tablet & Desktop */}
+          <button className="ms-btn ms-btn-ghost d-none d-md-inline-flex" onClick={onOpenPrintView} title={isPrintView ? 'Back to Edit' : 'Print / PDF'}>
             <i className={`bi ${isPrintView ? 'bi-pencil-square text-primary' : 'bi-printer-fill'}`} />
             <span>{isPrintView ? 'EDIT' : 'PRINT'}</span>
           </button>
 
-          {/* Excel */}
-          <button className="ms-btn ms-btn-ghost d-none d-sm-inline-flex" onClick={onExportExcel} title="Export to Microsoft Excel (.xlsx)">
+          {/* Excel — Tablet & Desktop */}
+          <button className="ms-btn ms-btn-ghost d-none d-md-inline-flex" onClick={onExportExcel} title="Export to Microsoft Excel (.xlsx)">
             <i className="bi bi-file-earmark-excel-fill" style={{ color: '#107c41', fontSize: '13px' }} />
             <span className="text-success fw-bold">EXCEL</span>
           </button>
@@ -238,7 +266,7 @@ export default function Header({
             <i className={`bi bi-chevron-${showSettingsPanel ? 'up' : 'down'} ms-1 d-none d-sm-inline`} style={{ fontSize: '10px' }} />
           </button>
 
-          {/* ── DESKTOP SHORTCUTS (Visible on Wide Monitors) ── */}
+          {/* ── DESKTOP SHORTCUTS (Visible on Wide Monitors >= 1200px) ── */}
           <div className="d-none d-xl-flex align-items-center gap-1">
             <div className="ms-vsep" />
 
@@ -275,6 +303,131 @@ export default function Header({
             <button className="ms-btn ms-btn-logout" onClick={onLogout} title="Logout">
               <i className="bi bi-box-arrow-right" />
             </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ══════════════════════════════════════════════════
+          ROW 2 — SHEET NAVIGATION & UTILITY BAR (Mobile & Tablet < 1200px)
+      ══════════════════════════════════════════════════ */}
+      <div className="ms-subbar d-flex d-xl-none">
+        {/* Left: Segmented Sheet Switcher Tabs */}
+        <div className="ms-subbar-left">
+          <div className="ms-nav-segmented" style={{ touchAction: 'manipulation' }}>
+            <button
+              type="button"
+              className={`ms-nav-seg-btn ${activeSection === 'info' ? 'active' : ''}`}
+              onClick={() => onChangeSection('info')}
+              onTouchEnd={(e) => { e.preventDefault(); onChangeSection('info'); }}
+              title="Project Details & Specifications (Page 1)"
+            >
+              <i className="bi bi-card-heading" />
+              <span className="tab-text">1. Info</span>
+            </button>
+            <button
+              type="button"
+              className={`ms-nav-seg-btn ${activeSection === 'measurements' ? 'active' : ''}`}
+              onClick={() => onChangeSection('measurements')}
+              onTouchEnd={(e) => { e.preventDefault(); onChangeSection('measurements'); }}
+              title="Measurement Book & Areas (Page 2)"
+            >
+              <i className="bi bi-grid-3x3" />
+              <span className="tab-text">2. Measurements</span>
+              {areasCount > 0 && <span className="ms-nav-seg-count">{areasCount}</span>}
+            </button>
+            <button
+              type="button"
+              className={`ms-nav-seg-btn ${activeSection === 'summary' ? 'active' : ''}`}
+              onClick={() => onChangeSection('summary')}
+              onTouchEnd={(e) => { e.preventDefault(); onChangeSection('summary'); }}
+              title="Financial Abstract & Grand Totals (Page 3)"
+            >
+              <i className="bi bi-pie-chart-fill text-warning" />
+              <span className="tab-text">3. Summary</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Right: Quick actions (Add Area on mobile, Undo/Redo, Save timestamp, RA Bill) */}
+        <div className="ms-subbar-right">
+          {/* Mobile Add Area shortcut */}
+          {!readOnly && (
+            <button
+              type="button"
+              className="ms-btn ms-btn-add shadow-sm d-inline-flex d-sm-none"
+              onClick={() => {
+                if (activeSection !== 'measurements') onChangeSection('measurements');
+                onAddNewArea();
+              }}
+              title="Add new area"
+              style={{ padding: '3px 8px', fontSize: '10px' }}
+            >
+              <i className="bi bi-plus-lg" />
+              <span>AREA</span>
+            </button>
+          )}
+
+          {/* Undo / Redo for Mobile & Tablet */}
+          {!readOnly && (
+            <div className="d-flex align-items-center gap-1">
+              <button
+                type="button"
+                className="ms-btn ms-btn-ghost"
+                onClick={onUndo}
+                disabled={!canUndo}
+                title="Undo (Ctrl+Z / Cmd+Z)"
+                style={{
+                  opacity: canUndo ? 1 : 0.4,
+                  cursor: canUndo ? 'pointer' : 'not-allowed',
+                  padding: '3px 7px',
+                }}
+              >
+                <i className="bi bi-arrow-counterclockwise" style={{ fontSize: '12px' }} />
+              </button>
+              <button
+                type="button"
+                className="ms-btn ms-btn-ghost"
+                onClick={onRedo}
+                disabled={!canRedo}
+                title="Redo (Ctrl+Y / Cmd+Y)"
+                style={{
+                  opacity: canRedo ? 1 : 0.4,
+                  cursor: canRedo ? 'pointer' : 'not-allowed',
+                  padding: '3px 7px',
+                }}
+              >
+                <i className="bi bi-arrow-clockwise" style={{ fontSize: '12px' }} />
+              </button>
+            </div>
+          )}
+
+          {/* Save status pill on Mobile (< 768px) where it's hidden from row 1 */}
+          {(lastSavedAt || isSaving) && (
+            <div className={`ms-save-pill d-inline-flex d-md-none ${isSaving ? 'ms-save-pill--saving' : ''}`} style={{ padding: '2px 6px', fontSize: '9px' }}>
+              {isSaving ? (
+                <><span className="ms-spin" /> Saving…</>
+              ) : (
+                <><i className="bi bi-cloud-check-fill" /> {formatSavedTime(lastSavedAt)}</>
+              )}
+            </div>
+          )}
+
+          {/* RA Bill Toggle & Theme on Tablet (768px - 1199px) */}
+          <div className="d-none d-md-flex align-items-center gap-1">
+            <label className="ms-toggle" title="Toggle RA Bill / Rate mode" style={{ padding: '2px 6px' }}>
+              <input
+                type="checkbox"
+                checked={settings.billingMode}
+                disabled={readOnly}
+                onChange={(e) => onToggleBillingMode(e.target.checked)}
+              />
+              <span className="ms-track"><span className="ms-thumb" /></span>
+              <span className="ms-tlbl" style={{ fontSize: '10px' }}>
+                <i className="bi bi-cash-stack" />
+                <span> RA BILL</span>
+              </span>
+            </label>
+            <ThemeToggle />
           </div>
         </div>
       </div>

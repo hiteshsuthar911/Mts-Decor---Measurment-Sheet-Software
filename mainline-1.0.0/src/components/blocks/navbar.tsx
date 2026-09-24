@@ -130,7 +130,7 @@ export const Navbar = () => {
               ),
             )}
           </NavigationMenuList>
-        </NavigationMenu>
+        </NavigationMenu> 
 
         {/* Action Buttons */}
         <div className="flex items-center gap-1.5 sm:gap-2.5">

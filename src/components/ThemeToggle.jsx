@@ -6,7 +6,8 @@ export default function ThemeToggle({ className = '' }) {
     try {
       const saved = localStorage.getItem('mts_theme');
       if (saved) return saved === 'dark';
-      return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      // Default to light theme always
+      return false;
     } catch {
       return false;
     }

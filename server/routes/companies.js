@@ -139,7 +139,7 @@ router.post('/', auth, async (req, res) => {
       active: true,
     });
 
-    // Optionally create the initial admin user for this company
+    // Optionally create the initial Company Admin user for this contractor company
     let createdUser = null;
     if (initialAdminUsername && initialAdminPassword) {
       const cleanUsername = initialAdminUsername.trim().toLowerCase();
@@ -148,17 +148,29 @@ router.post('/', auth, async (req, res) => {
         createdUser = await User.create({
           username: cleanUsername,
           password: initialAdminPassword,
-          name: ownerName || name,
-          role: 'USER',
+          name: (ownerName || name).trim().toUpperCase(),
+          role: 'ADMIN', // Contractor Company Admin
           companyId: company._id,
           companySlug: company.slug,
         });
       }
     }
 
+    let initialInvoice = null;
+
+    const loginUrl = `/c/${company.slug}/login`;
+
     res.status(201).json({
       company,
-      initialUser: createdUser ? { username: createdUser.username, name: createdUser.name } : null,
+      loginUrl,
+      initialInvoice,
+      initialUser: createdUser
+        ? {
+            username: createdUser.username,
+            name: createdUser.name,
+            role: createdUser.role,
+          }
+        : null,
     });
   } catch (err) {
     console.error('CREATE COMPANY ERROR:', err);
@@ -214,6 +226,87 @@ router.delete('/:id', auth, async (req, res) => {
   } catch (err) {
     console.error('DELETE COMPANY ERROR:', err);
     res.status(500).json({ message: 'FAILED TO DELETE COMPANY' });
+  }
+});
+
+// GET /api/companies/:id/onboarding-packet — Generate onboarding mail, credentials & WhatsApp link
+router.get('/:id/onboarding-packet', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'ADMIN') {
+      return res.status(403).json({ message: 'ADMIN ACCESS REQUIRED' });
+    }
+
+    const company = await Company.findById(req.params.id);
+    if (!company) return res.status(404).json({ message: 'COMPANY NOT FOUND' });
+
+    // Find company admin user
+    const adminUser = await User.findOne({
+      $or: [{ companyId: company._id }, { companySlug: company.slug }],
+      role: 'ADMIN',
+    }).sort({ createdAt: 1 });
+
+    // Find latest invoice
+    const latestInvoice = null;
+
+    const clientOrigin = req.headers.origin || 'http://localhost:5174';
+    const loginUrl = `${clientOrigin}/c/${company.slug}/login`;
+    const expiryStr = company.subscriptionExpiresAt
+      ? new Date(company.subscriptionExpiresAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+      : '365 Days Active';
+
+    const emailSubject = `Welcome to MS PRO – ${company.name} Admin Portal Credentials & Subscription Active`;
+
+    const emailText = `Hello ${company.ownerName || company.name},
+
+Congratulations! Your official MS PRO Contractor Company Admin Portal has been activated by MTS DECOR.
+
+──────────────────────────────────────────────────────
+YOUR DEDICATED COMPANY PORTAL & LOGIN DETAILS:
+──────────────────────────────────────────────────────
+🏢 Company: ${company.name}
+🌐 Dedicated Login URL: ${loginUrl}
+👤 Company Admin Username: ${adminUser ? adminUser.username : (company.ownerEmail || company.slug + '-admin')}
+🔑 Initial Password: [As provided during registration or reset from admin]
+💼 Plan: ${company.plan} Contractor License
+📅 Valid Until: ${expiryStr}
+${latestInvoice ? `📄 GST Invoice Number: ${latestInvoice.invoiceNumber} (₹${latestInvoice.totalAmount.toLocaleString('en-IN')})` : ''}
+
+──────────────────────────────────────────────────────
+WHAT YOU CAN DO AS COMPANY ADMIN:
+──────────────────────────────────────────────────────
+1. Sign in via your dedicated URL: ${loginUrl}
+2. Add and manage your company site engineers, quantity surveyors & estimators
+3. Create projects, site measurement sheets, and access 68+ civil labour rate catalogs
+4. Download your official GST Tax Invoices anytime
+
+Need assistance? Contact MTS DECOR Support at +91 99824 44449 or info@mtsdecor.com.
+
+Best Regards,
+MTS DECOR Master Platform Team`;
+
+    const whatsAppText = `*MTS DECOR • MS PRO CONTRACTOR ONBOARDING* 🚀%0A%0AHello *${encodeURIComponent(company.ownerName || company.name)}*,%0A%0AYour contractor company *${encodeURIComponent(company.name)}* is officially active on MS PRO!%0A%0A🔗 *Your Dedicated Company Login URL:*%0A${encodeURIComponent(loginUrl)}%0A%0A👤 *Company Admin Username:* \`${encodeURIComponent(adminUser ? adminUser.username : company.slug + '-admin')}\`%0A💼 *Subscription Plan:* ${encodeURIComponent(company.plan)} CONTRACTOR LICENSE%0A📅 *Valid Until:* ${encodeURIComponent(expiryStr)}%0A%0AYou can log in now to manage your company users, projects, and site measurements!%0A%0A— *MTS DECOR Platform Team*`;
+
+    const cleanPhone = (company.ownerPhone || company.phone || '').replace(/[^0-9]/g, '');
+    const whatsAppUrl = cleanPhone
+      ? `https://api.whatsapp.com/send?phone=${cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone}&text=${whatsAppText}`
+      : `https://api.whatsapp.com/send?text=${whatsAppText}`;
+
+    const mailtoUrl = `mailto:${encodeURIComponent(company.ownerEmail || company.email || '')}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailText)}`;
+
+    res.json({
+      company,
+      adminUser: adminUser ? { username: adminUser.username, name: adminUser.name, role: adminUser.role } : null,
+      loginUrl,
+      latestInvoice,
+      emailSubject,
+      emailText,
+      mailtoUrl,
+      whatsAppUrl,
+      whatsAppText: decodeURIComponent(whatsAppText),
+    });
+  } catch (err) {
+    console.error('ONBOARDING PACKET ERROR:', err);
+    res.status(500).json({ message: 'FAILED TO GENERATE ONBOARDING PACKET' });
   }
 });
 

@@ -1,3 +1,4 @@
+import { api, BASE_URL } from '../utils/api';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useParams, useSearchParams, Link } from 'react-router-dom';
 import Header from '../components/Header';
@@ -27,13 +28,25 @@ export default function MeasurementSheet() {
   const session = getSession();
   const [searchParams, setSearchParams] = useSearchParams();
 
+  useEffect(() => {
+    if (projectId) {
+      localStorage.setItem('mts_last_project_id', projectId);
+    }
+  }, [projectId]);
+
   const [project, setProject]           = useState(null);
   const [projectData, setProjectData]   = useState(null);
   const [editUnlocked, setEditUnlocked] = useState(false);
   const [showVerify, setShowVerify]     = useState(false);
   const [isPrintView, setIsPrintView]   = useState(false);
   const [printInitialMode, setPrintInitialMode] = useState('full');
-  const [showQuickMeasure, setShowQuickMeasure] = useState(false);
+  const [showQuickMeasure, setShowQuickMeasure] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const p = new URLSearchParams(window.location.search);
+      return p.get('field') === '1' || p.get('field') === 'true';
+    }
+    return false;
+  });
   const [showRateMaster, setShowRateMaster] = useState(false);
   const [showSummaryPrint, setShowSummaryPrint] = useState(false);
   const [showGstInvoice, setShowGstInvoice]     = useState(false);
@@ -47,7 +60,10 @@ export default function MeasurementSheet() {
   const [lastSavedAt, setLastSavedAt]   = useState(null);
   const [activeSheetPage, setActiveSheetPage] = useState('ALL');
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [sheetDropdownOpen, setSheetDropdownOpen] = useState(false);
+  const [sheetSearchQuery, setSheetSearchQuery] = useState('');
   const fullscreenRef = useRef(null);
+  const sheetDropdownRef = useRef(null);
 
   const pagesList = useMemo(() => groupAreasIntoPages(projectData?.areas || []), [projectData?.areas]);
   const isSinglePageView = activeSheetPage !== 'ALL';
@@ -93,11 +109,13 @@ export default function MeasurementSheet() {
 
   const setActiveSection = (section) => {
     setActiveSectionState(section);
-    setSearchParams(prev => {
-      const next = new URLSearchParams(prev);
-      next.set('tab', section);
-      return next;
-    }, { replace: true });
+    try {
+      setSearchParams(prev => {
+        const next = new URLSearchParams(prev);
+        next.set('tab', section);
+        return next;
+      }, { replace: true });
+    } catch {}
   };
 
   useEffect(() => {
@@ -257,7 +275,7 @@ export default function MeasurementSheet() {
   const fetchEngineerQueries = async () => {
     if (!projectId) return;
     try {
-      const res = await fetch(`/api/projects/engineer-portal/${projectId}`);
+      const res = await fetch(`${BASE_URL}/projects/engineer-portal/${projectId}`);
       if (res.ok) {
         const json = await res.json();
         if (json && Array.isArray(json.engineerQueries)) {
@@ -373,7 +391,7 @@ export default function MeasurementSheet() {
         // 2. Keepalive fetch (browser guarantees completion even after page unloads)
         try {
           const token = localStorage.getItem('mts_token') || localStorage.getItem('token');
-          fetch(`/api/projects/${projectId}`, {
+          fetch(`${BASE_URL}/projects/${projectId}`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
@@ -1032,54 +1050,489 @@ export default function MeasurementSheet() {
           {/* ══════════════════════════════════════════════════════════ */}
           {(activeSection === 'measurements' || activeSection === 'all') && (
             <div className="areas-container mb-4">
-              {/* Sleek Excel Workbook Tab Strip (Only shown when there are multiple sheet pages) */}
-              {pagesList.length > 1 && (
-                <div className="xls-workbook-tabs mb-2.5 d-flex align-items-center justify-content-between flex-wrap gap-2">
-                  <div className="d-flex align-items-center gap-1.5 flex-nowrap overflow-auto py-1" style={{ scrollbarWidth: 'thin' }}>
-                    <span className="extra-small fw-bold text-muted text-uppercase me-1 d-flex align-items-center">
-                      <i className="bi bi-layers text-primary me-1" />SHEETS ({pagesList.length}):
-                    </span>
+              {/* ── Premium Sheet Navigator ── */}
+              {pagesList.length > 1 && (() => {
+                const filteredPages = sheetSearchQuery
+                  ? pagesList.filter(pg =>
+                      `P${pg.pageNumber} ${pg.category}`.toLowerCase().includes(sheetSearchQuery.toLowerCase())
+                    )
+                  : pagesList;
+
+                // Current position info
+                const currentPageIdx = activeSheetPage === 'ALL'
+                  ? -1
+                  : pagesList.findIndex(p => p.pageNumber === Number(activeSheetPage));
+                const currentPg = currentPageIdx >= 0 ? pagesList[currentPageIdx] : null;
+                const posLabel = activeSheetPage === 'ALL'
+                  ? 'All Sheets'
+                  : currentPg ? `P${currentPg.pageNumber}: ${currentPg.category}` : 'Select Sheet';
+                const posCounter = activeSheetPage === 'ALL'
+                  ? `ALL · ${pagesList.length}`
+                  : `${currentPageIdx + 1} / ${pagesList.length}`;
+
+                // Prev / Next helpers
+                const goPrev = () => {
+                  if (activeSheetPage === 'ALL') { setActiveSheetPage(pagesList[pagesList.length - 1].pageNumber); return; }
+                  if (currentPageIdx <= 0) { setActiveSheetPage('ALL'); return; }
+                  setActiveSheetPage(pagesList[currentPageIdx - 1].pageNumber);
+                };
+                const goNext = () => {
+                  if (activeSheetPage === 'ALL') { setActiveSheetPage(pagesList[0].pageNumber); return; }
+                  if (currentPageIdx >= pagesList.length - 1) { setActiveSheetPage('ALL'); return; }
+                  setActiveSheetPage(pagesList[currentPageIdx + 1].pageNumber);
+                };
+
+                // Color palette for page badges (cycles every 8)
+                const PAGE_COLORS = [
+                  { bg: 'linear-gradient(135deg,#7f56d9,#6941c6)', text: 'white' },
+                  { bg: 'linear-gradient(135deg,#0ea5e9,#0284c7)', text: 'white' },
+                  { bg: 'linear-gradient(135deg,#10b981,#059669)', text: 'white' },
+                  { bg: 'linear-gradient(135deg,#f59e0b,#d97706)', text: 'white' },
+                  { bg: 'linear-gradient(135deg,#ef4444,#dc2626)', text: 'white' },
+                  { bg: 'linear-gradient(135deg,#ec4899,#db2777)', text: 'white' },
+                  { bg: 'linear-gradient(135deg,#14b8a6,#0d9488)', text: 'white' },
+                  { bg: 'linear-gradient(135deg,#8b5cf6,#7c3aed)', text: 'white' },
+                ];
+                const pageColor = (num) => PAGE_COLORS[(num - 1) % PAGE_COLORS.length];
+
+                // Progress %
+                const progressPct = activeSheetPage === 'ALL' ? 0
+                  : Math.round(((currentPageIdx + 1) / pagesList.length) * 100);
+
+                return (
+                  <div
+                    className="xls-workbook-tabs mb-2"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      flexWrap: 'nowrap',
+                      padding: '5px 8px',
+                      borderRadius: '12px',
+                      background: 'linear-gradient(135deg, #f8f7ff 0%, #f1f5f9 100%)',
+                      border: '1.5px solid #ddd6fe',
+                      boxShadow: '0 2px 8px rgba(127,86,217,0.08)',
+                      position: 'relative',
+                    }}
+                    ref={sheetDropdownRef}
+                  >
+                    <style>{`
+                      /* ── Trigger ── */
+                      .sdd-trigger {
+                        height: 34px; padding: 0 10px;
+                        border-radius: 9px; border: 1.5px solid #c4b5fd;
+                        background: white; color: #0d0620;
+                        font-size: 12px; font-weight: 700; letter-spacing: 0.3px;
+                        text-transform: uppercase; cursor: pointer;
+                        display: flex; align-items: center; gap: 6px;
+                        min-width: 0; max-width: 320px; flex: 1 1 auto;
+                        box-shadow: 0 1px 3px rgba(127,86,217,0.1);
+                        transition: all 0.15s ease;
+                        white-space: nowrap; overflow: hidden;
+                        position: relative;
+                      }
+                      .sdd-trigger:hover { border-color: #7f56d9; box-shadow: 0 2px 8px rgba(127,86,217,0.18); }
+                      .sdd-trigger.open  { border-color: #7f56d9; box-shadow: 0 0 0 3px rgba(127,86,217,0.16); }
+                      .sdd-label { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:left; }
+                      .sdd-pos   { font-size:10px; color:#9c84cc; font-weight:600; flex-shrink:0; padding:1px 6px; background:#f3f0ff; border-radius:5px; }
+                      .sdd-chevron { flex-shrink:0; font-size:11px; color:#6941c6; transition:transform 0.2s ease; }
+                      .sdd-chevron.open { transform: rotate(180deg); }
+
+                      /* Progress strip under trigger */
+                      .sdd-progress {
+                        position: absolute; bottom: 0; left: 0; height: 2px;
+                        background: linear-gradient(90deg, #7f56d9, #c4b5fd);
+                        border-radius: 0 0 8px 8px; transition: width 0.3s ease;
+                      }
+
+                      /* ── Nav arrows ── */
+                      .sdd-nav {
+                        width: 30px; height: 34px; border-radius: 9px;
+                        border: 1.5px solid #ddd6fe;
+                        background: white; color: #6941c6;
+                        display: flex; align-items: center; justify-content: center;
+                        cursor: pointer; font-size: 11px; flex-shrink: 0;
+                        transition: all 0.14s ease;
+                        box-shadow: 0 1px 3px rgba(127,86,217,0.08);
+                      }
+                      .sdd-nav:hover { background: #ede9fe; border-color: #c4b5fd; transform: scale(1.06); }
+                      .sdd-nav:active { transform: scale(0.96); }
+
+                      /* ── Label pill ── */
+                      .sdd-icon-label {
+                        display:flex; align-items:center; gap:5px; flex-shrink:0;
+                        font-size:11px; font-weight:800; letter-spacing:0.5px;
+                        color:white; text-transform:uppercase;
+                        background: linear-gradient(135deg,#7f56d9,#6941c6);
+                        padding:0 10px; height:34px; border-radius:9px;
+                        box-shadow: 0 2px 6px rgba(105,65,198,0.25);
+                      }
+
+                      /* ── Stats badge & New Sheet btn ── */
+                      .sdd-stats-badge {
+                        background: rgba(127,86,217,0.08); color: #6941c6;
+                        border: 1px solid rgba(127,86,217,0.18); border-radius: 7px;
+                        padding: 4px 8px; font-weight: 700; font-size: 11px;
+                        white-space: nowrap; flex-shrink: 0; display: inline-flex;
+                        align-items: center; height: 34px;
+                      }
+                      .sdd-new-sheet-btn {
+                        height: 34px; padding: 0 10px; border-radius: 9px;
+                        border: 1.5px solid #c4b5fd; background: white; color: #6941c6;
+                        font-size: 12px; font-weight: 700; cursor: pointer;
+                        display: flex; align-items: center; gap: 5px;
+                        white-space: nowrap; flex-shrink: 0;
+                        box-shadow: 0 1px 3px rgba(127,86,217,0.1);
+                        transition: all 0.14s ease;
+                      }
+                      .sdd-new-sheet-btn:hover { background: #ede9fe; border-color: #7f56d9; }
+
+                      /* ── Panel ── */
+                      .sdd-panel {
+                        position: absolute; top: calc(100% + 8px); left: 38px;
+                        width: 380px; max-width: calc(100vw - 32px);
+                        background: white; border-radius: 16px;
+                        border: 1.5px solid #e0d9ff;
+                        box-shadow: 0 20px 60px rgba(0,0,0,0.16), 0 4px 16px rgba(127,86,217,0.12), 0 0 0 1px rgba(127,86,217,0.05);
+                        z-index: 9999; overflow: hidden;
+                        animation: sddSlide 0.2s cubic-bezier(0.22,1,0.36,1);
+                      }
+                      @keyframes sddSlide {
+                        from { opacity:0; transform: translateY(-8px) scale(0.97); }
+                        to   { opacity:1; transform: translateY(0) scale(1); }
+                      }
+
+                      /* Panel header */
+                      .sdd-panel-header {
+                        background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 60%, #2d1b69 100%);
+                        padding: 12px 14px 10px;
+                        position: relative; overflow: hidden;
+                      }
+                      .sdd-panel-header::before {
+                        content:''; position:absolute; width:160px; height:160px; border-radius:50%;
+                        background: radial-gradient(circle, rgba(127,86,217,0.2) 0%, transparent 70%);
+                        top:-60px; right:-30px; pointer-events:none;
+                      }
+                      .sdd-panel-header-content { padding-right: 50px; }
+                      .sdd-panel-title { font-size:10px; font-weight:800; color:rgba(255,255,255,0.5); text-transform:uppercase; letter-spacing:0.8px; }
+                      .sdd-panel-current { font-size:13.5px; font-weight:800; color:white; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+                      .sdd-panel-meta { font-size:9.5px; color:rgba(255,255,255,0.5); margin-top:2px; text-transform:uppercase; letter-spacing:0.5px; }
+                      .sdd-panel-pos-badge {
+                        position:absolute; top:12px; right:12px;
+                        background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.2);
+                        border-radius:20px; padding:2px 8px;
+                        font-size:10.5px; font-weight:700; color:white;
+                        z-index:1;
+                      }
+
+                      /* Search */
+                      .sdd-search-wrap { padding:8px 10px; border-bottom:1px solid #f3f0ff; background:#faf8ff; position:relative; }
+                      .sdd-search {
+                        width:100%; height:32px;
+                        border:1.5px solid #ddd6fe; border-radius:9px;
+                        padding:0 10px 0 30px; font-size:12px; font-weight:600;
+                        color:#0d0620; background:white; outline:none; transition:border 0.15s;
+                      }
+                      .sdd-search:focus { border-color:#7f56d9; box-shadow: 0 0 0 3px rgba(127,86,217,0.1); }
+                      .sdd-search-icon { position:absolute; left:20px; top:50%; transform:translateY(-50%); color:#9c84cc; font-size:12px; pointer-events:none; }
+                      .sdd-search-clear {
+                        position:absolute; right:18px; top:50%; transform:translateY(-50%);
+                        background:none; border:none; cursor:pointer; color:#9c84cc; font-size:12px; padding:2px;
+                      }
+
+                      /* List */
+                      .sdd-list { max-height:220px; overflow-y:auto; padding:4px 0; -webkit-overflow-scrolling:touch; }
+                      .sdd-list::-webkit-scrollbar { width:4px; }
+                      .sdd-list::-webkit-scrollbar-track { background:transparent; }
+                      .sdd-list::-webkit-scrollbar-thumb { background:#ddd6fe; border-radius:4px; }
+
+                      /* Options */
+                      .sdd-opt {
+                        display:flex; align-items:center; gap:8px; padding:6px 12px;
+                        cursor:pointer; transition:background 0.1s; border:none;
+                        background:none; width:100%; text-align:left;
+                      }
+                      .sdd-opt:hover   { background:#f5f0ff; }
+                      .sdd-opt.active  { background:#ede9fe; }
+                      .sdd-opt.focused { background:#f0ebff; outline:none; }
+
+                      .sdd-opt-badge {
+                        flex-shrink:0; width:28px; height:28px; border-radius:7px;
+                        font-size:9.5px; font-weight:800; display:flex; align-items:center; justify-content:center;
+                        letter-spacing:0.2px; color:white;
+                      }
+                      .sdd-opt-info { flex:1; min-width:0; }
+                      .sdd-opt-name {
+                        font-size:11.5px; font-weight:700; color:#0d0620;
+                        text-transform:uppercase; letter-spacing:0.3px;
+                        white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+                      }
+                      .sdd-opt-sub { font-size:9.5px; color:#7a7a9a; text-transform:uppercase; letter-spacing:0.3px; margin-top:1px; }
+                      .sdd-opt-count {
+                        flex-shrink:0; border-radius:5px; font-size:9.5px; font-weight:700;
+                        padding:2px 6px; white-space:nowrap;
+                        background:rgba(127,86,217,0.08); color:#6941c6; border:1px solid rgba(127,86,217,0.15);
+                      }
+                      .sdd-opt-check { flex-shrink:0; color:#7f56d9; font-size:13px; }
+
+                      .sdd-divider { height:1px; background:#f3f0ff; margin:2px 0; }
+                      .sdd-empty { text-align:center; padding:18px 0; font-size:10.5px; color:#9c84cc; text-transform:uppercase; letter-spacing:0.5px; }
+
+                      /* Footer */
+                      .sdd-panel-footer {
+                        padding:7px 12px; border-top:1px solid #f3f0ff; background:#faf8ff;
+                        display:flex; align-items:center; justify-content:space-between; gap:6px;
+                      }
+                      .sdd-panel-footer-tip { font-size:9.5px; color:#9c84cc; text-transform:uppercase; letter-spacing:0.3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+                      .sdd-panel-add-btn {
+                        height:26px; padding:0 9px; border-radius:7px; border:none;
+                        background:linear-gradient(135deg,#7f56d9,#6941c6); color:white;
+                        font-size:10px; font-weight:700; cursor:pointer;
+                        display:flex; align-items:center; gap:4px; flex-shrink:0;
+                        transition:opacity 0.15s;
+                      }
+                      .sdd-panel-add-btn:hover { opacity:0.88; }
+
+                      /* ── Responsive Mobile Optimizations ── */
+                      @media (max-width: 576px) {
+                        .xls-workbook-tabs {
+                          padding: 4px 6px !important;
+                          gap: 4px !important;
+                        }
+                        .sdd-icon-label {
+                          height: 32px !important;
+                          padding: 0 8px !important;
+                        }
+                        .sdd-nav {
+                          width: 28px !important;
+                          height: 32px !important;
+                        }
+                        .sdd-trigger {
+                          height: 32px !important;
+                          padding: 0 7px !important;
+                          font-size: 11px !important;
+                          gap: 4px !important;
+                        }
+                        .sdd-pos {
+                          font-size: 9px !important;
+                          padding: 1px 4px !important;
+                        }
+                        .sdd-stats-badge {
+                          height: 32px !important;
+                          padding: 0 6px !important;
+                          font-size: 10px !important;
+                        }
+                        .sdd-new-sheet-btn {
+                          height: 32px !important;
+                          padding: 0 8px !important;
+                        }
+                        .sdd-panel {
+                          left: 0 !important;
+                          right: 0 !important;
+                          top: calc(100% + 5px) !important;
+                          width: 100% !important;
+                          max-width: 100% !important;
+                          border-radius: 13px !important;
+                          box-shadow: 0 12px 36px rgba(15,23,42,0.2), 0 2px 8px rgba(127,86,217,0.12) !important;
+                        }
+                      }
+                    `}</style>
+
+                    {/* ── Label pill ── */}
+                    <div className="sdd-icon-label" title="Sheets Navigator">
+                      <i className="bi bi-layers-fill" style={{ fontSize: '13px' }} />
+                      <span className="d-none d-sm-inline">Sheet</span>
+                    </div>
+
+                    {/* ── Prev arrow ── */}
+                    <button type="button" className="sdd-nav" onClick={goPrev} title="Previous sheet">
+                      <i className="bi bi-chevron-left" />
+                    </button>
+
+                    {/* ── Trigger button ── */}
                     <button
                       type="button"
-                      className={`sheet-page-tab-btn ${activeSheetPage === 'ALL' ? 'active' : ''}`}
-                      onClick={() => setActiveSheetPage('ALL')}
+                      className={`sdd-trigger${sheetDropdownOpen ? ' open' : ''}`}
+                      onClick={() => { setSheetDropdownOpen(o => !o); setSheetSearchQuery(''); }}
+                      title={posLabel}
                     >
-                      <i className="bi bi-collection me-1" />
-                      <span>All ({pagesList.length})</span>
+                      <i
+                        className={`bi ${activeSheetPage === 'ALL' ? 'bi-collection-fill' : 'bi-file-earmark-text-fill'}`}
+                        style={{ color: activeSheetPage === 'ALL' ? '#7f56d9' : (currentPg ? pageColor(currentPg.pageNumber).bg.match(/#[0-9a-f]{6}/i)?.[0] : '#7f56d9'), fontSize: '12px', flexShrink: 0 }}
+                      />
+                      <span className="sdd-label">{posLabel}</span>
+                      <span className="sdd-pos">{posCounter}</span>
+                      <i className={`bi bi-chevron-down sdd-chevron${sheetDropdownOpen ? ' open' : ''}`} />
+                      {/* Progress strip */}
+                      {activeSheetPage !== 'ALL' && (
+                        <div className="sdd-progress" style={{ width: `${progressPct}%` }} />
+                      )}
                     </button>
-                    {pagesList.map((pg) => (
-                      <button
-                        key={pg.pageNumber}
-                        type="button"
-                        className={`sheet-page-tab-btn ${activeSheetPage === pg.pageNumber ? 'active' : ''}`}
-                        onClick={() => setActiveSheetPage(pg.pageNumber)}
-                      >
-                        <i className="bi bi-file-earmark-text me-1" />
-                        <span>P{pg.pageNumber}: {pg.category}</span>
-                        <span className="sheet-page-tab-count">{pg.areas.length}</span>
-                      </button>
-                    ))}
-                  </div>
 
-                  <div className="d-flex align-items-center gap-2">
+                    {/* ── Next arrow ── */}
+                    <button type="button" className="sdd-nav" onClick={goNext} title="Next sheet">
+                      <i className="bi bi-chevron-right" />
+                    </button>
+
+                    {/* ── Stats badge ── */}
+                    <span
+                      className="sdd-stats-badge"
+                      title={`${projectData?.areas?.length || 0} Areas in Project`}
+                    >
+                      <span>{projectData?.areas?.length || 0}</span>
+                      <span className="d-none d-sm-inline ms-1">Areas</span>
+                      {grandTotals?.totalQty > 0 && <span className="d-none d-lg-inline"> · {formatNumber(grandTotals.totalQty, 2)} Qty</span>}
+                    </span>
+
+                    {/* ── New Sheet button (outside panel) ── */}
                     {!readOnly && (
                       <button
                         type="button"
-                        className="btn btn-sm btn-outline-primary extra-small fw-bold text-uppercase d-flex align-items-center gap-1 px-2.5 py-1"
-                        style={{ borderRadius: '6px' }}
+                        className="sdd-new-sheet-btn"
                         onClick={handleAddNewSheetPage}
-                        title="Start a new separate sheet page"
+                        title="Add a new sheet page"
                       >
-                        <i className="bi bi-file-earmark-plus" />
-                        <span>+ New Sheet Page</span>
+                        <i className="bi bi-plus-lg" style={{ fontSize: '12px' }} />
+                        <span className="d-none d-sm-inline">New Sheet</span>
                       </button>
                     )}
-                    <span className="badge bg-light text-secondary border extra-small">
-                      {projectData?.areas?.length || 0} Area{projectData?.areas?.length !== 1 ? 's' : ''} &bull; {grandTotals?.totalQty > 0 ? `${formatNumber(grandTotals.totalQty, 2)} Qty` : '0 Qty'}
-                    </span>
+
+                    {/* ── Responsive Dropdown Panel (direct child of xls-workbook-tabs) ── */}
+                    {sheetDropdownOpen && (
+                      <div className="sdd-panel" onClick={e => e.stopPropagation()}>
+
+                        {/* Header */}
+                        <div className="sdd-panel-header">
+                          <div className="sdd-panel-header-content">
+                            <div className="sdd-panel-title">Current Sheet</div>
+                            <div className="sdd-panel-current">{posLabel}</div>
+                            <div className="sdd-panel-meta">
+                              {activeSheetPage === 'ALL'
+                                ? `${pagesList.length} pages · ${projectData?.areas?.length || 0} areas`
+                                : currentPg
+                                  ? `${currentPg.areas.length} area${currentPg.areas.length !== 1 ? 's' : ''} · Sheet page ${currentPg.pageNumber} of ${pagesList.length}`
+                                  : ''
+                              }
+                            </div>
+                          </div>
+                          <div className="sdd-panel-pos-badge">{posCounter}</div>
+                        </div>
+
+                        {/* Search */}
+                        {pagesList.length > 4 && (
+                          <div className="sdd-search-wrap">
+                            <i className="bi bi-search sdd-search-icon" />
+                            <input
+                              autoFocus
+                              type="text"
+                              className="sdd-search"
+                              placeholder="Search sheets by name..."
+                              value={sheetSearchQuery}
+                              onChange={e => setSheetSearchQuery(e.target.value)}
+                              onKeyDown={e => {
+                                if (e.key === 'Escape') { setSheetDropdownOpen(false); setSheetSearchQuery(''); }
+                                if (e.key === 'ArrowDown') { e.preventDefault(); document.querySelector('.sdd-opt')?.focus(); }
+                              }}
+                            />
+                            {sheetSearchQuery && (
+                              <button className="sdd-search-clear" onClick={() => setSheetSearchQuery('')}>
+                                <i className="bi bi-x-lg" />
+                              </button>
+                            )}
+                          </div>
+                        )}
+
+                        {/* List */}
+                        <div className="sdd-list">
+                          {/* All Sheets */}
+                          {!sheetSearchQuery && (
+                            <>
+                              <button
+                                type="button"
+                                className={`sdd-opt${activeSheetPage === 'ALL' ? ' active' : ''}`}
+                                onClick={() => { setActiveSheetPage('ALL'); setSheetDropdownOpen(false); setSheetSearchQuery(''); }}
+                                onKeyDown={e => { if (e.key === 'ArrowDown') { e.preventDefault(); e.currentTarget.nextElementSibling?.nextElementSibling?.focus(); } }}
+                              >
+                                <span className="sdd-opt-badge" style={{ background: 'linear-gradient(135deg,#7f56d9,#6941c6)' }}>
+                                  <i className="bi bi-collection" />
+                                </span>
+                                <span className="sdd-opt-info">
+                                  <div className="sdd-opt-name">All Sheets</div>
+                                  <div className="sdd-opt-sub">View all {pagesList.length} pages together</div>
+                                </span>
+                                <span className="sdd-opt-count">{pagesList.length} pages</span>
+                                {activeSheetPage === 'ALL' && <i className="bi bi-check2 sdd-opt-check" />}
+                              </button>
+                              <div className="sdd-divider" />
+                            </>
+                          )}
+
+                          {/* Individual pages */}
+                          {filteredPages.length === 0 && (
+                            <div className="sdd-empty">
+                              <i className="bi bi-search d-block mb-1" style={{ fontSize: '18px' }} />
+                              No sheets match "{sheetSearchQuery}"
+                            </div>
+                          )}
+                          {filteredPages.map((pg) => {
+                            const col = pageColor(pg.pageNumber);
+                            return (
+                              <button
+                                key={pg.pageNumber}
+                                type="button"
+                                className={`sdd-opt${activeSheetPage === pg.pageNumber ? ' active' : ''}`}
+                                onClick={() => { setActiveSheetPage(pg.pageNumber); setSheetDropdownOpen(false); setSheetSearchQuery(''); }}
+                                onKeyDown={e => {
+                                  if (e.key === 'ArrowDown') { e.preventDefault(); e.currentTarget.nextElementSibling?.focus(); }
+                                  if (e.key === 'ArrowUp')   { e.preventDefault(); e.currentTarget.previousElementSibling?.focus(); }
+                                  if (e.key === 'Escape')    { setSheetDropdownOpen(false); }
+                                }}
+                              >
+                                <span className="sdd-opt-badge" style={{ background: col.bg }}>P{pg.pageNumber}</span>
+                                <span className="sdd-opt-info">
+                                  <div className="sdd-opt-name">{pg.category}</div>
+                                  <div className="sdd-opt-sub">Sheet {pg.pageNumber} · {pg.areas.length} area{pg.areas.length !== 1 ? 's' : ''}</div>
+                                </span>
+                                <span className="sdd-opt-count">{pg.areas.length}</span>
+                                {activeSheetPage === pg.pageNumber && <i className="bi bi-check2 sdd-opt-check" />}
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {/* Footer */}
+                        <div className="sdd-panel-footer">
+                          <span className="sdd-panel-footer-tip">
+                            <i className="bi bi-layers me-1" />{pagesList.length} sheets · {projectData?.areas?.length || 0} areas
+                          </span>
+                          {!readOnly && (
+                            <button
+                              type="button"
+                              className="sdd-panel-add-btn"
+                              onClick={() => { handleAddNewSheetPage(); setSheetDropdownOpen(false); }}
+                            >
+                              <i className="bi bi-plus-lg" /> New Sheet
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Click-outside overlay */}
+                    {sheetDropdownOpen && (
+                      <div
+                        style={{ position: 'fixed', inset: 0, zIndex: 9998 }}
+                        onClick={() => { setSheetDropdownOpen(false); setSheetSearchQuery(''); }}
+                      />
+                    )}
                   </div>
-                </div>
-              )}
+                );
+              })()}
+
+
+
+
+
 
               {/* Section Header when in 'View All' mode */}
               {activeSection === 'all' && (
@@ -1451,6 +1904,7 @@ export default function MeasurementSheet() {
         projectData={projectData}
         onUpdateProjectData={setAndSave}
         projectName={projectData?.header?.projectName || project?.name}
+        onOpenPrintView={() => { setShowQuickMeasure(false); setIsPrintView(true); }}
       />
 
       {/* Rate Master Library Modal */}

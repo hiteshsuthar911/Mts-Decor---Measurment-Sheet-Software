@@ -53,6 +53,11 @@ function DefaultRedirect() {
     logout();
     return <Navigate to="/login" replace />;
   }
+  const isCapacitor = window.location.protocol === 'capacitor:' || window.location.hostname === 'localhost';
+  const lastProject = localStorage.getItem('mts_last_project_id') || '6aa8f92c3bb049cf50fdc6c4';
+  if (isCapacitor && lastProject && window.innerWidth < 768) {
+    return <Navigate to={'/sheet/' + lastProject + '?field=1'} replace />;
+  }
   return <Navigate to={session.role === 'ADMIN' ? '/admin' : '/projects'} replace />;
 }
 
@@ -64,7 +69,7 @@ export default function App() {
         logout();
         if (typeof window !== 'undefined') {
           const path = window.location.pathname || '';
-          const isPublic = path.startsWith('/sign') || path.startsWith('/engineer') || path.startsWith('/review') || path.startsWith('/site-review') || path.startsWith('/c/') || path.startsWith('/login') || path.startsWith('/download') || path.startsWith('/apps');
+          const isPublic = path.startsWith('/sign') || path.startsWith('/engineer') || path.startsWith('/review') || path.startsWith('/site-review') || path.startsWith('/login') || path.startsWith('/download') || path.startsWith('/apps');
           if (!isPublic) {
             window.location.replace('/login');
           }
@@ -76,18 +81,17 @@ export default function App() {
     <Router>
       <ScrollToTop />
       <Routes>
-        {/* Public */}
+        {/* ── 1. PUBLIC PORTAL & SIGNING ROUTES ── */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/sign/:projectId" element={<ClientSignPortal />} />
         <Route path="/review/:projectId" element={<ClientSignPortal />} />
         <Route path="/engineer/:projectId" element={<SiteEngineerPortal />} />
         <Route path="/site-review/:projectId" element={<SiteEngineerPortal />} />
-        <Route path="/c/:companySlug" element={<UnderConstructionPage />} />
         <Route path="/construction" element={<UnderConstructionPage />} />
         <Route path="/download" element={<DownloadPage />} />
         <Route path="/apps" element={<DownloadPage />} />
 
-        {/* ADMIN only */}
+        {/* ── 2. SOFTWARE OPERATIONAL ADMIN PORTAL ── */}
         <Route
           path="/admin"
           element={

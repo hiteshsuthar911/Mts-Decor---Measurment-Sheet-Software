@@ -1,7 +1,16 @@
 // Central axios-like fetch wrapper for the MS PRO API
+const isCapacitor = typeof window !== 'undefined' && (
+  window.Capacitor !== undefined ||
+  window.location.protocol === 'capacitor:' ||
+  window.location.protocol === 'ionic:' ||
+  (window.location.hostname === 'localhost' && !window.location.port)
+);
 const isElectron = typeof window !== 'undefined' && (window.isElectron || window.location.protocol === 'file:');
-const DEFAULT_PROD_URL = isElectron ? 'https://mts-decor-measurment-sheet-software.onrender.com/api' : '/api';
-const BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? DEFAULT_PROD_URL : (isElectron ? 'https://mts-decor-measurment-sheet-software.onrender.com/api' : 'http://localhost:5001/api'));
+const isNativeApp = isCapacitor || isElectron;
+
+const PROD_API_URL = 'https://mts-decor-measurment-sheet-software.onrender.com/api';
+const DEFAULT_PROD_URL = isNativeApp ? PROD_API_URL : '/api';
+const BASE_URL = import.meta.env.VITE_API_URL || (isNativeApp ? PROD_API_URL : (import.meta.env.PROD ? DEFAULT_PROD_URL : 'http://localhost:5001/api'));
 
 function getToken() {
   try {
@@ -12,7 +21,9 @@ function getToken() {
 
 async function request(method, path, body) {
   const token = getToken();
-  const res = await fetch(`${BASE_URL}${path}`, {
+  const url = path.startsWith('http') ? path : `${BASE_URL}${path.startsWith('/') ? path : '/' + path}`;
+  
+  const res = await fetch(url, {
     method,
     headers: {
       'Content-Type': 'application/json',
@@ -20,19 +31,20 @@ async function request(method, path, body) {
     },
     ...(body ? { body: JSON.stringify(body) } : {}),
   });
+  
   const data = await res.json();
   if (!res.ok) {
     if ((res.status === 401 || res.status === 403) && typeof window !== 'undefined') {
-      const path = window.location.pathname || '';
-      const isPublicPath = path.startsWith('/sign') || 
-                           path.startsWith('/review') || 
-                           path.startsWith('/engineer') || 
-                           path.startsWith('/site-review') || 
-                           path.startsWith('/login') || 
-                           path.startsWith('/c/') || 
-                           path.startsWith('/construction') || 
-                           path.startsWith('/download') || 
-                           path.startsWith('/apps');
+      const currentPath = window.location.pathname || '';
+      const isPublicPath = currentPath.startsWith('/sign') || 
+                           currentPath.startsWith('/review') || 
+                           currentPath.startsWith('/engineer') || 
+                           currentPath.startsWith('/site-review') || 
+                           currentPath.startsWith('/login') || 
+                           currentPath.startsWith('/c/') || 
+                           currentPath.startsWith('/construction') || 
+                           currentPath.startsWith('/download') || 
+                           currentPath.startsWith('/apps');
       if (!isPublicPath) {
         localStorage.removeItem('MS_PRO_AUTH_V1');
         window.location.replace('/login');
@@ -50,4 +62,4 @@ export const api = {
   delete: (path)        => request('DELETE', path),
 };
 
-export { BASE_URL, getToken };
+export { BASE_URL, getToken, isNativeApp };

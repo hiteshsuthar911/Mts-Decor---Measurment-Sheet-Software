@@ -20,6 +20,7 @@ export const CATEGORIZED_WORK_TYPES = {
     'Design Floor Tiles',
     'Design Floor Tiles with Koba',
     'Floor Italian Marble',
+    'Kota Stone Filling',
     'Koba',
     'Patta Tiles'
   ],
@@ -29,7 +30,16 @@ export const CATEGORIZED_WORK_TYPES = {
     'Single Shempered Edge Stone Sill',
     'Double Shempered Edge Stone Sill',
     'Skirting',
-    'Shempered Edge Skirting'
+    'Tiles Skirting',
+    'Shempered Edge Skirting',
+    'Italian Marble / Stone Shempered Edge Skirting'
+  ],
+  'Door Frames & Fittings': [
+    'Main Door Frame Install',
+    'Bedroom Door Frame Install',
+    'Door Frame Removing',
+    'Kadappa Fitting',
+    'MS Angle Removing'
   ],
   'Edges & Chamfers': [
     'Kani Edge Tiles',
@@ -40,6 +50,7 @@ export const CATEGORIZED_WORK_TYPES = {
   ],
   'Kitchen Platforms & Counters': [
     'Platform',
+    'Kadappa Fitting',
     'Kitchen Platform Remove',
     'Basin Counter',
     'Basin Counter Remove'
@@ -60,12 +71,19 @@ export const CATEGORIZED_WORK_TYPES = {
   'Civil, Plaster & Masonry': [
     'Plaster',
     'Plaster Remove',
+    'Plaster Removing',
     'Tiles Remove',
+    'Tiles Removing',
     'Block Work',
     'Block Work Remove',
     'Brick Bat',
     'Brick Bat Remove',
-    'Brick Work Remove'
+    'Brick Bat Removing',
+    'Brick Work Remove',
+    'Wall Removing',
+    'Koba Removing',
+    'Door Frame Removing',
+    'MS Angle Removing'
   ],
   'Finishing & Joint Treatments': [
     'Epoxy Filling',
@@ -93,6 +111,7 @@ export const WORK_CATEGORIES = [
   'Design Floor Tiles with Koba',
   'Floor Tiles',
   'Floor Italian Marble',
+  'Kota Stone Filling',
   'Koba',
   'Patta Tiles',
   'Wall Tiles',
@@ -102,7 +121,14 @@ export const WORK_CATEGORIES = [
   'Single Shempered Edge Stone Sill',
   'Double Shempered Edge Stone Sill',
   'Skirting',
+  'Tiles Skirting',
   'Shempered Edge Skirting',
+  'Italian Marble / Stone Shempered Edge Skirting',
+  'Main Door Frame Install',
+  'Bedroom Door Frame Install',
+  'Door Frame Removing',
+  'Kadappa Fitting',
+  'MS Angle Removing',
   'Kani Edge Tiles',
   'Kani Edge Stone',
   'Sharp Edge Tiles',
@@ -123,12 +149,17 @@ export const WORK_CATEGORIES = [
   'Niche Create',
   'Plaster',
   'Plaster Remove',
+  'Plaster Removing',
   'Tiles Remove',
+  'Tiles Removing',
   'Block Work',
   'Block Work Remove',
   'Brick Bat',
   'Brick Bat Remove',
+  'Brick Bat Removing',
   'Brick Work Remove',
+  'Wall Removing',
+  'Koba Removing',
   'Epoxy Filling',
   'Acid Wash',
   'Other'
@@ -152,6 +183,7 @@ export const COMMON_DESCRIPTIONS = [
   'Design Floor Tiles with Koba',
   'Floor Tiles',
   'Floor Italian Marble',
+  'Kota Stone Filling',
   'Koba',
   'Patta Tiles',
   'Wall Tiles',
@@ -161,7 +193,14 @@ export const COMMON_DESCRIPTIONS = [
   'Single Shempered Edge Stone Sill',
   'Double Shempered Edge Stone Sill',
   'Skirting',
+  'Tiles Skirting',
   'Shempered Edge Skirting',
+  'Italian Marble / Stone Shempered Edge Skirting',
+  'Main Door Frame Install',
+  'Bedroom Door Frame Install',
+  'Door Frame Removing',
+  'Kadappa Fitting',
+  'MS Angle Removing',
   'Kani Edge Tiles',
   'Kani Edge Stone',
   'Sharp Edge Tiles',
@@ -182,12 +221,17 @@ export const COMMON_DESCRIPTIONS = [
   'Niche Create',
   'Plaster',
   'Plaster Remove',
+  'Plaster Removing',
   'Tiles Remove',
+  'Tiles Removing',
   'Block Work',
   'Block Work Remove',
   'Brick Bat',
   'Brick Bat Remove',
+  'Brick Bat Removing',
   'Brick Work Remove',
+  'Wall Removing',
+  'Koba Removing',
   'Epoxy Filling',
   'Acid Wash',
   'Other'
@@ -246,7 +290,7 @@ export const CATEGORIZED_REMARKS = {
     'Lobby',
     'Terrace',
     'Compound',
-    'Other'
+    'Other' 
   ]
 };
 

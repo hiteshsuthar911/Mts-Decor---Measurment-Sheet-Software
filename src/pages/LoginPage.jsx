@@ -2,8 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { loginInit, loginVerify2FA } from '../utils/auth';
 import { getFounderSlides } from '../utils/storage';
-import AppStoreBadges from '../components/AppStoreBadges';
-import UiverseLoginButton from '../components/UiverseLoginButton';
+import { LiquidMetalButton } from '../components/ui/liquid-metal-button';
 import ThemeToggle from '../components/ThemeToggle';
 
 const STATIC_FOUNDER_SLIDES = [
@@ -28,6 +27,12 @@ export default function LoginPage() {
 
   // Official MTS DECOR Website URL
   const websiteUrl = 'https://mts-decor-website.onrender.com';
+
+  // Force light theme on the login page always
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', 'light');
+    document.documentElement.setAttribute('data-bs-theme', 'light');
+  }, []);
 
   // Step 1: Credentials | Step 2: Two-Step 6-Digit Verification
   const [step, setStep] = useState(1);
@@ -214,41 +219,65 @@ export default function LoginPage() {
           {/* STEP 1: Enter Username & Password */}
           {step === 1 && (
             <>
-              <h1>Welcome back</h1>
-              <p className="subtitle">Please enter your credentials to proceed.</p>
+              <h1>Welcome back<span className="accent-dot">.</span></h1>
+              <p className="subtitle">Sign in to your MTS Decor account to continue.</p>
 
               <form onSubmit={handleStep1Submit} autoComplete="off">
                 {/* Email / Username Input */}
                 <div className="mb-3">
-                  <label className="untitled-label text-uppercase" htmlFor="emailInput">
+                  <label className="untitled-label" htmlFor="emailInput">
                     User ID or Email
                   </label>
-                  <input
-                    id="emailInput"
-                    type="text"
-                    className="untitled-input text-uppercase"
-                    placeholder="ENTER YOUR USER ID OR EMAIL"
-                    value={emailOrUser}
-                    onChange={(e) => setEmailOrUser(e.target.value.toUpperCase())}
-                    style={{ textTransform: 'uppercase' }}
-                    required
-                    autoFocus
-                  />
+                  <div className="position-relative">
+                    <span
+                      className="position-absolute top-50 start-0 translate-middle-y ps-3"
+                      style={{ pointerEvents: 'none', color: '#94a3b8', zIndex: 2 }}
+                    >
+                      <i className="bi bi-person-fill" style={{ fontSize: '15px' }} />
+                    </span>
+                    <input
+                      id="emailInput"
+                      type="text"
+                      className="untitled-input"
+                      placeholder="Enter your User ID or email"
+                      value={emailOrUser}
+                      onChange={(e) => setEmailOrUser(e.target.value.toUpperCase())}
+                      style={{ paddingLeft: '38px', textTransform: 'uppercase' }}
+                      required
+                      autoFocus
+                    />
+                  </div>
                 </div>
 
                 {/* Password Input */}
                 <div className="mb-3">
-                  <label className="untitled-label" htmlFor="passwordInput">
-                    Password
-                  </label>
+                  <div className="d-flex align-items-center justify-content-between mb-1">
+                    <label className="untitled-label mb-0" htmlFor="passwordInput">
+                      Password
+                    </label>
+                    <a
+                      href="mailto:support@mtsdecor.com?subject=Password%20Reset%20Request"
+                      className="text-decoration-none text-muted"
+                      style={{ fontSize: '11.5px', fontWeight: 500 }}
+                    >
+                      Forgot?
+                    </a>
+                  </div>
                   <div className="position-relative">
+                    <span
+                      className="position-absolute top-50 start-0 translate-middle-y ps-3"
+                      style={{ pointerEvents: 'none', color: '#94a3b8', zIndex: 2 }}
+                    >
+                      <i className="bi bi-lock-fill" style={{ fontSize: '15px' }} />
+                    </span>
                     <input
                       id="passwordInput"
                       type={showPass ? 'text' : 'password'}
-                      className="untitled-input pe-5"
-                      placeholder="••••••••••••"
+                      className="untitled-input"
+                      placeholder="Enter your password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
+                      style={{ paddingLeft: '38px', paddingRight: '42px' }}
                       required
                     />
                     <button
@@ -264,22 +293,22 @@ export default function LoginPage() {
                 </div>
 
                 {/* Cloudflare Turnstile Human Verification Screen (Free Bot Defense) */}
-                <div className="mb-3 d-flex flex-column align-items-center">
+                <div className="mb-3 d-flex flex-column align-items-center justify-content-center p-2 rounded-3" style={{ background: '#f8fafc', border: '1px solid #f1f5f9' }}>
                   <div ref={turnstileContainerRef} id="cf-turnstile-container" style={{ minHeight: '65px' }}></div>
                 </div>
 
                 {/* Hidden submit button for native Enter key support */}
                 <button type="submit" style={{ display: 'none' }} aria-hidden="true" tabIndex={-1} />
 
-                {/* Submit Credentials Button (Uiverse Button Mastery 13) */}
-                <div className="d-flex flex-column align-items-center my-2">
-                  <UiverseLoginButton loading={loading} disabled={loading} />
-                  {loading && (
-                    <div className="text-muted extra-small fw-bold text-uppercase mt-2 d-flex align-items-center gap-2">
-                      <span className="spinner-border spinner-border-sm text-primary" role="status"></span>
-                      <span>Authenticating...</span>
-                    </div>
-                  )}
+                {/* Submit Credentials Button (Liquid Metal Shader Button) */}
+                <div className="my-3 w-100">
+                  <LiquidMetalButton
+                    label={loading ? "Logging in..." : "Login"}
+                    type="submit"
+                    loading={loading}
+                    disabled={loading}
+                    fullWidth
+                  />
                 </div>
               </form>
             </>
@@ -338,20 +367,15 @@ export default function LoginPage() {
                   />
                 </div>
 
-                <button
-                  type="submit"
-                  className="untitled-btn-primary"
-                  disabled={loading || otpCode.length !== 6}
-                >
-                  {loading ? (
-                    <>
-                      <span className="spinner-border spinner-border-sm me-2" role="status"></span>
-                      Verifying...
-                    </>
-                  ) : (
-                    'Verify & Sign in'
-                  )}
-                </button>
+                <div className="my-3 w-100">
+                  <LiquidMetalButton
+                    label={loading ? "Verifying..." : "Verify & Sign in"}
+                    type="submit"
+                    loading={loading}
+                    disabled={loading || otpCode.length !== 6}
+                    fullWidth
+                  />
+                </div>
 
                 <div className="text-center mt-3">
                   <button
@@ -365,43 +389,6 @@ export default function LoginPage() {
               </form>
             </div>
           )}
-        </div>
-
-        {/* App Store & Google Play Download Badges */}
-        <div className="mt-4 pt-2 text-center border-top border-light">
-          <div className="text-muted extra-small text-uppercase fw-bold mb-2" style={{ letterSpacing: '0.05em' }}>
-            Get MTS Decor on Mobile & Desktop
-          </div>
-          <AppStoreBadges height={38} showWindowsMac={false} align="center" />
-          <div className="mt-2">
-            <Link to="/download" className="text-decoration-none extra-small text-muted fw-semibold">
-              <i className="bi bi-display me-1 text-primary"></i>
-              <span>Also available for Windows PC & Mac →</span>
-            </Link>
-          </div>
-        </div>
-
-        {/* Bottom Copyright & Official Website Link */}
-        <div className="untitled-footer-text mt-3 text-center">
-          <div className="mb-2">
-            <a
-              href={websiteUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="badge bg-light text-dark border border-secondary border-opacity-25 px-3 py-1.5 text-decoration-none extra-small fw-bold d-inline-flex align-items-center gap-1 shadow-xs"
-              style={{ transition: 'all 0.2s ease' }}
-            >
-              <i className="bi bi-globe2 text-primary"></i>
-              <span>Official MTS DECOR Website</span>
-              <i className="bi bi-box-arrow-up-right text-muted"></i>
-            </a>
-          </div>
-          <div className="text-secondary extra-small text-uppercase fw-semibold">
-            &copy; {new Date().getFullYear()} MTS Decor &bull; All Rights Reserved
-          </div>
-          <div className="extra-small text-muted text-uppercase mt-1 fw-bold">
-            Built by <span className="text-dark fw-bolder">Hitesh Jagdish Suthar</span>
-          </div>
         </div>
       </div>
 

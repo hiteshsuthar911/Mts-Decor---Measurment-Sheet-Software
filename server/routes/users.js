@@ -129,8 +129,7 @@ router.put('/change-password', auth, async (req, res, next) => {
 // GET /api/users (List all users)
 router.get('/', auth, requireAdmin, async (req, res, next) => {
   try {
-    const users = await User.find({}, 'username name role companyId companySlug createdAt updatedAt')
-      .populate('companyId', 'name slug')
+    const users = await User.find({}, 'username name role createdAt updatedAt')
       .sort({ createdAt: -1 });
     res.json(users);
   } catch (err) {
@@ -141,7 +140,7 @@ router.get('/', auth, requireAdmin, async (req, res, next) => {
 // POST /api/users (Create new user)
 router.post('/', auth, requireAdmin, async (req, res, next) => {
   try {
-    const { username, name, password, role, companyId, companySlug } = req.body;
+    const { username, name, password, role } = req.body;
     if (!username || !password || !name) {
       return res.status(400).json({ message: 'USERNAME, NAME, AND PASSWORD ARE REQUIRED' });
     }
@@ -158,11 +157,9 @@ router.post('/', auth, requireAdmin, async (req, res, next) => {
       name: name.trim().toUpperCase(),
       password: hashedPassword,
       role: role === 'ADMIN' ? 'ADMIN' : 'USER',
-      companyId: companyId || null,
-      companySlug: companySlug || 'mts-decor',
     });
 
-    logger.logAdminAction(req.user.username, 'CREATE_USER', `Created user: "${newUser.username}" (${newUser.role}) for company: "${newUser.companySlug}"`, req);
+    logger.logAdminAction(req.user.username, 'CREATE_USER', `Created user: "${newUser.username}" (${newUser.role})`, req);
 
     res.status(201).json({
       _id: newUser._id,
@@ -184,20 +181,18 @@ router.put('/:id/password', auth, requireAdmin, async (req, res, next) => {
       return res.status(400).json({ message: 'PASSWORD MUST BE AT LEAST 4 CHARACTERS' });
     }
 
-    const hashedPassword = await bcrypt.hash(password.trim(), 10);
-    const user = await User.findByIdAndUpdate(
-      req.params.id,
-      { password: hashedPassword },
-      { returnDocument: 'after' }
-    );
-
-    if (!user) {
+    const targetUser = await User.findById(req.params.id);
+    if (!targetUser) {
       return res.status(404).json({ message: 'USER NOT FOUND' });
     }
 
-    logger.logAdminAction(req.user.username, 'RESET_PASSWORD', `Updated password for: "${user.username}"`, req);
+    const hashedPassword = await bcrypt.hash(password.trim(), 10);
+    targetUser.password = hashedPassword;
+    await targetUser.save();
 
-    res.json({ message: 'PASSWORD UPDATED SUCCESSFULLY', username: user.username });
+    logger.logAdminAction(req.user.username, 'RESET_PASSWORD', `Updated password for: "${targetUser.username}"`, req);
+
+    res.json({ message: 'PASSWORD UPDATED SUCCESSFULLY', username: targetUser.username });
   } catch (err) {
     next(err);
   }
@@ -210,12 +205,18 @@ router.delete('/:id', auth, requireAdmin, async (req, res, next) => {
       return res.status(400).json({ message: 'CANNOT DELETE CURRENTLY LOGGED IN ADMIN ACCOUNT' });
     }
 
-    const user = await User.findByIdAndDelete(req.params.id);
-    if (!user) {
+    const targetUser = await User.findById(req.params.id);
+    if (!targetUser) {
       return res.status(404).json({ message: 'USER NOT FOUND' });
     }
 
-    logger.logAdminAction(req.user.username, 'DELETE_USER', `Deleted user: "${user.username}" (ID: ${user._id})`, req);
+    if (targetUser.username === 'admin') {
+      return res.status(400).json({ message: 'CANNOT DELETE MASTER PLATFORM ADMIN' });
+    }
+
+    await targetUser.deleteOne();
+
+    logger.logAdminAction(req.user.username, 'DELETE_USER', `Deleted user: "${targetUser.username}" (ID: ${targetUser._id})`, req);
 
     res.json({ message: 'USER DELETED SUCCESSFULLY' });
   } catch (err) {
