@@ -109,6 +109,9 @@ app.use(express.static(distPath));
 // Fallback for nested asset requests
 app.use('/sheet/assets', express.static(path.join(distPath, 'assets')));
 app.use('/projects/assets', express.static(path.join(distPath, 'assets')));
+app.use('/pdf/assets', express.static(path.join(distPath, 'assets')));
+app.use('/view/assets', express.static(path.join(distPath, 'assets')));
+app.use('/verify/assets', express.static(path.join(distPath, 'assets')));
 
 // Client-side SPA routing fallback
 app.use((req, res, next) => {

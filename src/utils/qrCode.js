@@ -6,15 +6,13 @@ import QRCode from 'qrcode';
  * @param {number} pageNumber - Current sheet page number
  * @returns {Promise<string>} Data URL containing QR code PNG
  */
-export async function generateVerificationQRCode(projectData, pageNumber = 1) {
+export async function generateVerificationQRCode(projectData, pageNumber = 1, explicitProjectId = null) {
   try {
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://mtsdecor.com';
-    const projectId = projectData?.id || 'doc-mts';
-    const title = encodeURIComponent(projectData?.projectTitle || 'Measurement Sheet');
-    const date = projectData?.date || new Date().toISOString().split('T')[0];
+    const projectId = explicitProjectId || projectData?.id || projectData?._id || projectData?.header?.projectId || 'doc-mts';
     
-    // Verification URL that can be opened on any phone camera
-    const verifyUrl = `${origin}/#verify?id=${projectId}&title=${title}&dt=${date}&p=${pageNumber}`;
+    // Direct public PDF view URL that can be opened on any phone camera without login
+    const verifyUrl = `${origin}/pdf/${projectId}`;
     
     const qrDataUrl = await QRCode.toDataURL(verifyUrl, {
       errorCorrectionLevel: 'M',
@@ -36,13 +34,11 @@ export async function generateVerificationQRCode(projectData, pageNumber = 1) {
 /**
  * Synchronous SVG generator fallback for QR codes
  */
-export async function generateVerificationQRSvg(projectData, pageNumber = 1) {
+export async function generateVerificationQRSvg(projectData, pageNumber = 1, explicitProjectId = null) {
   try {
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://mtsdecor.com';
-    const projectId = projectData?.id || 'doc-mts';
-    const title = encodeURIComponent(projectData?.projectTitle || 'Measurement Sheet');
-    const date = projectData?.date || new Date().toISOString().split('T')[0];
-    const verifyUrl = `${origin}/#verify?id=${projectId}&title=${title}&dt=${date}&p=${pageNumber}`;
+    const projectId = explicitProjectId || projectData?.id || projectData?._id || projectData?.header?.projectId || 'doc-mts';
+    const verifyUrl = `${origin}/pdf/${projectId}`;
 
     return await QRCode.toString(verifyUrl, {
       type: 'svg',

@@ -94,10 +94,10 @@ export default function PrintSheetView({
   const [qrCodeUrl, setQrCodeUrl] = useState('');
 
   useEffect(() => {
-    generateVerificationQRCode(projectData).then(url => {
+    generateVerificationQRCode(projectData, 1, projectId).then(url => {
       if (url) setQrCodeUrl(url);
     });
-  }, [projectData]);
+  }, [projectData, projectId]);
 
   const [savingPdf, setSavingPdf] = useState(false);
   const [savePdfProgress, setSavePdfProgress] = useState('');

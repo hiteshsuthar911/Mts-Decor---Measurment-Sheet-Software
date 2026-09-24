@@ -9,6 +9,7 @@ import ProfilePage from './pages/ProfilePage';
 import UnderConstructionPage from './pages/UnderConstructionPage';
 import ClientSignPortal from './pages/ClientSignPortal';
 import SiteEngineerPortal from './pages/SiteEngineerPortal';
+import PublicPdfViewer from './pages/PublicPdfViewer';
 import { getSession, isLoggedIn, logout } from './utils/auth';
 import { api } from './utils/api';
 
@@ -48,6 +49,23 @@ function RoleRoute({ children, allowedRole }) {
 }
 
 function DefaultRedirect() {
+  if (typeof window !== 'undefined') {
+    const hash = window.location.hash || '';
+    if (hash.includes('verify')) {
+      const match = hash.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+      if (match && match[1]) {
+        return <Navigate to={`/pdf/${match[1]}`} replace />;
+      }
+    }
+    const search = window.location.search || '';
+    if (search.includes('id=')) {
+      const match = search.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+      if (match && match[1]) {
+        return <Navigate to={`/pdf/${match[1]}`} replace />;
+      }
+    }
+  }
+
   const session = getSession();
   if (!session || !session.token) {
     logout();
@@ -69,7 +87,7 @@ export default function App() {
         logout();
         if (typeof window !== 'undefined') {
           const path = window.location.pathname || '';
-          const isPublic = path.startsWith('/sign') || path.startsWith('/engineer') || path.startsWith('/review') || path.startsWith('/site-review') || path.startsWith('/login') || path.startsWith('/download') || path.startsWith('/apps');
+          const isPublic = path.startsWith('/sign') || path.startsWith('/engineer') || path.startsWith('/review') || path.startsWith('/site-review') || path.startsWith('/pdf') || path.startsWith('/view') || path.startsWith('/verify') || path.startsWith('/login') || path.startsWith('/download') || path.startsWith('/apps');
           if (!isPublic) {
             window.location.replace('/login');
           }
@@ -81,8 +99,12 @@ export default function App() {
     <Router>
       <ScrollToTop />
       <Routes>
-        {/* ── 1. PUBLIC PORTAL & SIGNING ROUTES ── */}
+        {/* ── 1. PUBLIC PORTAL & VERIFIED PDF VIEWER ROUTES ── */}
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/pdf/:projectId" element={<PublicPdfViewer />} />
+        <Route path="/view/:projectId" element={<PublicPdfViewer />} />
+        <Route path="/verify/:projectId" element={<PublicPdfViewer />} />
+        <Route path="/verify" element={<PublicPdfViewer />} />
         <Route path="/sign/:projectId" element={<ClientSignPortal />} />
         <Route path="/review/:projectId" element={<ClientSignPortal />} />
         <Route path="/engineer/:projectId" element={<SiteEngineerPortal />} />

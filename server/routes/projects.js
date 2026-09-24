@@ -335,6 +335,35 @@ function getProjectAccessPin(project) {
   return String(project._id).slice(-4).toUpperCase();
 }
 
+// GET /api/projects/public-pdf/:id — Public read-only verification / PDF view when scanning printed QR code
+router.get('/public-pdf/:id', async (req, res) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(404).json({ message: 'MEASUREMENT SHEET NOT FOUND OR INVALID LINK' });
+    }
+    const project = await Project.findById(req.params.id);
+    if (!project || project.isDeleted) {
+      return res.status(404).json({ message: 'MEASUREMENT SHEET NOT FOUND OR HAS BEEN DELETED' });
+    }
+
+    const data = project.data || {};
+    res.json({
+      id: project._id,
+      projectName: project.name || data.header?.projectName || 'Measurement Sheet',
+      companySlug: project.companySlug,
+      header: data.header || {},
+      areas: data.areas || [],
+      settings: data.settings || {},
+      clientApproval: data.clientApproval || null,
+      engineerQueries: data.engineerQueries || [],
+      updatedAt: project.updatedAt
+    });
+  } catch (err) {
+    console.error('Public PDF fetch error:', err);
+    res.status(500).json({ message: 'SERVER ERROR' });
+  }
+});
+
 // GET /api/projects/sign-portal/:id
 router.get('/sign-portal/:id', async (req, res) => {
   try {
