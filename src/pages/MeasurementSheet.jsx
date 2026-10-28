@@ -13,6 +13,8 @@ import ClientApprovalModal from '../components/ClientApprovalModal';
 import SiteEngineerReviewModal from '../components/SiteEngineerReviewModal';
 import SummaryPrintModal from '../components/SummaryPrintModal';
 import GstInvoiceModal from '../components/GstInvoiceModal';
+import MailDispatchModal from '../components/MailDispatchModal';
+import WhatsAppShareModal from '../components/WhatsAppShareModal';
 import { applyRatesToProject, updateCategoryRateInProject } from '../utils/rateMaster';
 import { saveRevision } from '../utils/revisionHistory';
 import { getSession, logout } from '../utils/auth';
@@ -52,6 +54,8 @@ export default function MeasurementSheet() {
   const [showGstInvoice, setShowGstInvoice]     = useState(false);
   const [showClientApproval, setShowClientApproval] = useState(false);
   const [showEngineerReview, setShowEngineerReview] = useState(false);
+  const [showMailModal, setShowMailModal]           = useState(false);
+  const [showWhatsAppModal, setShowWhatsAppModal]   = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [notFound, setNotFound]         = useState(false);
   const [fetchError, setFetchError]     = useState('');
@@ -773,6 +777,16 @@ export default function MeasurementSheet() {
     showToast(pin ? 'SIGN-OFF PORTAL PIN SAVED' : 'PIN PROTECTION REMOVED');
   };
 
+  const handleUpdateEngineerPin = (pin) => {
+    if (!projectData) return;
+    const updated = {
+      ...projectData,
+      engineerPortalPin: pin || null
+    };
+    setAndSave(updated);
+    showToast(pin ? 'SITE ENGINEER PASSCODE SAVED' : 'ENGINEER PASSCODE RESET TO DEFAULT');
+  };
+
   const handleCommitEngineerQuery = (queryId) => {
     if (!projectData) return;
     const queries = projectData.engineerQueries || [];
@@ -920,7 +934,7 @@ export default function MeasurementSheet() {
   );
 
   return (
-    <div className="app-container min-vh-100 d-flex flex-column bg-light">
+    <div className="app-container min-vh-100 d-flex flex-column bg-light" style={{ paddingBottom: 'calc(65px + env(safe-area-inset-bottom, 0px))' }}>
       {/* Identity Verify Modal */}
       <VerifyModal
         show={showVerify}
@@ -1004,6 +1018,8 @@ export default function MeasurementSheet() {
         pendingEngineerQueriesCount={(projectData?.engineerQueries || []).filter(q => q.status === 'PENDING').length}
         onOpenClientApproval={() => setShowClientApproval(true)}
         clientApproval={projectData?.clientApproval}
+        onOpenMailModal={() => setShowMailModal(true)}
+        onOpenWhatsAppModal={() => setShowWhatsAppModal(true)}
         isSaving={isSaving}
         lastSavedAt={lastSavedAt}
         isPrintView={isPrintView}
@@ -1936,6 +1952,7 @@ export default function MeasurementSheet() {
         onCommitQuery={handleCommitEngineerQuery}
         onRejectQuery={handleRejectEngineerQuery}
         onRefresh={fetchEngineerQueries}
+        onUpdateEngineerPin={handleUpdateEngineerPin}
       />
 
       {/* Standalone Executive Summary / Abstract Print Modal */}
@@ -1957,6 +1974,86 @@ export default function MeasurementSheet() {
         grandTotals={grandTotals}
         currencySymbol={projectData?.settings?.currencySymbol || '₹'}
       />
+
+      {/* Official Email Bill & Document Dispatch Modal */}
+      <MailDispatchModal
+        show={showMailModal}
+        onClose={() => setShowMailModal(false)}
+        projectId={projectId}
+        projectName={projectData?.header?.projectName || project?.name}
+        clientName={projectData?.header?.clientName || projectData?.clientApproval?.signerName || project?.clientName}
+        clientEmail={projectData?.header?.clientEmail || projectData?.clientApproval?.clientEmail || project?.clientEmail}
+        billAmount={grandTotals?.grandTotal || grandTotals?.raBillTotal || ''}
+        onSuccess={() => showToast('BILL DISPATCHED VIA EMAIL!')}
+      />
+
+      {/* Quick WhatsApp Bill Dispatch Modal */}
+      <WhatsAppShareModal
+        show={showWhatsAppModal}
+        onClose={() => setShowWhatsAppModal(false)}
+        projectId={projectId}
+        projectName={projectData?.header?.projectName || project?.name}
+        folderName={projectData?.header?.folderName || project?.folderName || ''}
+        clientName={projectData?.header?.clientName || projectData?.clientApproval?.signerName || project?.clientName}
+        location={projectData?.header?.location || projectData?.header?.siteAddress || project?.location}
+        billNumber={projectData?.raBilling?.raBillNumber || 'Final Abstract'}
+        totalAmount={grandTotals?.grandTotalPayable || grandTotals?.totalNetAmount || 0}
+        clientPhone={projectData?.header?.clientPhone || ''}
+      />
+
+      {/* ── MOBILE FLOATING ACTION DOCK (Visible on Mobile Screens) ── */}
+      {!isPrintView && (
+        <div className="ms-mobile-dock d-flex d-md-none no-print">
+          {/* Quick Field Mode Keypad Button */}
+          <button
+            type="button"
+            className="btn btn-sm d-flex align-items-center gap-1.5 fw-bold shadow-sm rounded-pill text-dark px-3 py-2"
+            style={{
+              background: 'linear-gradient(135deg, #f5d77f 0%, #d4af37 100%)',
+              border: 'none',
+              fontSize: '12px'
+            }}
+            onClick={() => setShowQuickMeasure(true)}
+            title="Open Mobile Field Keypad with large numbers & fraction tape"
+          >
+            <i className="bi bi-phone-fill fs-6" />
+            <span>FIELD KEYPAD</span>
+          </button>
+
+          {/* Quick Add Area / Room Button */}
+          {!readOnly && (
+            <button
+              type="button"
+              className="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1 fw-bold rounded-pill px-2.5 py-2"
+              style={{ fontSize: '12px' }}
+              onClick={handleAddNewArea}
+              title="Add New Room / Location"
+            >
+              <i className="bi bi-plus-lg" />
+              <span>+ Room</span>
+            </button>
+          )}
+
+          {/* Cloud Save Button */}
+          {!readOnly && (
+            <button
+              type="button"
+              className="btn btn-sm btn-success d-flex align-items-center gap-1 fw-bold rounded-pill shadow-xs px-3 py-2"
+              style={{ fontSize: '12px' }}
+              onClick={handleManualSave}
+              disabled={isSaving}
+              title="Save changes to MongoDB Atlas Cloud"
+            >
+              {isSaving ? (
+                <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true" />
+              ) : (
+                <i className="bi bi-cloud-arrow-up-fill" />
+              )}
+              <span>SAVE</span>
+            </button>
+          )}
+        </div>
+      )}
 
       <footer className="bg-white border-top py-2 text-center text-muted extra-small mt-auto no-print text-uppercase">
         &copy; {new Date().getFullYear()} MS PRO — CONTRACTOR MEASUREMENT &amp; RA BILL SYSTEM &bull; <Link to="/download" className="text-decoration-none text-muted fw-bold">GET MOBILE &amp; DESKTOP APPS</Link>

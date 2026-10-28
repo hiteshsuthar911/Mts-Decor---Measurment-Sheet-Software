@@ -69,11 +69,13 @@ app.use('/api/auth',           require('./routes/auth'));
 app.use('/api/users',          require('./routes/users'));
 app.use('/api/companies',      require('./routes/companies'));
 app.use('/api/projects',       require('./routes/projects'));
+app.use('/api/folders',        require('./routes/folders'));
 app.use('/api/excel-files',    require('./routes/excelFiles'));
 app.use('/api/pdf-files',      require('./routes/pdfFiles'));
 app.use('/api/founder-slides', require('./routes/founderSlides'));
 app.use('/api/backup',         require('./routes/backup'));
 app.use('/api/labour-rates',   require('./routes/civilLabourRates'));
+app.use('/api/mail',           require('./routes/mail'));
 
 // Direct download endpoints for Windows & Mac builds
 app.get('/api/download/windows', (req, res) => {
@@ -154,6 +156,7 @@ async function seedUsers() {
     { username: 'admin',    password: 'admin@123',    name: 'ADMINISTRATOR', role: 'ADMIN' },
     { username: 'jagdish',  password: 'jagdish@123',  name: 'JAGDISH',       role: 'USER'  },
     { username: 'madanlal', password: 'madanlal@123', name: 'MADANLAL',      role: 'USER'  },
+    { username: 'engineer', password: 'engineer@123', name: 'SITE ENGINEER', role: 'USER'  },
   ];
   for (const u of users) {
     const exists = await User.findOne({ username: u.username });

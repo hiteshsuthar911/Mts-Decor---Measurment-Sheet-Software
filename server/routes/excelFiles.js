@@ -57,6 +57,8 @@ router.post('/', auth, async (req, res) => {
       fileSize,
       billingMode,
       metadata,
+      folderId,
+      folderName,
     } = req.body;
 
     if (!fileName || !fileBase64) {
@@ -72,6 +74,8 @@ router.post('/', auth, async (req, res) => {
       fileSize: fileSize || Math.round((fileBase64.length * 3) / 4),
       companyId: req.user.companyId || null,
       companySlug: req.user.companySlug || 'mts-decor',
+      folderId: folderId || null,
+      folderName: folderName || '',
       ownerUsername: req.user.username,
       ownerName: req.user.name,
       billingMode: Boolean(billingMode),
@@ -85,13 +89,31 @@ router.post('/', auth, async (req, res) => {
   }
 });
 
+// PATCH / PUT /api/excel-files/:id/folder — move excel file to folder or root
+const handleMoveExcelFolder = async (req, res) => {
+  try {
+    const file = await ExcelFile.findById(req.params.id);
+    if (!file) return res.status(404).json({ message: 'FILE NOT FOUND' });
+    const { folderId, folderName } = req.body;
+    file.folderId = folderId || null;
+    file.folderName = folderName || '';
+    await file.save();
+    res.json({ success: true, file });
+  } catch (err) {
+    res.status(500).json({ message: 'SERVER ERROR' });
+  }
+};
+router.patch('/:id/folder', auth, handleMoveExcelFolder);
+router.put('/:id/folder', auth, handleMoveExcelFolder);
+
 // DELETE /api/excel-files/:id — delete a saved excel file
 router.delete('/:id', auth, async (req, res) => {
   try {
     const file = await ExcelFile.findById(req.params.id);
     if (!file) return res.status(404).json({ message: 'EXCEL FILE NOT FOUND' });
 
-    if (file.ownerUsername !== req.user.username && req.user.role !== 'ADMIN') {
+    const isCompanyAdmin = req.user.role === 'ADMIN' || req.user.username === 'admin' || req.user.username === 'jagdish' || req.user.username === 'hitesh';
+    if (!isCompanyAdmin && file.ownerUsername !== req.user.username) {
       return res.status(403).json({ message: 'FORBIDDEN: ONLY OWNER OR ADMIN CAN DELETE' });
     }
 

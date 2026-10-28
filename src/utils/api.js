@@ -9,8 +9,7 @@ const isElectron = typeof window !== 'undefined' && (window.isElectron || window
 const isNativeApp = isCapacitor || isElectron;
 
 const PROD_API_URL = 'https://mts-decor-measurment-sheet-software.onrender.com/api';
-const DEFAULT_PROD_URL = isNativeApp ? PROD_API_URL : '/api';
-const BASE_URL = import.meta.env.VITE_API_URL || (isNativeApp ? PROD_API_URL : (import.meta.env.PROD ? DEFAULT_PROD_URL : 'http://localhost:5001/api'));
+const BASE_URL = import.meta.env.VITE_API_URL || (isNativeApp ? PROD_API_URL : '/api');
 
 function getToken() {
   try {
@@ -32,9 +31,17 @@ async function request(method, path, body) {
     ...(body ? { body: JSON.stringify(body) } : {}),
   });
   
-  const data = await res.json();
+  let data = {};
+  try {
+    data = await res.json();
+  } catch {
+    data = {};
+  }
+
   if (!res.ok) {
-    if ((res.status === 401 || res.status === 403) && typeof window !== 'undefined') {
+    // Only redirect to login on genuine token authentication failures (401 with UNAUTHORIZED message)
+    // NEVER log out on 403 Forbidden or other status codes!
+    if (res.status === 401 && typeof window !== 'undefined') {
       const currentPath = window.location.pathname || '';
       const isPublicPath = currentPath.startsWith('/sign') || 
                            currentPath.startsWith('/review') || 
@@ -45,12 +52,13 @@ async function request(method, path, body) {
                            currentPath.startsWith('/construction') || 
                            currentPath.startsWith('/download') || 
                            currentPath.startsWith('/apps');
-      if (!isPublicPath) {
+      const authErrorMessage = String(data.message || '').toUpperCase();
+      if (!isPublicPath && (authErrorMessage.includes('UNAUTHORIZED') || authErrorMessage.includes('TOKEN'))) {
         localStorage.removeItem('MS_PRO_AUTH_V1');
         window.location.replace('/login');
       }
     }
-    throw new Error(data.message || 'API ERROR');
+    throw new Error(data.message || `API ERROR (${res.status})`);
   }
   return data;
 }
@@ -59,6 +67,7 @@ export const api = {
   get:    (path)        => request('GET', path),
   post:   (path, body)  => request('POST', path, body),
   put:    (path, body)  => request('PUT', path, body),
+  patch:  (path, body)  => request('PATCH', path, body),
   delete: (path)        => request('DELETE', path),
 };
 

@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { WORK_CATEGORIES, CATEGORIZED_WORK_TYPES, COMMON_ROOM_AREAS, UNIT_OPTIONS, REMARK_OPTIONS, CATEGORIZED_REMARKS } from '../data/categories';
 import LineItemRow from './LineItemRow';
+import MobileLineItemCard from './MobileLineItemCard';
 import { calculateAreaTotals, formatNumber, formatCurrency } from '../utils/calculations';
 import { createEmptyItem } from '../data/sampleData';
 import MultiFloorReplicateModal, { parseFloorNumber, formatFloorName } from './MultiFloorReplicateModal';
@@ -21,6 +22,20 @@ export default function AreaBlock({
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showReplicateModal, setShowReplicateModal] = useState(false);
   const [selectedItemIds, setSelectedItemIds] = useState([]);
+  const [mobileLayout, setMobileLayout] = useState(() => {
+    try {
+      return localStorage.getItem('mts_mobile_layout_mode') || 'cards';
+    } catch {
+      return 'cards';
+    }
+  });
+
+  const toggleMobileLayout = (mode) => {
+    setMobileLayout(mode);
+    try {
+      localStorage.setItem('mts_mobile_layout_mode', mode);
+    } catch {}
+  };
   const [customCategories, setCustomCategories] = useState(() => {
     try {
       const saved = localStorage.getItem('mts_custom_work_categories');
@@ -563,16 +578,112 @@ export default function AreaBlock({
             </div>
           )}
 
-          {/* ─── Mobile Swipe Hint ──────────────────────── */}
-          <div className="ent-swipe-hint">
-            <span><i className="bi bi-arrow-left-right" style={{ color: '#2563eb' }} /> Scroll to view all columns</span>
+          {/* ─── Mobile View Switcher Bar (Mobile Only) ─── */}
+          <div className="d-flex d-md-none align-items-center justify-content-between px-2.5 py-2 bg-light border-bottom">
+            <div className="d-flex align-items-center gap-1.5">
+              <span className="badge bg-secondary-subtle text-dark border extra-small fw-bold">
+                {area.items?.length || 0} ITEMS
+              </span>
+              <span className="extra-small text-muted fw-bold">
+                NET: <span className="text-primary">{formatNumber(totals.netArea)}</span> {area.items?.[0]?.unit || 'SFT'}
+              </span>
+            </div>
+
+            <div className="btn-group btn-group-sm bg-white p-0.5 rounded-pill border shadow-2xs">
+              <button
+                type="button"
+                className={`btn btn-xs rounded-pill px-2.5 py-1 fw-bold ${
+                  mobileLayout === 'cards' ? 'btn-primary text-white' : 'btn-light text-dark'
+                }`}
+                onClick={() => toggleMobileLayout('cards')}
+                style={{ fontSize: '11px' }}
+                title="Mobile Touch Card View (No horizontal scrolling)"
+              >
+                <i className="bi bi-card-text me-1" />
+                Cards
+              </button>
+              <button
+                type="button"
+                className={`btn btn-xs rounded-pill px-2.5 py-1 fw-bold ${
+                  mobileLayout === 'table' ? 'btn-primary text-white' : 'btn-light text-dark'
+                }`}
+                onClick={() => toggleMobileLayout('table')}
+                style={{ fontSize: '11px' }}
+                title="Spreadsheet Table View"
+              >
+                <i className="bi bi-table me-1" />
+                Table
+              </button>
+            </div>
+          </div>
+
+          {/* ─── Mobile Cards View (Rendered on mobile when cards mode active) ─── */}
+          {mobileLayout === 'cards' && (
+            <div className="d-md-none p-2 bg-light">
+              {(area.items || []).map((item, itemIdx) => (
+                <MobileLineItemCard
+                  key={item.id}
+                  item={item}
+                  index={itemIdx}
+                  totalItems={area.items?.length || 0}
+                  billingMode={billingMode}
+                  currencySymbol={currencySymbol}
+                  onChangeItem={handleChangeItem}
+                  onDuplicateItem={handleDuplicateItem}
+                  onDeleteItem={handleDeleteItem}
+                  onMoveItemUp={() => handleMoveItem(item.id, 'up')}
+                  onMoveItemDown={() => handleMoveItem(item.id, 'down')}
+                />
+              ))}
+
+              {(!area.items || area.items.length === 0) && (
+                <div className="text-center py-4 px-3 bg-white border rounded-3 my-2 shadow-xs">
+                  <i className="bi bi-rulers fs-2 text-muted mb-2 d-block" />
+                  <div className="fw-bold small text-dark mb-1">No measurement rows in this room</div>
+                  <div className="extra-small text-muted mb-3">Add items below or use the field keypad</div>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-primary fw-bold px-3 py-1.5 rounded-pill shadow-xs"
+                    onClick={() => handleAddItem(false)}
+                  >
+                    <i className="bi bi-plus-lg me-1" /> Add First Row
+                  </button>
+                </div>
+              )}
+
+              {/* Mobile Quick Add Buttons */}
+              <div className="d-flex gap-2 my-2.5">
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm flex-grow-1 fw-bold py-2 rounded-3 shadow-xs d-flex align-items-center justify-content-center gap-1.5"
+                  onClick={() => handleAddItem(false)}
+                >
+                  <i className="bi bi-plus-circle-fill" />
+                  <span>ADD ROW (+ ADD)</span>
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-outline-danger btn-sm fw-bold py-2 px-3 rounded-3 d-flex align-items-center gap-1"
+                  onClick={() => handleAddItem(true)}
+                  title="Add Deduction Row (Door, Window, Cutout)"
+                >
+                  <i className="bi bi-dash-circle-fill" />
+                  <span>DEDUCT (− LESS)</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ─── Mobile Swipe Hint (When table is active on mobile) ─── */}
+          <div className={`ent-swipe-hint ${mobileLayout === 'cards' ? 'd-none d-md-flex' : ''}`}>
+            <span><i className="bi bi-arrow-left-right" style={{ color: '#2563eb' }} /> Swipe horizontally to view all columns</span>
             <span style={{ background: '#e2e8f0', borderRadius: '3px', padding: '2px 7px', fontSize: '10px', fontWeight: 700 }}>
               {area.items?.length || 0} rows
             </span>
           </div>
 
-          {/* ─── Data Grid Table ────────────────────────── */}
-          <div className="table-responsive" style={{ overflowX: 'auto' }}>
+          {/* ─── Data Grid Table (Always on desktop; on mobile when table layout chosen) ─── */}
+          <div className={`table-responsive ${mobileLayout === 'cards' ? 'd-none d-md-block' : ''}`} style={{ overflowX: 'auto' }}>
             <table className={`xls-grid-table ${billingMode ? 'billing-active' : ''}`}>
               <thead className="xls-grid-thead">
                 <tr>

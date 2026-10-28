@@ -26,26 +26,22 @@ export async function loginVerify2FA(challengeId, code) {
   return session;
 }
 
-// Direct Login (fallback)
+// Direct Login (No 2FA Required)
 export async function login(username, password) {
-  try {
-    const result = await api.post('/auth/login', { username, password });
-    const session = {
-      token: result.token,
-      id: result.user.id,
-      username: result.user.username,
-      name: result.user.name,
-      role: result.user.role,
-      companyId: result.user.companyId || null,
-      companySlug: result.user.companySlug || 'mts-decor',
-      company: result.user.company || null,
-      loginTime: new Date().toISOString(),
-    };
-    localStorage.setItem(AUTH_KEY, JSON.stringify(session));
-    return session;
-  } catch (err) {
-    return null;
-  }
+  const result = await api.post('/auth/login', { username, password });
+  const session = {
+    token: result.token,
+    id: result.user.id,
+    username: result.user.username,
+    name: result.user.name,
+    role: result.user.role,
+    companyId: result.user.companyId || null,
+    companySlug: result.user.companySlug || 'mts-decor',
+    company: result.user.company || null,
+    loginTime: new Date().toISOString(),
+  };
+  localStorage.setItem(AUTH_KEY, JSON.stringify(session));
+  return session;
 }
 
 // Verify current user's own password (for edit guard)
@@ -93,4 +89,5 @@ export const ADMIN_USERS = [
   { username: 'admin',    name: 'ADMINISTRATOR', role: 'ADMIN', defaultPassword: 'admin@123' },
   { username: 'jagdish',  name: 'JAGDISH',       role: 'USER',  defaultPassword: 'jagdish@123' },
   { username: 'madanlal', name: 'MADANLAL',      role: 'USER',  defaultPassword: 'madanlal@123' },
+  { username: 'engineer', name: 'SITE ENGINEER', role: 'USER',  defaultPassword: 'engineer@123' },
 ];

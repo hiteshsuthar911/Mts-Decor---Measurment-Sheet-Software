@@ -329,18 +329,17 @@ export default function SiteEngineerPortal() {
             <form onSubmit={handleUnlockPin}>
               <div className="mb-4">
                 <input
-                  type="password"
-                  inputMode="numeric"
+                  type="text"
                   autoFocus
                   className="form-control form-control-lg text-center fw-bold letter-spacing-2"
-                  style={{ letterSpacing: '6px', fontSize: '1.4rem' }}
-                  placeholder="••••"
-                  maxLength={10}
+                  style={{ letterSpacing: '4px', fontSize: '1.3rem', textTransform: 'uppercase' }}
+                  placeholder="ENTER PASSCODE"
+                  maxLength={20}
                   value={pinInput}
-                  onChange={(e) => setPinInput(e.target.value)}
+                  onChange={(e) => setPinInput(e.target.value.toUpperCase())}
                   required
                 />
-                <div className="form-text extra-small mt-1 text-muted">Passcode / PIN is case-sensitive</div>
+                <div className="form-text extra-small mt-1 text-muted">Site Engineer Passcode (provided by contractor)</div>
               </div>
 
               <button type="submit" className="btn btn-warning text-dark w-100 py-2 fw-bold shadow-sm">

@@ -1961,6 +1961,211 @@ body {
   animation: loginShake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97);
 }
 
+/* ── MINIMALIST WOBAKA-STYLE LOGIN ── */
+.minimal-login-wrapper {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #fbf8f3;
+  padding: 32px 16px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+.minimal-login-card {
+  width: 100%;
+  max-width: 390px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.minimal-login-icon {
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  border: 4px solid #1e293b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+  background-color: transparent;
+}
+
+.minimal-login-title {
+  font-size: 29px;
+  font-weight: 700;
+  color: #111827;
+  letter-spacing: -0.4px;
+  margin-bottom: 32px;
+}
+
+.minimal-login-form {
+  width: 100%;
+  text-align: left;
+}
+
+.minimal-login-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 7px;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.minimal-login-input {
+  width: 100%;
+  height: 44px;
+  padding: 10px 14px;
+  background-color: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #111827;
+  margin-bottom: 18px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.minimal-login-input:focus {
+  border-color: #2d3f50;
+  box-shadow: 0 0 0 3px rgba(45, 63, 80, 0.1);
+}
+
+.minimal-login-input::placeholder {
+  color: #9ca3af;
+  font-size: 13.5px;
+}
+
+.minimal-login-btn {
+  width: 100%;
+  height: 46px;
+  background-color: #2d3f50;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 14.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.18s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 18px;
+}
+
+.minimal-login-btn:hover:not(:disabled) {
+  background-color: #1f2d3a;
+}
+
+.minimal-login-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.minimal-login-lost-box {
+  width: 100%;
+  background-color: #e8dfcf;
+  color: #2d3f50;
+  border-radius: 6px;
+  padding: 13px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  text-decoration: none;
+  display: block;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  border: none;
+}
+
+.minimal-login-lost-box:hover {
+  background-color: #dfd5c3;
+  color: #1a2530;
+}
+.sliding-login-container {
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  position: relative;
+  overflow: hidden;
+  border-radius: 28px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.22), 0 4px 16px rgba(0, 0, 0, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #0a0a0c;
+}
+
+.sliding-login-track {
+  display: flex;
+  height: 100%;
+  transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+.sliding-login-slide {
+  height: 100%;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: clamp(24px, 3.5vw, 48px);
+}
+
+.sliding-login-pill {
+  height: 7px;
+  border-radius: 4px;
+  background-color: rgba(255, 255, 255, 0.25);
+  cursor: pointer;
+  transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.sliding-login-pill.active {
+  background-color: #ffffff;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+}
+
+.login-auth-btn {
+  width: 100%;
+  height: 48px;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: 0.3px;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35), 0 1px 3px rgba(16, 24, 40, 0.06);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.login-auth-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45);
+  transform: translateY(-1px);
+}
+
+.login-auth-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.login-auth-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
+
 /* ── RESPONSIVE ── */
 @media (min-width: 992px) and (max-width: 1280px) {
   .untitled-form-side {
@@ -2457,8 +2662,38 @@ input::placeholder {
 .workspace-filter-bar {
   background-color: #ffffff;
   border-color: #e2e8f0 !important;
-  flex-wrap: nowrap !important;
-  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+@media (min-width: 769px) {
+  .workspace-filter-bar {
+    flex-wrap: nowrap !important;
+    overflow: hidden;
+  }
+}
+
+@media (max-width: 768px) {
+  .workspace-filter-bar {
+    flex-wrap: wrap !important;
+    padding: 8px !important;
+    gap: 8px !important;
+  }
+  .workspace-filter-tabs {
+    width: 100% !important;
+    margin-bottom: 4px;
+    padding: 3px !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+  .workspace-search-group {
+    flex: 1 1 auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+  }
+  .workspace-sort-select {
+    max-width: 130px !important;
+    font-size: 11.5px !important;
+  }
 }
 
 /* Tab pills container — scrollable horizontally on small screens */
@@ -2638,6 +2873,125 @@ input::placeholder {
 .workspace-upload-dashed-card {
   background-color: #f0fdf4;
 }
+
+/* ── Modern Dashboard 2.0 Enhancements ── */
+.workspace-view-toggle {
+  background: #f1f5f9;
+  border-radius: 8px;
+  padding: 2px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.workspace-view-btn {
+  border: none;
+  background: transparent;
+  color: #64748b;
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.workspace-view-btn:hover {
+  color: #0f172a;
+}
+.workspace-view-btn.active {
+  background: #ffffff;
+  color: #2563eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.workspace-sort-select {
+  border: 1px solid #e2e8f0;
+  background-color: #ffffff;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+  padding: 5px 10px;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+.workspace-sort-select:hover, .workspace-sort-select:focus {
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+/* Dense & Clean Table View for Contractors */
+.workspace-table-container {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+}
+.workspace-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13px;
+}
+.workspace-table thead th {
+  background-color: #f8fafc;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e2e8f0;
+  white-space: nowrap;
+}
+.workspace-table tbody td {
+  padding: 13px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+  color: #334155;
+  transition: background-color 0.12s ease;
+}
+.workspace-table tbody tr:last-child td {
+  border-bottom: none;
+}
+.workspace-table tbody tr:hover td {
+  background-color: #f8fafc;
+}
+
+/* Modern Folder Card Elevation */
+.workspace-folder-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+  position: relative;
+  overflow: hidden;
+}
+.workspace-folder-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -2px rgba(15, 23, 42, 0.03);
+  border-color: #cbd5e1;
+}
+
+/* Status / Amount highlight pill */
+.workspace-amount-pill {
+  font-family: inherit;
+  font-weight: 700;
+  color: #059669;
+  background-color: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
 .workspace-modal-card {
   background-color: #ffffff;
   border-color: #e2e8f0;
@@ -3165,6 +3519,62 @@ input::placeholder {
     padding: 4px 6px;
     font-size: 11px;
   }
+
+  /* Sticky frozen columns on mobile table swipe */
+  .table-responsive {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+  }
+  .xls-grid-thead th.th-rn,
+  .xls-cell--sr {
+    position: sticky !important;
+    left: 0 !important;
+    z-index: 6 !important;
+    background: #e2e8f0 !important;
+  }
+  .xls-grid-thead th:nth-child(2),
+  .xls-cell--type {
+    position: sticky !important;
+    left: 52px !important;
+    z-index: 6 !important;
+    background: #ffffff !important;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.08);
+  }
+  .xls-row:nth-child(even) .xls-cell--type {
+    background: #fafbfc !important;
+  }
+  .xls-row--deduction .xls-cell--type {
+    background: #fff5f5 !important;
+  }
+  .xls-row--selected .xls-cell--type {
+    background: #dbeafe !important;
+  }
+}
+
+/* ── Mobile Floating Action Dock (Measurement Sheet) ── */
+.ms-mobile-dock {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1040;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 8px 12px;
+  padding-bottom: max(10px, env(safe-area-inset-bottom, 10px));
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+[data-theme="dark"] .ms-mobile-dock,
+[data-bs-theme="dark"] .ms-mobile-dock {
+  background: rgba(15, 23, 42, 0.96);
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .ent-area-id-badge {

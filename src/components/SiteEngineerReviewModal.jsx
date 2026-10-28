@@ -9,19 +9,35 @@ export default function SiteEngineerReviewModal({
   projectData,
   onCommitQuery,
   onRejectQuery,
-  onRefresh
+  onRefresh,
+  onUpdateEngineerPin
 }) {
   const [activeTab, setActiveTab] = useState('queries'); // 'queries' | 'share'
   const [statusFilter, setStatusFilter] = useState('ALL'); // 'ALL' | 'PENDING' | 'COMMITTED'
   const [copied, setCopied] = useState(false);
+  const [copiedPin, setCopiedPin] = useState(false);
+  const [copiedAll, setCopiedAll] = useState(false);
+  const [pinSaved, setPinSaved] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Default distinct fallback engineer passcode: 'E' + last 3 characters of project ID
+  const rawId = String(projectId || '');
+  const defaultEngineerPin = rawId.length >= 4 ? `E${rawId.slice(-4, -1).toUpperCase()}` : 'ENG1';
+  const [engineerPin, setEngineerPin] = useState('');
 
   const queries = Array.isArray(projectData?.engineerQueries) ? projectData.engineerQueries : [];
   const pendingCount = queries.filter(q => q.status === 'PENDING').length;
 
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
   const portalUrl = `${origin}/engineer/${projectId}`;
+
+  useEffect(() => {
+    if (show) {
+      const activePin = projectData?.engineerPortalPin || projectData?.engineerPin || defaultEngineerPin;
+      setEngineerPin(activePin);
+    }
+  }, [show, projectData?.engineerPortalPin, projectData?.engineerPin, defaultEngineerPin]);
 
   useEffect(() => {
     if (show && onRefresh) {
@@ -51,6 +67,44 @@ export default function SiteEngineerReviewModal({
     }
   };
 
+  const handleSavePin = () => {
+    if (!onUpdateEngineerPin) return;
+    const cleanPin = engineerPin.trim();
+    onUpdateEngineerPin(cleanPin || null);
+    setPinSaved(true);
+    setTimeout(() => setPinSaved(false), 2000);
+  };
+
+  const handleGenerateRandomPin = () => {
+    const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+    let rnd = 'E';
+    for (let i = 0; i < 3; i++) {
+      rnd += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setEngineerPin(rnd);
+    if (onUpdateEngineerPin) {
+      onUpdateEngineerPin(rnd);
+      setPinSaved(true);
+      setTimeout(() => setPinSaved(false), 2000);
+    }
+  };
+
+  const handleCopyPinOnly = () => {
+    navigator.clipboard.writeText(engineerPin).then(() => {
+      setCopiedPin(true);
+      setTimeout(() => setCopiedPin(false), 2000);
+    });
+  };
+
+  const handleCopyAll = () => {
+    const projName = projectData?.header?.projectName || projectData?.name || 'Measurement Sheet';
+    const text = `Site Engineer Review Portal: ${portalUrl}\nSite Engineer Passcode: ${engineerPin}\n(Project: ${projName})`;
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedAll(true);
+      setTimeout(() => setCopiedAll(false), 2500);
+    });
+  };
+
   const handleCopyLink = () => {
     navigator.clipboard.writeText(portalUrl).then(() => {
       setCopied(true);
@@ -59,7 +113,8 @@ export default function SiteEngineerReviewModal({
   };
 
   const handleWhatsAppShare = () => {
-    const text = `Hello Engineer, please review the measurement sheet for "${projectData?.header?.projectName || 'Project'}" on site and submit any queries/corrections here:\n${portalUrl}`;
+    const projName = projectData?.header?.projectName || projectData?.name || 'Measurement Sheet';
+    const text = `Hello Engineer, please review the measurement sheet for "${projName}" on site and submit any queries/corrections here:\n${portalUrl}\n\n🔐 Site Engineer Passcode: ${engineerPin}\n(Case-sensitive passcode for engineer site access)`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   };
 
@@ -358,20 +413,96 @@ export default function SiteEngineerReviewModal({
                       </button>
                     </div>
 
+                    {/* Dedicated Site Engineer Passcode / PIN Section (Different from Client Sign PIN) */}
+                    <div className="card border-warning-subtle bg-warning-subtle bg-opacity-25 rounded-3 p-3 mb-3">
+                      <div className="d-flex align-items-center justify-content-between gap-2 mb-2 flex-wrap">
+                        <div className="d-flex align-items-center gap-1.5">
+                          <i className="bi bi-shield-lock-fill text-warning fs-6"></i>
+                          <span className="fw-bold text-dark extra-small text-uppercase">
+                            Site Engineer Passcode / PIN
+                          </span>
+                        </div>
+                        <span className="badge bg-warning text-dark border border-warning-subtle rounded-pill extra-small fw-bold px-2 py-0.5">
+                          Different from Client Sign PIN
+                        </span>
+                      </div>
+
+                      <div className="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                        <div className="input-group input-group-sm" style={{ width: '190px' }}>
+                          <span className="input-group-text bg-white font-monospace text-muted">PIN</span>
+                          <input
+                            type="text"
+                            className="form-control font-monospace fw-bold text-primary"
+                            style={{ letterSpacing: '2px', fontSize: '14px', textTransform: 'uppercase' }}
+                            value={engineerPin}
+                            onChange={(e) => {
+                              setEngineerPin(e.target.value.toUpperCase());
+                              setPinSaved(false);
+                            }}
+                            placeholder="e.g. E6AD"
+                            maxLength={15}
+                          />
+                        </div>
+
+                        <button
+                          type="button"
+                          className={`btn btn-sm ${pinSaved ? 'btn-success' : 'btn-primary'} fw-bold px-2.5 shadow-2xs`}
+                          onClick={handleSavePin}
+                          title="Save this custom passcode for Site Engineer"
+                        >
+                          {pinSaved ? <><i className="bi bi-check2"></i> Saved</> : 'Save PIN'}
+                        </button>
+
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline-secondary"
+                          onClick={handleGenerateRandomPin}
+                          title="Generate a random engineer passcode"
+                        >
+                          <i className="bi bi-shuffle"></i>
+                        </button>
+
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline-secondary"
+                          onClick={handleCopyPinOnly}
+                          title="Copy engineer passcode only"
+                        >
+                          {copiedPin ? <i className="bi bi-check2 text-success"></i> : <i className="bi bi-key"></i>}
+                        </button>
+                      </div>
+
+                      <div className="extra-small text-muted d-flex align-items-center gap-1">
+                        <i className="bi bi-info-circle text-primary"></i>
+                        <span>
+                          The site engineer uses this dedicated password <strong>{engineerPin}</strong> to access the review portal. Client sign-off uses the separate client PIN <code>{projectData?.signPortalPin || String(projectId).slice(-4).toUpperCase()}</code>.
+                        </span>
+                      </div>
+                    </div>
+
                     <div className="d-flex flex-wrap gap-2">
                       <button
                         type="button"
                         className="btn btn-success btn-sm fw-bold px-3 d-flex align-items-center gap-1 shadow-sm"
                         onClick={handleWhatsAppShare}
                       >
-                        <i className="bi bi-whatsapp"></i> Share on WhatsApp
+                        <i className="bi bi-whatsapp"></i> Share on WhatsApp (with PIN)
+                      </button>
+
+                      <button
+                        type="button"
+                        className={`btn btn-sm ${copiedAll ? 'btn-dark' : 'btn-outline-dark'} fw-bold px-3 d-flex align-items-center gap-1`}
+                        onClick={handleCopyAll}
+                        title="Copy portal URL and engineer passcode together"
+                      >
+                        {copiedAll ? <><i className="bi bi-check2 text-success"></i> Copied Info!</> : <><i className="bi bi-clipboard-check"></i> Copy Link + PIN</>}
                       </button>
 
                       <a
-                        href={portalUrl}
+                        href={`${portalUrl}?pin=${encodeURIComponent(engineerPin)}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="btn btn-outline-dark btn-sm fw-semibold d-flex align-items-center gap-1"
+                        className="btn btn-outline-secondary btn-sm fw-semibold d-flex align-items-center gap-1"
                       >
                         <i className="bi bi-box-arrow-up-right"></i> Open Portal Preview
                       </a>

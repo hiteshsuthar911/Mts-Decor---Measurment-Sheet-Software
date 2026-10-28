@@ -36,6 +36,31 @@ function canUserAccessProject(user, project) {
   return false;
 }
 
+// Helper to compute total amount from project data
+function calculateTotalAmountFromData(data) {
+  if (!data) return 0;
+  if (data.grandTotals?.grandTotalPayable) return Number(data.grandTotals.grandTotalPayable);
+  if (data.grandTotals?.totalNetAmount) return Number(data.grandTotals.totalNetAmount);
+  const areas = Array.isArray(data.areas) ? data.areas : [];
+  let sum = 0;
+  for (const a of areas) {
+    for (const item of (a.items || [])) {
+      const q = parseFloat(item.quantity) || 0;
+      const l = parseFloat(item.length) || 0;
+      const h = parseFloat(item.height) || 0;
+      const r = parseFloat(item.rate) || 0;
+      const unit = String(item.unit || 'SFT').toUpperCase();
+      let total = 0;
+      if (['SFT', 'SQM'].includes(unit)) total = q * l * (h > 0 ? h : 1);
+      else if (['RFT', 'RMT'].includes(unit)) total = q * l;
+      else if (['NOS', 'PCS', 'NO'].includes(unit)) total = q;
+      else total = q * l * (h > 0 ? h : 1);
+      sum += (total * r);
+    }
+  }
+  return Math.round(sum * 100) / 100;
+}
+
 // GET /api/projects — all active projects (excluding soft-deleted)
 router.get('/', auth, async (req, res) => {
   try {
@@ -104,21 +129,28 @@ router.get('/:id', auth, async (req, res) => {
 // POST /api/projects — create new project
 router.post('/', auth, async (req, res) => {
   try {
-    const { data } = req.body;
+    const { data, folderId, folderName } = req.body;
     const areas = Array.isArray(data?.areas) ? data.areas : [];
     const totalItems = areas.reduce((sum, a) => sum + (Array.isArray(a.items) ? a.items.length : 0), 0);
+    const totalAmount = calculateTotalAmountFromData(data);
+    const assignedFolderId = folderId || data?.folderId || null;
+    const assignedFolderName = folderName || data?.folderName || '';
+
     const project = await Project.create({
       name: data?.header?.projectName || 'NEW PROJECT',
       ownerUsername: req.user.username,
       ownerName: req.user.name,
       companyId: req.user.companyId || null,
       companySlug: req.user.companySlug || 'mts-decor',
+      folderId: assignedFolderId,
+      folderName: assignedFolderName,
       lastEditedBy: req.user.name,
       lastEditedAt: new Date(),
       clientName: data?.header?.clientName || '',
       location: data?.header?.location || data?.header?.siteAddress || '',
       areasCount: areas.length,
       totalItemsCount: totalItems,
+      totalAmount,
       data: data || {},
       isDeleted: false,
     });
@@ -139,7 +171,7 @@ router.put('/:id', auth, async (req, res) => {
       return res.status(403).json({ message: 'FORBIDDEN: CANNOT ACCESS PROJECT FROM ANOTHER COMPANY' });
     }
 
-    const { data } = req.body;
+    const { data, folderId, folderName } = req.body;
     const oldData = existing.data || {};
     const newData = data ? { ...data } : {};
 
@@ -170,6 +202,16 @@ router.put('/:id', auth, async (req, res) => {
     existing.location = newData?.header?.location || newData?.header?.siteAddress || existing.location || '';
     existing.areasCount = areas.length || existing.areasCount || 0;
     existing.totalItemsCount = totalItems || existing.totalItemsCount || 0;
+    existing.totalAmount = calculateTotalAmountFromData(newData) || existing.totalAmount || 0;
+
+    if (folderId !== undefined) {
+      existing.folderId = folderId || null;
+      existing.folderName = folderName || '';
+    } else if (newData.folderId !== undefined) {
+      existing.folderId = newData.folderId || null;
+      existing.folderName = newData.folderName || '';
+    }
+
     existing.lastEditedBy = req.user.name;
     existing.lastEditedAt = new Date();
     existing.data = newData;
@@ -243,6 +285,9 @@ router.post('/:id/duplicate', auth, async (req, res) => {
       ownerName: req.user.name,
       companyId: req.user.companyId || original.companyId || null,
       companySlug: req.user.companySlug || original.companySlug || 'mts-decor',
+      folderId: original.folderId || null,
+      folderName: original.folderName || '',
+      totalAmount: original.totalAmount || 0,
       lastEditedBy: req.user.name,
       lastEditedAt: new Date(),
       clientName: clonedData?.header?.clientName || original.clientName || '',
@@ -261,6 +306,61 @@ router.post('/:id/duplicate', auth, async (req, res) => {
   }
 });
 
+// PATCH / PUT /api/projects/:id/folder — move project to folder or remove from folder
+const handleMoveProjectFolder = async (req, res) => {
+  try {
+    const project = await Project.findById(req.params.id);
+    if (!project) return res.status(404).json({ message: 'PROJECT NOT FOUND' });
+    if (!canUserAccessProject(req.user, project)) {
+      return res.status(403).json({ message: 'FORBIDDEN: CANNOT ACCESS PROJECT FROM ANOTHER COMPANY' });
+    }
+    const { folderId, folderName } = req.body;
+    project.folderId = folderId || null;
+    project.folderName = folderName || '';
+    if (project.data) {
+      project.data.folderId = folderId || null;
+      project.data.folderName = folderName || '';
+      project.markModified('data');
+    }
+    await project.save();
+    res.json({ success: true, project });
+  } catch (err) {
+    console.error('MOVE PROJECT FOLDER ERROR:', err);
+    res.status(500).json({ message: 'SERVER ERROR' });
+  }
+};
+router.patch('/:id/folder', auth, handleMoveProjectFolder);
+router.put('/:id/folder', auth, handleMoveProjectFolder);
+
+// POST /api/projects/batch/folder — batch move multiple projects to a folder or root
+router.post('/batch/folder', auth, async (req, res) => {
+  try {
+    const { projectIds, folderId, folderName } = req.body;
+    if (!Array.isArray(projectIds) || !projectIds.length) {
+      return res.status(400).json({ message: 'projectIds array required' });
+    }
+    const cleanFolderId = folderId || null;
+    const cleanFolderName = folderName || '';
+
+    await Project.updateMany(
+      { _id: { $in: projectIds } },
+      {
+        $set: {
+          folderId: cleanFolderId,
+          folderName: cleanFolderName,
+          'data.folderId': cleanFolderId,
+          'data.folderName': cleanFolderName,
+          updatedAt: new Date()
+        }
+      }
+    );
+    res.json({ success: true, count: projectIds.length });
+  } catch (err) {
+    console.error('BATCH MOVE FOLDER ERROR:', err);
+    res.status(500).json({ message: 'SERVER ERROR', error: err.message });
+  }
+});
+
 // POST /api/projects/:id/restore — restore soft-deleted project
 router.post('/:id/restore', auth, async (req, res) => {
   try {
@@ -269,7 +369,8 @@ router.post('/:id/restore', auth, async (req, res) => {
     if (!canUserAccessProject(req.user, project)) {
       return res.status(403).json({ message: 'FORBIDDEN: CANNOT ACCESS PROJECT FROM ANOTHER COMPANY' });
     }
-    if (project.ownerUsername !== req.user.username && req.user.role !== 'ADMIN')
+    const isCompanyAdmin = req.user.role === 'ADMIN' || req.user.username === 'admin' || req.user.username === 'jagdish' || req.user.username === 'hitesh';
+    if (!isCompanyAdmin && project.ownerUsername !== req.user.username)
       return res.status(403).json({ message: 'FORBIDDEN: ONLY OWNER OR ADMIN CAN RESTORE' });
 
     project.isDeleted = false;
@@ -292,7 +393,8 @@ router.delete('/:id/permanent', auth, async (req, res) => {
     if (!canUserAccessProject(req.user, project)) {
       return res.status(403).json({ message: 'FORBIDDEN: CANNOT ACCESS PROJECT FROM ANOTHER COMPANY' });
     }
-    if (project.ownerUsername !== req.user.username && req.user.role !== 'ADMIN')
+    const isCompanyAdmin = req.user.role === 'ADMIN' || req.user.username === 'admin' || req.user.username === 'jagdish' || req.user.username === 'hitesh';
+    if (!isCompanyAdmin && project.ownerUsername !== req.user.username)
       return res.status(403).json({ message: 'FORBIDDEN: ONLY OWNER OR ADMIN CAN DELETE' });
 
     await project.deleteOne();
@@ -311,7 +413,8 @@ router.delete('/:id', auth, async (req, res) => {
     if (!canUserAccessProject(req.user, project)) {
       return res.status(403).json({ message: 'FORBIDDEN: CANNOT ACCESS PROJECT FROM ANOTHER COMPANY' });
     }
-    if (project.ownerUsername !== req.user.username && req.user.role !== 'ADMIN')
+    const isCompanyAdmin = req.user.role === 'ADMIN' || req.user.username === 'admin' || req.user.username === 'jagdish' || req.user.username === 'hitesh';
+    if (!isCompanyAdmin && project.ownerUsername !== req.user.username)
       return res.status(403).json({ message: 'FORBIDDEN: ONLY OWNER OR ADMIN CAN DELETE' });
 
     project.isDeleted = true;
@@ -325,7 +428,7 @@ router.delete('/:id', auth, async (req, res) => {
   }
 });
 
-// Helper: Determine deterministic or custom security PIN for portal access
+// Helper: Determine deterministic or custom security PIN for portal access (Client Sign-Off)
 function getProjectAccessPin(project) {
   const data = project.data || {};
   if (data.signPortalPin && String(data.signPortalPin).trim()) {
@@ -333,6 +436,26 @@ function getProjectAccessPin(project) {
   }
   // Deterministic 4-character fallback PIN based on Project ID
   return String(project._id).slice(-4).toUpperCase();
+}
+
+// Helper: Determine engineer-specific access PIN / passcode (strictly distinct from client signPortalPin)
+function getEngineerAccessPin(project) {
+  const data = project.data || {};
+  // 1. Explicitly configured engineer password/PIN on this project
+  if (data.engineerPortalPin && String(data.engineerPortalPin).trim()) {
+    return String(data.engineerPortalPin).trim();
+  }
+  if (data.engineerPin && String(data.engineerPin).trim()) {
+    return String(data.engineerPin).trim();
+  }
+  // 2. Deterministic distinct fallback PIN for engineer (e.g. prefix 'E' + last 3 characters of ID)
+  // Ensures engineer PIN is always different from client sign-off PIN (which uses raw last 4 characters)
+  const rawId = String(project._id || '');
+  if (rawId.length >= 4) {
+    const last4 = rawId.slice(-4).toUpperCase();
+    return `E${last4.slice(0, 3)}`;
+  }
+  return 'ENG1';
 }
 
 // GET /api/projects/public-pdf/:id — Public read-only verification / PDF view when scanning printed QR code
@@ -473,7 +596,7 @@ router.get('/engineer-portal/:id', async (req, res) => {
     }
 
     const data = project.data || {};
-    const requiredPin = getProjectAccessPin(project);
+    const requiredPin = getEngineerAccessPin(project);
     const providedPin = String(req.query.pin || req.headers['x-portal-pin'] || req.headers['x-sign-pin'] || '').trim();
 
     // Mandatory PIN verification: Without matching PIN, return zero measurement data
@@ -516,7 +639,7 @@ router.post('/engineer-portal/:id/query', async (req, res) => {
     }
 
     const data = project.data || {};
-    const requiredPin = getProjectAccessPin(project);
+    const requiredPin = getEngineerAccessPin(project);
     const providedPin = String(req.body.pin || req.headers['x-portal-pin'] || req.headers['x-sign-pin'] || '').trim();
 
     if (!providedPin || providedPin.toUpperCase() !== requiredPin.toUpperCase()) {

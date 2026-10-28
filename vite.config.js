@@ -15,6 +15,7 @@ export default defineConfig({
   },
   base: process.env.ELECTRON_BUILD === 'true' ? './' : '/',
   server: {
+    host: true,
     proxy: {
       '/api': {
         target: 'http://localhost:5001',

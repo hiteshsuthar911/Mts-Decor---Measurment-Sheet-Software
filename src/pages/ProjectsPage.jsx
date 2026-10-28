@@ -1,7 +1,41 @@
-import { api, BASE_URL } from '../utils/api';
+import { BASE_URL } from '../utils/api';
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import * as XLSX from 'xlsx';
+import {
+  Folder,
+  FolderPlus,
+  FolderOpen,
+  FileSpreadsheet,
+  FileText,
+  Plus,
+  Search,
+  ArrowRight,
+  Clock,
+  Building2,
+  MapPin,
+  IndianRupee,
+  Share2,
+  Copy,
+  Trash2,
+  Eye,
+  Download,
+  UploadCloud,
+  CheckCircle2,
+  SlidersHorizontal,
+  Grid,
+  List,
+  Smartphone,
+  ShieldCheck,
+  X,
+  Mail,
+  User,
+  LogOut,
+  Layers,
+  ArrowLeft,
+  FolderMinus,
+  CheckSquare
+} from 'lucide-react';
 import { getSession, logout } from '../utils/auth';
 import {
   getAllProjects,
@@ -18,12 +52,24 @@ import {
   downloadExcelFromBase64,
   getAllPdfFiles,
   deletePdfFile,
-  downloadPdfFromBase64
+  downloadPdfFromBase64,
+  getAllFolders,
+  createFolder,
+  updateFolder,
+  deleteFolder,
+  moveProjectFolder,
+  batchMoveProjectsFolder,
+  moveExcelFolder,
+  movePdfFolder,
 } from '../utils/storage';
 import { BLANK_PROJECT } from '../data/sampleData';
 import AppStoreBadges from '../components/AppStoreBadges';
 import ExcelViewerModal from '../components/ExcelViewerModal';
 import PdfViewerModal from '../components/PdfViewerModal';
+import FolderModal from '../components/FolderModal';
+import MoveToFolderModal from '../components/MoveToFolderModal';
+import WhatsAppShareModal from '../components/WhatsAppShareModal';
+import { shareViaWhatsApp } from '../utils/whatsappShare';
 import ThemeToggle from '../components/ThemeToggle';
 import AppLoader from '../components/AppLoader';
 
@@ -59,21 +105,61 @@ export default function ProjectsPage() {
   const [loadingPdf, setLoadingPdf] = useState(false);
   const [selectedPdfId, setSelectedPdfId] = useState(null);
   const [pdfViewerInitialFile, setPdfViewerInitialFile] = useState(null);
+
+  // Folder & Hierarchy State
+  const [folders, setFolders] = useState([]);
+  const [loadingFolders, setLoadingFolders] = useState(false);
+  const [currentFolder, setCurrentFolder] = useState(null);
+  const [showFolderModal, setShowFolderModal] = useState(false);
+  const [editingFolder, setEditingFolder] = useState(null);
+  const [showMoveModal, setShowMoveModal] = useState(false);
+  const [moveTargetItem, setMoveTargetItem] = useState(null);
+
+  // WhatsApp Share Modal State
+  const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
+  const [whatsAppTarget, setWhatsAppTarget] = useState(null);
+
+  // Multi-Select & Batch Action States
+  const [selectedProjectIds, setSelectedProjectIds] = useState([]);
+  const [showBatchMoveModal, setShowBatchMoveModal] = useState(false);
+  const [showAllInRoot, setShowAllInRoot] = useState(false);
+
+  // Clear selections when folder or active tab changes
+  useEffect(() => {
+    setSelectedProjectIds([]);
+  }, [currentFolder, activeTab]);
+
+  // Modern View & Sort Controls
+  const [viewMode, setViewMode] = useState(() => {
+    return localStorage.getItem('ms_dashboard_view_mode') || 'grid';
+  });
+  const [sortBy, setSortBy] = useState('updated'); // 'updated' | 'name' | 'amount' | 'areas'
+
+  const handleToggleViewMode = (mode) => {
+    setViewMode(mode);
+    localStorage.setItem('ms_dashboard_view_mode', mode);
+  };
+
   useEffect(() => {
     if (!session) { navigate('/login'); return; }
     fetchProjects();
+    fetchFolders();
     fetchExcelFiles();
     fetchPdfFiles();
     fetchDeletedProjects();
-
-    // Auto-resume to active Field Mode on mobile if previous project exists
-    const isMobileDevice = typeof window !== 'undefined' && window.innerWidth < 768;
-    const hasExitedField = sessionStorage.getItem('mts_exited_field_mode');
-    const lastProject = localStorage.getItem('mts_last_project_id') || '6aa8f92c3bb049cf50fdc6c4';
-    if (isMobileDevice && !hasExitedField && lastProject) {
-      navigate(`/sheet/${lastProject}?field=1`);
-    }
   }, []);
+
+  const fetchFolders = async () => {
+    try {
+      setLoadingFolders(true);
+      const data = await getAllFolders();
+      setFolders(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.warn('Failed to load folders:', err);
+    } finally {
+      setLoadingFolders(false);
+    }
+  };
 
   const fetchProjects = async () => {
     try {
@@ -135,8 +221,159 @@ export default function ProjectsPage() {
     }
   };
 
+  const handleNewProjectInFolder = async () => {
+    if (!currentFolder) return handleNewProject();
+    try {
+      const blank = JSON.parse(JSON.stringify(BLANK_PROJECT));
+      blank.header = blank.header || {};
+      const fName = currentFolder.name || 'Site';
+      const existingInFolder = projects.filter(p => 
+        (p.folderId && String(p.folderId) === String(currentFolder._id || currentFolder.id)) ||
+        (p.folderName && p.folderName === currentFolder.name)
+      );
+      const nextIndex = existingInFolder.length + 1;
+      blank.header.projectName = `${fName} A${nextIndex}`;
+      if (currentFolder.clientName) blank.header.clientName = currentFolder.clientName;
+      if (currentFolder.location) blank.header.location = currentFolder.location;
+
+      const fId = currentFolder._id || currentFolder.id;
+      const proj = await createProject(blank);
+      if (proj && proj._id) {
+        await moveProjectFolder(proj._id, fId, currentFolder.name);
+      }
+      showToast(`NEW SHEET CREATED IN ${fName.toUpperCase()}`);
+      navigate(`/sheet/${proj._id}`);
+    } catch (err) {
+      alert('FAILED TO CREATE PROJECT: ' + err.message);
+    }
+  };
+
+  const handleSaveFolder = async (folderData) => {
+    if (editingFolder) {
+      const fId = editingFolder._id || editingFolder.id;
+      const updated = await updateFolder(fId, folderData);
+      setFolders(prev => prev.map(f => (f._id || f.id) === fId ? { ...f, ...updated } : f));
+      if (currentFolder && (currentFolder._id || currentFolder.id) === fId) {
+        setCurrentFolder(prev => ({ ...prev, ...updated }));
+      }
+      // Also update projects in local state if name changed
+      if (folderData.name && folderData.name !== editingFolder.name) {
+        setProjects(prev => prev.map(p => (p.folderId && String(p.folderId) === String(fId)) ? { ...p, folderName: folderData.name } : p));
+      }
+      showToast('FOLDER UPDATED');
+    } else {
+      const created = await createFolder(folderData);
+      setFolders(prev => [created, ...prev]);
+      showToast('NEW FOLDER CREATED');
+    }
+  };
+
+  const handleDeleteFolder = async (folderId, folderName) => {
+    if (!confirm(`DELETE FOLDER "${folderName}"? All measurement sheets inside will safely be moved to root/unassigned.`)) return;
+    try {
+      await deleteFolder(folderId);
+      setFolders(prev => prev.filter(f => (f._id || f.id) !== folderId));
+      if (currentFolder && (currentFolder._id || currentFolder.id) === folderId) {
+        setCurrentFolder(null);
+      }
+      // Refresh projects to reflect unassigned status
+      setProjects(prev => prev.map(p => (p.folderId && String(p.folderId) === String(folderId)) ? { ...p, folderId: null, folderName: '' } : p));
+      showToast('FOLDER DELETED & ITEMS SAFELY UNASSIGNED');
+    } catch (err) {
+      alert('DELETE FAILED: ' + err.message);
+    }
+  };
+
+  const handleMoveItem = async (targetFolderId, targetFolderName) => {
+    if (!moveTargetItem) return;
+    const { type, id } = moveTargetItem;
+    try {
+      if (type === 'project') {
+        await moveProjectFolder(id, targetFolderId, targetFolderName);
+        setProjects(prev => prev.map(p => (p._id || p.id) === id ? { ...p, folderId: targetFolderId, folderName: targetFolderName } : p));
+        fetchFolders();
+        showToast(targetFolderId ? `MOVED TO ${targetFolderName}` : 'MOVED TO ROOT');
+      } else if (type === 'excel') {
+        await moveExcelFolder(id, targetFolderId, targetFolderName);
+        setExcelFiles(prev => prev.map(f => (f._id || f.id) === id ? { ...f, folderId: targetFolderId, folderName: targetFolderName } : f));
+        fetchFolders();
+        showToast(targetFolderId ? `MOVED TO ${targetFolderName}` : 'MOVED TO ROOT');
+      } else if (type === 'pdf') {
+        await movePdfFolder(id, targetFolderId, targetFolderName);
+        setPdfFiles(prev => prev.map(f => (f._id || f.id) === id ? { ...f, folderId: targetFolderId, folderName: targetFolderName } : f));
+        fetchFolders();
+        showToast(targetFolderId ? `MOVED TO ${targetFolderName}` : 'MOVED TO ROOT');
+      }
+    } catch (err) {
+      alert('MOVE FAILED: ' + (err.message || 'Error'));
+    }
+  };
+
+  // ── Multi-Select & Batch Operation Handlers ──
+  const toggleSelectProject = (id) => {
+    setSelectedProjectIds(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedProjectIds.length === projectsToDisplay.length) {
+      setSelectedProjectIds([]);
+    } else {
+      setSelectedProjectIds(projectsToDisplay.map(p => p._id || p.id));
+    }
+  };
+
+  const handleRemoveSingleProjectFromFolder = async (projId) => {
+    try {
+      await moveProjectFolder(projId, null, '');
+      setProjects(prev => prev.map(p => (p._id || p.id) === projId ? { ...p, folderId: null, folderName: '' } : p));
+      fetchFolders();
+      showToast('MOVED OUT TO ROOT (NO FOLDER)');
+    } catch (err) {
+      alert('FAILED TO REMOVE FROM FOLDER: ' + (err.message || 'Error'));
+    }
+  };
+
+  const handleBatchMoveProjects = async (targetFolderId, targetFolderName) => {
+    if (!selectedProjectIds.length) return;
+    try {
+      await batchMoveProjectsFolder(selectedProjectIds, targetFolderId, targetFolderName);
+      setProjects(prev => prev.map(p => {
+        if (selectedProjectIds.includes(p._id || p.id)) {
+          return { ...p, folderId: targetFolderId, folderName: targetFolderName };
+        }
+        return p;
+      }));
+      fetchFolders();
+      const count = selectedProjectIds.length;
+      setSelectedProjectIds([]);
+      setShowBatchMoveModal(false);
+      showToast(targetFolderId ? `MOVED ${count} SHEETS TO ${targetFolderName}` : `MOVED ${count} SHEETS OUT TO ROOT`);
+    } catch (err) {
+      alert('BATCH MOVE FAILED: ' + (err.message || 'Error'));
+    }
+  };
+
+  const handleBatchDeleteSelected = async () => {
+    if (!selectedProjectIds.length) return;
+    if (!confirm(`MOVE ${selectedProjectIds.length} SELECTED SHEETS TO TRASH?`)) return;
+    try {
+      for (const id of selectedProjectIds) {
+        await deleteProject(id);
+      }
+      setProjects(prev => prev.filter(p => !selectedProjectIds.includes(p._id || p.id)));
+      const count = selectedProjectIds.length;
+      setSelectedProjectIds([]);
+      showToast(`${count} SHEETS MOVED TO TRASH`);
+    } catch (err) {
+      alert('DELETE FAILED: ' + (err.message || 'Error'));
+    }
+  };
+
   const handleDeleteProject = async (id, ownerUsername) => {
-    if (ownerUsername !== session.username && session.role !== 'ADMIN') {
+    const isCompanyAdmin = session?.role === 'ADMIN' || session?.username === 'admin' || session?.username === 'jagdish' || session?.username === 'hitesh';
+    if (!isCompanyAdmin && ownerUsername !== session.username) {
       alert('YOU CAN ONLY DELETE YOUR OWN PROJECTS.');
       return;
     }
@@ -208,7 +445,8 @@ export default function ProjectsPage() {
   };
 
   const handleDeleteExcel = async (id, ownerUsername) => {
-    if (ownerUsername !== session.username && session.role !== 'ADMIN') {
+    const isCompanyAdmin = session?.role === 'ADMIN' || session?.username === 'admin' || session?.username === 'jagdish' || session?.username === 'hitesh';
+    if (!isCompanyAdmin && ownerUsername !== session.username) {
       alert('YOU CAN ONLY DELETE YOUR OWN EXCEL FILES.');
       return;
     }
@@ -295,7 +533,8 @@ export default function ProjectsPage() {
   };
 
   const handleDeletePdf = async (id, ownerUsername) => {
-    if (ownerUsername !== session.username && session.role !== 'ADMIN') {
+    const isCompanyAdmin = session?.role === 'ADMIN' || session?.username === 'admin' || session?.username === 'jagdish' || session?.username === 'hitesh';
+    if (!isCompanyAdmin && ownerUsername !== session.username) {
       alert('YOU CAN ONLY DELETE YOUR OWN PDF FILES.');
       return;
     }
@@ -380,6 +619,14 @@ export default function ProjectsPage() {
     ? teamProjectsFiltered
     : filteredProjects;
 
+  const safeFolders = Array.isArray(folders) ? folders : [];
+  const filteredFolders = safeFolders.filter(f =>
+    !search ||
+    (f.name || '').toUpperCase().includes(search.toUpperCase()) ||
+    (f.clientName || '').toUpperCase().includes(search.toUpperCase()) ||
+    (f.location || '').toUpperCase().includes(search.toUpperCase())
+  );
+
   const safeExcelFiles = Array.isArray(excelFiles) ? excelFiles : [];
   const filteredExcelFiles = safeExcelFiles.filter(f =>
     !search ||
@@ -396,6 +643,55 @@ export default function ProjectsPage() {
     (f.ownerName || '').toUpperCase().includes(search.toUpperCase())
   );
 
+  const projectsToDisplay = currentFolder
+    ? displayedProjects.filter(p =>
+        (p.folderId && String(p.folderId) === String(currentFolder._id || currentFolder.id)) ||
+        (p.folderName && p.folderName === currentFolder.name)
+      )
+    : (search || showAllInRoot)
+    ? displayedProjects
+    : displayedProjects.filter(p => !p.folderId && !p.folderName);
+
+  const excelsToDisplay = currentFolder
+    ? filteredExcelFiles.filter(f =>
+        (f.folderId && String(f.folderId) === String(currentFolder._id || currentFolder.id)) ||
+        (f.folderName && f.folderName === currentFolder.name)
+      )
+    : (search || showAllInRoot)
+    ? filteredExcelFiles
+    : filteredExcelFiles.filter(f => !f.folderId && !f.folderName);
+
+  const pdfsToDisplay = currentFolder
+    ? filteredPdfFiles.filter(f =>
+        (f.folderId && String(f.folderId) === String(currentFolder._id || currentFolder.id)) ||
+        (f.folderName && f.folderName === currentFolder.name)
+      )
+    : (search || showAllInRoot)
+    ? filteredPdfFiles
+    : filteredPdfFiles.filter(f => !f.folderId && !f.folderName);
+
+  const currentFolderTotalAmount = currentFolder
+    ? projectsToDisplay.reduce((s, p) => s + (p.totalAmount || 0), 0)
+    : 0;
+
+  const totalPortfolioValue = safeProjects.reduce((sum, p) => sum + (p.totalAmount || 0), 0);
+
+  const sortedProjects = [...projectsToDisplay].sort((a, b) => {
+    if (sortBy === 'name') {
+      return (a.name || '').localeCompare(b.name || '');
+    }
+    if (sortBy === 'amount') {
+      return (b.totalAmount || 0) - (a.totalAmount || 0);
+    }
+    if (sortBy === 'areas') {
+      return (b.areasCount || 0) - (a.areasCount || 0);
+    }
+    // Default: 'updated'
+    const dateA = new Date(a.updatedAt || a.lastEditedAt || a.createdAt || 0);
+    const dateB = new Date(b.updatedAt || b.lastEditedAt || b.createdAt || 0);
+    return dateB - dateA;
+  });
+
   const formatFileSize = (bytes) => {
     if (!bytes || bytes === 0) return '0 KB';
     const k = 1024;
@@ -410,25 +706,121 @@ export default function ProjectsPage() {
     const location = proj.location || proj.data?.header?.location || proj.data?.header?.siteAddress || '';
     const areasCount = proj.areasCount || (Array.isArray(proj.data?.areas) ? proj.data.areas.length : 0);
     const updatedTime = proj.updatedAt || proj.lastEditedAt || proj.createdAt;
+    const isSelected = selectedProjectIds.includes(id);
 
     return (
-      <div className="workspace-project-card p-4 d-flex flex-column justify-content-between">
+      <div 
+        className="workspace-project-card p-4 d-flex flex-column justify-content-between position-relative"
+        style={{
+          border: isSelected ? '2px solid #2563eb' : undefined,
+          backgroundColor: isSelected ? '#f8faff' : undefined,
+          boxShadow: isSelected ? '0 4px 12px rgba(37, 99, 235, 0.12)' : undefined,
+          transition: 'border 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease'
+        }}
+      >
         <div>
-          {/* Top Header Row: Ownership Pill + Top-Right Ghost Actions */}
+          {/* Top Header Row: Multi-select Checkbox + Ownership Pill + Actions */}
           <div className="d-flex align-items-center justify-content-between mb-3">
-            <span className={`workspace-badge-pill ${isOwn ? 'workspace-badge-pill--own' : 'workspace-badge-pill--team'}`}>
-              <i className={`bi ${isOwn ? 'bi-person-check-fill' : 'bi-people-fill'}`}></i>
-              <span>{isOwn ? 'My Project' : (proj.ownerName || 'Team')}</span>
-            </span>
+            <div className="d-flex align-items-center gap-2 flex-wrap">
+              <input
+                type="checkbox"
+                className="form-check-input mt-0"
+                style={{ width: '17px', height: '17px', cursor: 'pointer', borderRadius: '4px' }}
+                checked={isSelected}
+                onChange={(e) => {
+                  e.stopPropagation();
+                  toggleSelectProject(id);
+                }}
+                onClick={(e) => e.stopPropagation()}
+                title={isSelected ? 'Deselect sheet' : 'Select sheet'}
+              />
 
-            <div className="d-flex align-items-center gap-1.5">
+              <span className={`workspace-badge-pill ${isOwn ? 'workspace-badge-pill--own' : 'workspace-badge-pill--team'}`}>
+                {isOwn ? <User size={12} className="text-primary" /> : <Building2 size={12} className="text-warning-emphasis" />}
+                <span>{isOwn ? 'My Project' : (proj.ownerName || 'Team')}</span>
+              </span>
+
+              {proj.folderName && !currentFolder && (
+                <span
+                  className="badge bg-light text-primary border rounded-pill px-2 py-0.5 d-inline-flex align-items-center gap-1"
+                  style={{ cursor: 'pointer', fontSize: '10.5px' }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const targetFolder = folders.find(f => (f._id || f.id) === proj.folderId || f.name === proj.folderName);
+                    if (targetFolder) setCurrentFolder(targetFolder);
+                  }}
+                  title={`Folder: ${proj.folderName} (Click to open)`}
+                >
+                  <Folder size={11} className="text-primary" />
+                  <span>{proj.folderName}</span>
+                </span>
+              )}
+            </div>
+
+            <div className="d-flex align-items-center gap-1">
+              {/* If inside a folder: direct remove from folder button */}
+              {currentFolder && (
+                <button
+                  type="button"
+                  className="workspace-card-icon-btn text-warning-emphasis"
+                  title="Remove from this folder (Move out to Root)"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRemoveSingleProjectFromFolder(id);
+                  }}
+                >
+                  <FolderMinus size={14} />
+                </button>
+              )}
+
+              {/* WhatsApp Share Button */}
+              <button
+                type="button"
+                className="workspace-card-icon-btn text-success"
+                title="Share via WhatsApp"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setWhatsAppTarget({
+                    projectName: proj.name || 'Measurement Sheet',
+                    folderName: proj.folderName || '',
+                    clientName,
+                    location,
+                    totalAmount: proj.totalAmount || 0,
+                    projectId: id,
+                    clientPhone: proj.data?.header?.clientPhone || ''
+                  });
+                  setShowWhatsAppModal(true);
+                }}
+              >
+                <Share2 size={13.5} />
+              </button>
+
+              {/* Move to Folder Button */}
+              <button
+                type="button"
+                className="workspace-card-icon-btn text-secondary"
+                title="Move to Folder / Site"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMoveTargetItem({
+                    type: 'project',
+                    id,
+                    name: proj.name,
+                    currentFolderId: proj.folderId
+                  });
+                  setShowMoveModal(true);
+                }}
+              >
+                <FolderPlus size={14} />
+              </button>
+
               <button
                 type="button"
                 className="workspace-card-icon-btn"
                 title="Duplicate Project (Make a Copy)"
                 onClick={(e) => { e.stopPropagation(); handleDuplicateProject(id); }}
               >
-                <i className="bi bi-copy"></i>
+                <Copy size={13.5} />
               </button>
 
               {isOwn && (
@@ -438,7 +830,7 @@ export default function ProjectsPage() {
                   title="Move to Trash"
                   onClick={(e) => { e.stopPropagation(); handleDeleteProject(id, proj.ownerUsername); }}
                 >
-                  <i className="bi bi-trash3"></i>
+                  <Trash2 size={13.5} />
                 </button>
               )}
             </div>
@@ -459,19 +851,19 @@ export default function ProjectsPage() {
                 boxShadow: '0 1px 2px rgba(37, 99, 235, 0.08)',
               }}
             >
-              <i className="bi bi-file-earmark-spreadsheet-fill"></i>
+              <FileSpreadsheet size={20} />
             </div>
             <div className="flex-grow-1 min-w-0" style={{ minWidth: 0 }}>
               <h6
                 className="fw-bold text-dark mb-1 text-truncate"
                 title={proj.name}
-                style={{ fontSize: '16px', letterSpacing: '-0.25px', cursor: 'pointer', lineHeight: '1.3' }}
+                style={{ fontSize: '15.5px', letterSpacing: '-0.2px', cursor: 'pointer', lineHeight: '1.3' }}
                 onClick={() => navigate(`/sheet/${id}`)}
               >
                 {proj.name || 'Untitled Project'}
               </h6>
               <div className="text-muted text-truncate" style={{ fontSize: '12px' }}>
-                Measurement Sheet • BOQ
+                Measurement Sheet &bull; BOQ
               </div>
             </div>
           </div>
@@ -485,15 +877,15 @@ export default function ProjectsPage() {
               fontSize: '12px',
             }}
           >
-            <div className="d-flex align-items-center gap-2 text-truncate" title={clientName ? `Client: ${clientName}` : 'No client specified'}>
-              <i className="bi bi-building text-secondary" style={{ fontSize: '12px', flexShrink: 0 }}></i>
+            <div className="d-flex align-items-center gap-1.5 text-truncate" title={clientName ? `Client: ${clientName}` : 'No client specified'}>
+              <Building2 size={13} className="text-secondary flex-shrink-0" />
               <span className="text-secondary fw-semibold text-truncate">
                 {clientName || 'General / Unassigned'}
               </span>
             </div>
             {location && (
-              <div className="d-flex align-items-center gap-2 text-truncate mt-1 text-muted" title={`Location: ${location}`}>
-                <i className="bi bi-geo-alt text-secondary" style={{ fontSize: '11px', flexShrink: 0 }}></i>
+              <div className="d-flex align-items-center gap-1.5 text-truncate mt-1 text-muted" title={`Location: ${location}`}>
+                <MapPin size={12} className="text-muted flex-shrink-0" />
                 <span className="text-truncate" style={{ fontSize: '11.5px' }}>{location}</span>
               </div>
             )}
@@ -503,23 +895,31 @@ export default function ProjectsPage() {
         <div>
           {/* Metadata Row */}
           <div className="d-flex align-items-center justify-content-between pt-2.5 pb-2 border-top" style={{ borderColor: '#f1f5f9' }}>
-            <span
-              className="badge border fw-semibold d-inline-flex align-items-center gap-1.5"
-              style={{
-                backgroundColor: '#ffffff',
-                color: '#334155',
-                borderColor: '#e2e8f0',
-                borderRadius: '6px',
-                fontSize: '11px',
-                padding: '4px 9px',
-              }}
-            >
-              <i className="bi bi-grid-fill text-primary" style={{ fontSize: '10px' }}></i>
-              {areasCount} {areasCount === 1 ? 'Area' : 'Areas'}
-            </span>
+            <div className="d-flex align-items-center gap-1.5 flex-wrap">
+              <span
+                className="badge border fw-semibold d-inline-flex align-items-center gap-1.5"
+                style={{
+                  backgroundColor: '#ffffff',
+                  color: '#334155',
+                  borderColor: '#e2e8f0',
+                  borderRadius: '6px',
+                  fontSize: '11px',
+                  padding: '4px 8px',
+                }}
+              >
+                <Layers size={11} className="text-primary" />
+                {areasCount} {areasCount === 1 ? 'Area' : 'Areas'}
+              </span>
 
-            <span className="text-muted extra-small d-flex align-items-center gap-1.5" style={{ fontSize: '11.5px' }}>
-              <i className="bi bi-clock" style={{ fontSize: '11px' }}></i>
+              {proj.totalAmount > 0 && (
+                <span className="workspace-amount-pill">
+                  ₹{Number(proj.totalAmount).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                </span>
+              )}
+            </div>
+
+            <span className="text-muted extra-small d-flex align-items-center gap-1" style={{ fontSize: '11.5px' }}>
+              <Clock size={11} className="text-muted" />
               <span>Updated {formatTimeAgo(updatedTime)}</span>
             </span>
           </div>
@@ -532,7 +932,7 @@ export default function ProjectsPage() {
               style={{
                 borderRadius: '9px',
                 fontSize: '13.5px',
-                padding: '9px 14px',
+                padding: '8px 14px',
                 background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
                 border: 'none',
                 boxShadow: '0 2px 4px rgba(37, 99, 235, 0.15)',
@@ -540,26 +940,576 @@ export default function ProjectsPage() {
               onClick={() => navigate(`/sheet/${id}`)}
             >
               <span>Open Sheet</span>
-              <i className="bi bi-arrow-right project-card-arrow"></i>
+              <ArrowRight size={14} className="project-card-arrow" />
             </button>
             <button
               type="button"
-              className="btn fw-bold d-flex align-items-center justify-content-center gap-1.5 shadow-2xs text-dark px-3"
+              className="btn fw-bold d-flex align-items-center justify-content-center gap-1 shadow-2xs text-dark px-2.5"
               style={{
                 borderRadius: '9px',
-                fontSize: '13px',
-                padding: '9px 14px',
+                fontSize: '12.5px',
+                padding: '8px 12px',
                 background: 'linear-gradient(135deg, #f5d77f 0%, #d4af37 100%)',
                 border: 'none',
-                boxShadow: '0 2px 6px rgba(212, 175, 55, 0.3)',
+                boxShadow: '0 2px 6px rgba(212, 175, 55, 0.25)',
               }}
               onClick={() => navigate(`/sheet/${id}?field=1`)}
               title="Open directly in Mobile Field Mode"
             >
-              <i className="bi bi-phone-fill"></i>
+              <Smartphone size={13} />
               <span>FIELD</span>
             </button>
           </div>
+        </div>
+      </div>
+    );
+  };
+
+  const ProjectTableView = ({ projectsList }) => {
+    return (
+      <>
+        {/* Desktop / Tablet View: Full Dense Table */}
+        <div className="workspace-table-container table-responsive mb-4 d-none d-md-block">
+          <table className="workspace-table mb-0">
+            <thead>
+              <tr>
+                <th style={{ width: '40px' }} className="text-center">
+                  <input
+                    type="checkbox"
+                    className="form-check-input mt-0"
+                    style={{ width: '16px', height: '16px', cursor: 'pointer', borderRadius: '4px' }}
+                    checked={projectsList.length > 0 && selectedProjectIds.length === projectsList.length}
+                    onChange={toggleSelectAll}
+                    title={selectedProjectIds.length === projectsList.length ? 'Deselect All' : 'Select All'}
+                  />
+                </th>
+                <th style={{ minWidth: '240px' }}>Project / Sheet Name</th>
+                <th style={{ minWidth: '180px' }}>Client &amp; Site</th>
+                <th style={{ minWidth: '130px' }}>Folder / Site</th>
+                <th style={{ minWidth: '100px' }}>Scope</th>
+                <th style={{ minWidth: '130px' }} className="text-end">Billed Value</th>
+                <th style={{ minWidth: '190px' }} className="text-end">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {projectsList.map(proj => {
+                const id = proj._id || proj.id;
+                const isOwn = proj.ownerUsername === session?.username;
+                const isSelected = selectedProjectIds.includes(id);
+                const clientName = proj.clientName || proj.data?.header?.clientName || '';
+                const location = proj.location || proj.data?.header?.location || proj.data?.header?.siteAddress || '';
+                const areasCount = proj.areasCount || (Array.isArray(proj.data?.areas) ? proj.data.areas.length : 0);
+                const updatedTime = proj.updatedAt || proj.lastEditedAt || proj.createdAt;
+
+                return (
+                  <tr 
+                    key={id} 
+                    style={{ 
+                      cursor: 'pointer',
+                      backgroundColor: isSelected ? '#f8faff' : undefined 
+                    }} 
+                    onClick={() => navigate(`/sheet/${id}`)}
+                  >
+                    <td className="text-center" onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        className="form-check-input mt-0"
+                        style={{ width: '16px', height: '16px', cursor: 'pointer', borderRadius: '4px' }}
+                        checked={isSelected}
+                        onChange={() => toggleSelectProject(id)}
+                      />
+                    </td>
+                    <td>
+                      <div className="d-flex align-items-center gap-2.5">
+                        <div
+                          className="d-flex align-items-center justify-content-center rounded-2 flex-shrink-0"
+                          style={{
+                            width: '34px',
+                            height: '34px',
+                            backgroundColor: '#eff6ff',
+                            color: '#2563eb',
+                            border: '1px solid #dbeafe'
+                          }}
+                        >
+                          <FileSpreadsheet size={18} />
+                        </div>
+                        <div className="min-w-0" style={{ minWidth: 0 }}>
+                          <div className="fw-bold text-dark text-truncate" style={{ fontSize: '13.5px' }}>
+                            {proj.name || 'Untitled Project'}
+                          </div>
+                          <div className="text-muted extra-small d-flex align-items-center gap-1.5 mt-0.5">
+                            <span className={`badge ${isOwn ? 'bg-primary-subtle text-primary' : 'bg-warning-subtle text-warning-emphasis'}`} style={{ fontSize: '10px', padding: '1px 5px' }}>
+                              {isOwn ? 'My Sheet' : (proj.ownerName || 'Team')}
+                            </span>
+                            <span>&bull;</span>
+                            <span className="d-flex align-items-center gap-1">
+                              <Clock size={11} className="text-muted" /> {formatTimeAgo(updatedTime)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td>
+                      <div className="text-truncate">
+                        <div className="text-dark fw-semibold small text-truncate d-flex align-items-center gap-1.5">
+                          <Building2 size={13} className="text-secondary flex-shrink-0" />
+                          <span>{clientName || 'General / Unassigned'}</span>
+                        </div>
+                        {location && (
+                          <div className="text-muted extra-small text-truncate d-flex align-items-center gap-1.5 mt-0.5">
+                            <MapPin size={11} className="text-muted flex-shrink-0" />
+                            <span>{location}</span>
+                          </div>
+                        )}
+                      </div>
+                    </td>
+
+                    <td>
+                      {proj.folderName ? (
+                        <span
+                          className="badge bg-light text-primary border rounded-pill px-2.5 py-1 d-inline-flex align-items-center gap-1 extra-small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const targetFolder = folders.find(f => (f._id || f.id) === proj.folderId || f.name === proj.folderName);
+                            if (targetFolder) setCurrentFolder(targetFolder);
+                          }}
+                          title={`Folder: ${proj.folderName} (Click to open)`}
+                        >
+                          <Folder size={12} className="text-primary" />
+                          <span>{proj.folderName}</span>
+                        </span>
+                      ) : (
+                        <span className="text-muted extra-small">&mdash;</span>
+                      )}
+                    </td>
+
+                    <td>
+                      <span className="badge bg-light text-secondary border px-2 py-1 extra-small d-inline-flex align-items-center gap-1">
+                        <Layers size={11} />
+                        {areasCount} {areasCount === 1 ? 'Area' : 'Areas'}
+                      </span>
+                    </td>
+
+                    <td className="text-end">
+                      {proj.totalAmount > 0 ? (
+                        <span className="workspace-amount-pill">
+                          ₹{Number(proj.totalAmount).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                        </span>
+                      ) : (
+                        <span className="text-muted extra-small">&mdash;</span>
+                      )}
+                    </td>
+
+                    <td className="text-end" onClick={(e) => e.stopPropagation()}>
+                      <div className="d-flex align-items-center justify-content-end gap-1">
+                        {currentFolder && (
+                          <button
+                            type="button"
+                            className="workspace-card-icon-btn text-warning-emphasis"
+                            title="Remove from this folder (Move to Root)"
+                            onClick={() => handleRemoveSingleProjectFromFolder(id)}
+                          >
+                            <FolderMinus size={13} />
+                          </button>
+                        )}
+
+                        <button
+                          type="button"
+                          className="workspace-card-icon-btn text-success"
+                          title="Share on WhatsApp"
+                          onClick={() => {
+                            setWhatsAppTarget({
+                              projectName: proj.name || 'Measurement Sheet',
+                              folderName: proj.folderName || '',
+                              clientName,
+                              location,
+                              totalAmount: proj.totalAmount || 0,
+                              projectId: id,
+                              clientPhone: proj.data?.header?.clientPhone || ''
+                            });
+                            setShowWhatsAppModal(true);
+                          }}
+                        >
+                          <Share2 size={13} />
+                        </button>
+
+                        <button
+                          type="button"
+                          className="workspace-card-icon-btn text-dark"
+                          title="Open in Field Mode"
+                          onClick={() => navigate(`/sheet/${id}?field=1`)}
+                        >
+                          <Smartphone size={13} />
+                        </button>
+
+                        <button
+                          type="button"
+                          className="workspace-card-icon-btn text-secondary"
+                          title="Move to Folder"
+                          onClick={() => {
+                            setMoveTargetItem({
+                              type: 'project',
+                              id,
+                              name: proj.name,
+                              currentFolderId: proj.folderId
+                            });
+                            setShowMoveModal(true);
+                          }}
+                        >
+                          <FolderPlus size={14} />
+                        </button>
+
+                        <button
+                          type="button"
+                          className="workspace-card-icon-btn"
+                          title="Duplicate"
+                          onClick={() => handleDuplicateProject(id)}
+                        >
+                          <Copy size={13} />
+                        </button>
+
+                        {isOwn && (
+                          <button
+                            type="button"
+                            className="workspace-card-icon-btn text-danger"
+                            title="Move to Trash"
+                            onClick={() => handleDeleteProject(id, proj.ownerUsername)}
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        )}
+
+                        <button
+                          type="button"
+                          className="btn btn-primary btn-sm px-2.5 py-1 fw-bold ms-1 d-inline-flex align-items-center gap-1 shadow-2xs"
+                          style={{ fontSize: '12px', borderRadius: '7px' }}
+                          onClick={() => navigate(`/sheet/${id}`)}
+                        >
+                          <span>Open</span>
+                          <ArrowRight size={12} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Mobile View (<768px): Touch-Friendly Responsive Card List */}
+        <div className="d-md-none d-flex flex-column gap-2.5 mb-4">
+          {projectsList.map(proj => {
+            const id = proj._id || proj.id;
+            const isOwn = proj.ownerUsername === session?.username;
+            const isSelected = selectedProjectIds.includes(id);
+            const clientName = proj.clientName || proj.data?.header?.clientName || '';
+            const location = proj.location || proj.data?.header?.location || proj.data?.header?.siteAddress || '';
+            const areasCount = proj.areasCount || (Array.isArray(proj.data?.areas) ? proj.data.areas.length : 0);
+            const updatedTime = proj.updatedAt || proj.lastEditedAt || proj.createdAt;
+
+            return (
+              <div
+                key={`mob-${id}`}
+                className="bg-white border rounded-3 p-3 shadow-2xs position-relative"
+                style={{
+                  borderColor: isSelected ? '#3b82f6' : '#e2e8f0',
+                  backgroundColor: isSelected ? '#f8faff' : '#ffffff',
+                  borderLeft: isSelected ? '4px solid #2563eb' : '1px solid #e2e8f0',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                {/* Header row: Checkbox, Name, Billed Value */}
+                <div className="d-flex align-items-start justify-content-between gap-2 mb-2">
+                  <div className="d-flex align-items-start gap-2.5 min-w-0" style={{ minWidth: 0 }}>
+                    <input
+                      type="checkbox"
+                      className="form-check-input mt-1 flex-shrink-0"
+                      style={{ width: '18px', height: '18px', cursor: 'pointer', borderRadius: '4px' }}
+                      checked={isSelected}
+                      onChange={() => toggleSelectProject(id)}
+                    />
+                    <div className="min-w-0" style={{ minWidth: 0 }} onClick={() => navigate(`/sheet/${id}`)}>
+                      <div className="fw-bold text-dark text-truncate" style={{ fontSize: '14.5px', cursor: 'pointer' }}>
+                        {proj.name || 'Untitled Project'}
+                      </div>
+                      <div className="text-muted extra-small d-flex flex-wrap align-items-center gap-1.5 mt-0.5">
+                        <span className={`badge ${isOwn ? 'bg-primary-subtle text-primary' : 'bg-warning-subtle text-warning-emphasis'}`} style={{ fontSize: '10px', padding: '1px 5px' }}>
+                          {isOwn ? 'My Sheet' : (proj.ownerName || 'Team')}
+                        </span>
+                        <span>&bull;</span>
+                        <span className="d-flex align-items-center gap-1">
+                          <Clock size={11} className="text-muted" /> {formatTimeAgo(updatedTime)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {proj.totalAmount > 0 && (
+                    <span className="workspace-amount-pill flex-shrink-0" style={{ fontSize: '12px', padding: '3px 8px' }}>
+                      ₹{Number(proj.totalAmount).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                    </span>
+                  )}
+                </div>
+
+                {/* Subtitle row: Client & Site details */}
+                <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 text-muted extra-small py-1.5 px-2 bg-light rounded-2 mb-2">
+                  <div className="d-flex align-items-center gap-1.5 text-truncate" style={{ maxWidth: '65%' }}>
+                    <Building2 size={12} className="text-secondary flex-shrink-0" />
+                    <span className="text-truncate fw-semibold text-secondary">{clientName || 'General / Unassigned'}</span>
+                  </div>
+                  <div className="d-flex align-items-center gap-1 flex-shrink-0">
+                    <Layers size={11} className="text-primary" />
+                    <span>{areasCount} {areasCount === 1 ? 'Area' : 'Areas'}</span>
+                  </div>
+                </div>
+
+                {/* Bottom row: Folder badge + Quick Actions */}
+                <div className="d-flex align-items-center justify-content-between pt-1 border-top gap-2" style={{ borderColor: '#f1f5f9' }}>
+                  <div className="d-flex align-items-center gap-1 min-w-0">
+                    {proj.folderName ? (
+                      <span
+                        className="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-0.5 d-inline-flex align-items-center gap-1 extra-small text-truncate"
+                        style={{ maxWidth: '140px' }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const targetFolder = folders.find(f => (f._id || f.id) === proj.folderId || f.name === proj.folderName);
+                          if (targetFolder) setCurrentFolder(targetFolder);
+                        }}
+                      >
+                        <Folder size={11} className="text-primary flex-shrink-0" />
+                        <span className="text-truncate">{proj.folderName}</span>
+                      </span>
+                    ) : (
+                      <span className="text-muted extra-small" style={{ fontSize: '11px' }}>Standalone</span>
+                    )}
+                  </div>
+
+                  <div className="d-flex align-items-center gap-1 flex-shrink-0">
+                    {currentFolder && (
+                      <button
+                        type="button"
+                        className="workspace-card-icon-btn text-warning-emphasis"
+                        style={{ width: '28px', height: '28px' }}
+                        title="Remove from folder"
+                        onClick={() => handleRemoveSingleProjectFromFolder(id)}
+                      >
+                        <FolderMinus size={13} />
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      className="workspace-card-icon-btn text-success"
+                      style={{ width: '28px', height: '28px' }}
+                      title="Share on WhatsApp"
+                      onClick={() => {
+                        setWhatsAppTarget({
+                          projectName: proj.name || 'Measurement Sheet',
+                          folderName: proj.folderName || '',
+                          clientName,
+                          location,
+                          totalAmount: proj.totalAmount || 0,
+                          projectId: id,
+                          clientPhone: proj.data?.header?.clientPhone || ''
+                        });
+                        setShowWhatsAppModal(true);
+                      }}
+                    >
+                      <Share2 size={13} />
+                    </button>
+                    <button
+                      type="button"
+                      className="workspace-card-icon-btn text-dark"
+                      style={{ width: '28px', height: '28px' }}
+                      title="Field Mode"
+                      onClick={() => navigate(`/sheet/${id}?field=1`)}
+                    >
+                      <Smartphone size={13} />
+                    </button>
+                    <button
+                      type="button"
+                      className="workspace-card-icon-btn text-secondary"
+                      style={{ width: '28px', height: '28px' }}
+                      title="Move"
+                      onClick={() => {
+                        setMoveTargetItem({
+                          type: 'project',
+                          id,
+                          name: proj.name,
+                          currentFolderId: proj.folderId
+                        });
+                        setShowMoveModal(true);
+                      }}
+                    >
+                      <FolderPlus size={13} />
+                    </button>
+                    {isOwn && (
+                      <button
+                        type="button"
+                        className="workspace-card-icon-btn text-danger"
+                        style={{ width: '28px', height: '28px' }}
+                        title="Delete"
+                        onClick={() => handleDeleteProject(id, proj.ownerUsername)}
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      className="btn btn-primary btn-sm px-2 py-1 fw-bold ms-0.5 d-inline-flex align-items-center gap-1"
+                      style={{ fontSize: '11.5px', borderRadius: '7px' }}
+                      onClick={() => navigate(`/sheet/${id}`)}
+                    >
+                      <span>Open</span>
+                      <ArrowRight size={11} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </>
+    );
+  };
+
+  const FolderCard = ({ folder }) => {
+    const fId = folder._id || folder.id;
+    const isOwn = folder.ownerUsername === session?.username;
+    const accentColor = folder.color || '#2563eb';
+    return (
+      <div 
+        className="workspace-project-card p-4 d-flex flex-column justify-content-between position-relative"
+        style={{
+          borderLeft: `4px solid ${accentColor}`,
+          cursor: 'pointer',
+          transition: 'all 0.2s ease',
+          backgroundColor: '#ffffff'
+        }}
+        onClick={() => setCurrentFolder(folder)}
+      >
+        <div>
+          {/* Top row */}
+          <div className="d-flex align-items-center justify-content-between mb-3">
+            <span 
+              className="badge rounded-pill d-inline-flex align-items-center gap-1.5 px-2.5 py-1"
+              style={{
+                backgroundColor: `${accentColor}15`,
+                color: accentColor,
+                fontSize: '11px',
+                fontWeight: 600
+              }}
+            >
+              <FolderOpen size={12} />
+              <span>Project Site / Folder</span>
+            </span>
+
+            <div className="d-flex align-items-center gap-1" onClick={(e) => e.stopPropagation()}>
+              <button
+                type="button"
+                className="workspace-card-icon-btn"
+                title="Edit Folder Details"
+                onClick={() => {
+                  setEditingFolder(folder);
+                  setShowFolderModal(true);
+                }}
+              >
+                <SlidersHorizontal size={13} />
+              </button>
+
+              {(isOwn || session?.role === 'ADMIN') && (
+                <button
+                  type="button"
+                  className="workspace-card-icon-btn text-danger"
+                  title="Delete Folder (Unlinks sheets safely)"
+                  onClick={() => handleDeleteFolder(fId, folder.name)}
+                >
+                  <Trash2 size={13} />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Folder Name & Icon */}
+          <div className="d-flex align-items-start gap-3 mb-3">
+            <div
+              className="d-flex align-items-center justify-content-center flex-shrink-0 rounded-3 shadow-2xs"
+              style={{
+                width: '42px',
+                height: '42px',
+                backgroundColor: `${accentColor}18`,
+                color: accentColor,
+                fontSize: '20px'
+              }}
+            >
+              <Folder size={22} />
+            </div>
+            <div className="flex-grow-1 min-w-0" style={{ minWidth: 0 }}>
+              <h6 className="fw-bold text-dark mb-1 text-truncate" style={{ fontSize: '16.5px', letterSpacing: '-0.2px' }}>
+                {folder.name}
+              </h6>
+              <div className="text-muted text-truncate" style={{ fontSize: '12px' }}>
+                {folder.clientName ? `Client: ${folder.clientName}` : 'All site bills & sheets'}
+              </div>
+            </div>
+          </div>
+
+          {/* Location & Details */}
+          {(folder.location || folder.description) && (
+            <div className="p-2.5 rounded-3 mb-3" style={{ backgroundColor: '#f8fafc', border: '1px solid #f1f5f9', fontSize: '12px' }}>
+              {folder.location && (
+                <div className="d-flex align-items-center gap-1.5 text-truncate text-muted">
+                  <MapPin size={12} className="text-secondary flex-shrink-0" />
+                  <span className="text-truncate">{folder.location}</span>
+                </div>
+              )}
+              {folder.description && (
+                <div className="text-secondary text-truncate mt-0.5" style={{ fontSize: '11.5px' }}>
+                  {folder.description}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div>
+          {/* Metadata & Stats */}
+          <div className="d-flex align-items-center justify-content-between pt-2.5 pb-2 border-top" style={{ borderColor: '#f1f5f9' }}>
+            <span className="badge border fw-semibold d-inline-flex align-items-center gap-1.5" style={{ backgroundColor: '#ffffff', color: '#334155', borderColor: '#e2e8f0', borderRadius: '6px', fontSize: '11px', padding: '4px 9px' }}>
+              <Layers size={11} className="text-primary" />
+              {folder.projectsCount || 0} {(folder.projectsCount === 1) ? 'Sheet' : 'Sheets'}
+              {(folder.excelCount > 0 || folder.pdfCount > 0) && (
+                <span className="text-muted fw-normal">
+                  (+{(folder.excelCount || 0) + (folder.pdfCount || 0)} files)
+                </span>
+              )}
+            </span>
+
+            {folder.totalAmount > 0 ? (
+              <span className="workspace-amount-pill">
+                ₹{Number(folder.totalAmount).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+              </span>
+            ) : (
+              <span className="text-muted extra-small">No billed amount</span>
+            )}
+          </div>
+
+          <button
+            type="button"
+            className="btn w-100 fw-semibold d-flex align-items-center justify-content-center gap-2 mt-2 shadow-2xs text-white"
+            style={{
+              borderRadius: '9px',
+              fontSize: '13px',
+              padding: '8px 14px',
+              backgroundColor: accentColor,
+              border: 'none'
+            }}
+            onClick={() => setCurrentFolder(folder)}
+          >
+            <span>Open Folder</span>
+            <ArrowRight size={13} />
+          </button>
         </div>
       </div>
     );
@@ -572,19 +1522,44 @@ export default function ProjectsPage() {
         <div>
           {/* Top Header Row */}
           <div className="d-flex align-items-center justify-content-between mb-3">
-            <span className="workspace-badge-pill workspace-badge-pill--excel">
-              <i className="bi bi-file-earmark-excel-fill text-success"></i>
-              <span>Excel Workbook</span>
-            </span>
+            <div className="d-flex align-items-center gap-1.5 flex-wrap">
+              <span className="workspace-badge-pill workspace-badge-pill--excel">
+                <FileSpreadsheet size={13} className="text-success" />
+                <span>Excel Workbook</span>
+              </span>
+              {file.folderName && !currentFolder && (
+                <span className="badge bg-light text-primary border rounded-pill px-2 py-0.5 extra-small d-inline-flex align-items-center gap-1">
+                  <Folder size={11} className="text-primary" />{file.folderName}
+                </span>
+              )}
+            </div>
 
             <div className="d-flex align-items-center gap-1.5">
+              <button
+                type="button"
+                className="workspace-card-icon-btn text-secondary"
+                title="Move to Folder"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMoveTargetItem({
+                    type: 'excel',
+                    id: file._id,
+                    name: file.fileName,
+                    currentFolderId: file.folderId
+                  });
+                  setShowMoveModal(true);
+                }}
+              >
+                <FolderPlus size={14} />
+              </button>
+
               <button
                 type="button"
                 className="workspace-card-icon-btn"
                 title="Download .xlsx file"
                 onClick={(e) => { e.stopPropagation(); handleDownloadExcelCard(file); }}
               >
-                <i className="bi bi-download"></i>
+                <Download size={14} />
               </button>
 
               {(isOwn || session.role === 'ADMIN') && (
@@ -594,7 +1569,7 @@ export default function ProjectsPage() {
                   title="Delete Excel file"
                   onClick={(e) => { e.stopPropagation(); handleDeleteExcel(file._id, file.ownerUsername); }}
                 >
-                  <i className="bi bi-trash3"></i>
+                  <Trash2 size={14} />
                 </button>
               )}
             </div>
@@ -615,7 +1590,7 @@ export default function ProjectsPage() {
                 boxShadow: '0 1px 2px rgba(22, 163, 74, 0.08)',
               }}
             >
-              <i className="bi bi-file-earmark-excel-fill"></i>
+              <FileSpreadsheet size={20} />
             </div>
             <div className="flex-grow-1 min-w-0" style={{ minWidth: 0 }}>
               <h6
@@ -627,7 +1602,7 @@ export default function ProjectsPage() {
                 {file.fileName}
               </h6>
               <div className="text-muted text-truncate" style={{ fontSize: '12px' }}>
-                Excel Spreadsheet • Imported
+                Excel Spreadsheet &bull; Imported
               </div>
             </div>
           </div>
@@ -642,7 +1617,7 @@ export default function ProjectsPage() {
             }}
           >
             <div className="d-flex align-items-center gap-2 text-truncate" title={`Project: ${file.projectName || 'Measurement Sheet'}`}>
-              <i className="bi bi-folder2 text-success" style={{ fontSize: '12px', flexShrink: 0 }}></i>
+              <Folder size={13} className="text-success flex-shrink-0" />
               <span className="text-muted">Project:</span>
               <span className="text-dark fw-semibold text-truncate">{file.projectName || 'Measurement Sheet'}</span>
             </div>
@@ -654,7 +1629,6 @@ export default function ProjectsPage() {
           <div className="d-flex align-items-center justify-content-between pt-2.5 pb-2 border-top" style={{ borderColor: '#f1f5f9' }}>
             <div className="d-flex align-items-center gap-1.5">
               <span className="badge border fw-semibold extra-small" style={{ backgroundColor: '#ffffff', color: '#475569', borderColor: '#e2e8f0', borderRadius: '6px', fontSize: '11px', padding: '4px 9px' }}>
-                <i className="bi bi-hdd me-1 text-secondary"></i>
                 {formatFileSize(file.fileSize)}
               </span>
               <span className="badge border extra-small" style={{ backgroundColor: '#f8fafc', color: '#475569', borderColor: '#e2e8f0', borderRadius: '6px', fontSize: '11px', padding: '4px 8px' }}>
@@ -663,7 +1637,7 @@ export default function ProjectsPage() {
             </div>
 
             <span className="text-muted extra-small d-flex align-items-center gap-1.5" style={{ fontSize: '11.5px' }}>
-              <i className="bi bi-clock" style={{ fontSize: '11px' }}></i>
+              <Clock size={11} className="text-muted" />
               <span>Updated {formatTimeAgo(file.createdAt)}</span>
             </span>
           </div>
@@ -681,7 +1655,7 @@ export default function ProjectsPage() {
             }}
             onClick={() => setSelectedExcelId(file._id)}
           >
-            <i className="bi bi-eye-fill"></i>
+            <Eye size={14} />
             <span>View Sheet</span>
           </button>
         </div>
@@ -696,19 +1670,44 @@ export default function ProjectsPage() {
         <div>
           {/* Top Header Row */}
           <div className="d-flex align-items-center justify-content-between mb-3">
-            <span className="workspace-badge-pill workspace-badge-pill--pdf">
-              <i className="bi bi-file-earmark-pdf-fill text-danger"></i>
-              <span>PDF Document</span>
-            </span>
+            <div className="d-flex align-items-center gap-1.5 flex-wrap">
+              <span className="workspace-badge-pill workspace-badge-pill--pdf">
+                <FileText size={13} className="text-danger" />
+                <span>PDF Document</span>
+              </span>
+              {file.folderName && !currentFolder && (
+                <span className="badge bg-light text-primary border rounded-pill px-2 py-0.5 extra-small d-inline-flex align-items-center gap-1">
+                  <Folder size={11} className="text-primary" />{file.folderName}
+                </span>
+              )}
+            </div>
 
             <div className="d-flex align-items-center gap-1.5">
+              <button
+                type="button"
+                className="workspace-card-icon-btn text-secondary"
+                title="Move to Folder"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMoveTargetItem({
+                    type: 'pdf',
+                    id: file._id,
+                    name: file.fileName,
+                    currentFolderId: file.folderId
+                  });
+                  setShowMoveModal(true);
+                }}
+              >
+                <FolderPlus size={14} />
+              </button>
+
               <button
                 type="button"
                 className="workspace-card-icon-btn"
                 title="Download .pdf document"
                 onClick={(e) => { e.stopPropagation(); handleDownloadPdfCard(file); }}
               >
-                <i className="bi bi-download"></i>
+                <Download size={14} />
               </button>
 
               {(isOwn || session.role === 'ADMIN') && (
@@ -718,7 +1717,7 @@ export default function ProjectsPage() {
                   title="Delete PDF document"
                   onClick={(e) => { e.stopPropagation(); handleDeletePdf(file._id, file.ownerUsername); }}
                 >
-                  <i className="bi bi-trash3"></i>
+                  <Trash2 size={14} />
                 </button>
               )}
             </div>
@@ -739,7 +1738,7 @@ export default function ProjectsPage() {
                 boxShadow: '0 1px 2px rgba(220, 38, 38, 0.08)',
               }}
             >
-              <i className="bi bi-file-earmark-pdf-fill"></i>
+              <FileText size={20} />
             </div>
             <div className="flex-grow-1 min-w-0" style={{ minWidth: 0 }}>
               <h6
@@ -751,7 +1750,7 @@ export default function ProjectsPage() {
                 {file.fileName}
               </h6>
               <div className="text-muted text-truncate" style={{ fontSize: '12px' }}>
-                PDF Document • Exported
+                PDF Document &bull; Exported
               </div>
             </div>
           </div>
@@ -766,7 +1765,7 @@ export default function ProjectsPage() {
             }}
           >
             <div className="d-flex align-items-center gap-2 text-truncate" title={`Project: ${file.projectName || 'Measurement Sheet'}`}>
-              <i className="bi bi-folder2 text-danger" style={{ fontSize: '12px', flexShrink: 0 }}></i>
+              <Folder size={13} className="text-danger flex-shrink-0" />
               <span className="text-muted">Project:</span>
               <span className="text-dark fw-semibold text-truncate">{file.projectName || 'Measurement Sheet'}</span>
             </div>
@@ -778,7 +1777,6 @@ export default function ProjectsPage() {
           <div className="d-flex align-items-center justify-content-between pt-2.5 pb-2 border-top" style={{ borderColor: '#f1f5f9' }}>
             <div className="d-flex align-items-center gap-1.5">
               <span className="badge border fw-semibold extra-small" style={{ backgroundColor: '#ffffff', color: '#475569', borderColor: '#e2e8f0', borderRadius: '6px', fontSize: '11px', padding: '4px 9px' }}>
-                <i className="bi bi-hdd me-1 text-secondary"></i>
                 {formatFileSize(file.fileSize)}
               </span>
               {file.pageCount && (
@@ -789,7 +1787,7 @@ export default function ProjectsPage() {
             </div>
 
             <span className="text-muted extra-small d-flex align-items-center gap-1.5" style={{ fontSize: '11.5px' }}>
-              <i className="bi bi-clock" style={{ fontSize: '11px' }}></i>
+              <Clock size={11} className="text-muted" />
               <span>Updated {formatTimeAgo(file.createdAt)}</span>
             </span>
           </div>
@@ -807,7 +1805,7 @@ export default function ProjectsPage() {
             }}
             onClick={() => setSelectedPdfId(file._id)}
           >
-            <i className="bi bi-eye-fill"></i>
+            <Eye size={14} />
             <span>View PDF</span>
           </button>
         </div>
@@ -824,7 +1822,7 @@ export default function ProjectsPage() {
         <div className="position-fixed bottom-0 end-0 p-3" style={{ zIndex: 99999 }}>
           <div className="toast show bg-white text-dark border shadow-lg px-3 py-2 rounded-3" style={{ borderColor: '#e2e8f0' }}>
             <div className="d-flex align-items-center gap-2">
-              <i className="bi bi-check-circle-fill text-success fs-5"></i>
+              <CheckCircle2 size={16} className="text-success" />
               <span className="small fw-bold text-uppercase">{toast}</span>
             </div>
           </div>
@@ -911,17 +1909,16 @@ export default function ProjectsPage() {
               </span>
             </Link>
 
-
-
             {/* Single Primary Action: + New Project */}
             <button
               type="button"
-              className="btn btn-primary btn-sm fw-bold px-3 py-1.5 shadow-sm d-flex align-items-center gap-1.5"
+              className="btn btn-primary btn-sm fw-bold px-2 px-sm-3 py-1.5 shadow-sm d-flex align-items-center gap-1.5 text-nowrap"
               style={{ borderRadius: '8px', fontSize: '12.5px' }}
-              onClick={handleNewProject}
+              onClick={currentFolder ? handleNewProjectInFolder : handleNewProject}
             >
-              <i className="bi bi-plus-lg"></i>
-              <span>New Project</span>
+              <Plus size={15} />
+              <span className="d-none d-sm-inline">{currentFolder ? `New Sheet in ${currentFolder.name}` : 'New Project'}</span>
+              <span className="d-inline d-sm-none">{currentFolder ? '+ Sheet' : '+ Project'}</span>
             </button>
 
             {/* Logout Button */}
@@ -932,7 +1929,7 @@ export default function ProjectsPage() {
               title="Log out of system"
               onClick={() => { logout(); navigate('/login'); }}
             >
-              <i className="bi bi-box-arrow-right"></i>
+              <LogOut size={14} />
             </button>
           </div>
         </div>
@@ -947,7 +1944,8 @@ export default function ProjectsPage() {
                 <h5 className="fw-bold text-dark mb-0" style={{ letterSpacing: '-0.2px' }}>
                   Project Workspace
                 </h5>
-                <span className="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-0.5" style={{ fontSize: '11px' }}>
+                <span className="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-0.5 d-inline-flex align-items-center gap-1" style={{ fontSize: '11px' }}>
+                  <ShieldCheck size={11} className="text-primary" />
                   Cloud Sync Active
                 </span>
               </div>
@@ -975,7 +1973,7 @@ export default function ProjectsPage() {
                 <div className="fs-4 fw-bold text-dark mt-0.5">{safeProjects.length}</div>
               </div>
               <div className="workspace-metric-icon workspace-metric-icon--blue">
-                <i className="bi bi-folder2-open"></i>
+                <FileSpreadsheet size={20} />
               </div>
             </div>
           </div>
@@ -984,30 +1982,36 @@ export default function ProjectsPage() {
             <div
               className="workspace-metric-card d-flex align-items-center justify-content-between"
               style={{ cursor: 'pointer' }}
-              onClick={() => setActiveTab('my')}
+              onClick={() => setActiveTab('all')}
             >
               <div>
-                <div className="text-muted extra-small fw-semibold text-uppercase">My Projects</div>
-                <div className="fs-4 fw-bold text-primary mt-0.5">{myProjectsAll.length}</div>
+                <div className="text-muted extra-small fw-semibold text-uppercase">Billed Value</div>
+                <div className="fs-4 fw-bold text-success mt-0.5" style={{ letterSpacing: '-0.5px' }}>
+                  ₹{totalPortfolioValue >= 10000000
+                    ? `${(totalPortfolioValue / 10000000).toFixed(2)} Cr`
+                    : totalPortfolioValue >= 100000
+                    ? `${(totalPortfolioValue / 100000).toFixed(2)} L`
+                    : Number(totalPortfolioValue).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                </div>
+              </div>
+              <div className="workspace-metric-icon workspace-metric-icon--emerald">
+                <IndianRupee size={20} />
+              </div>
+            </div>
+          </div>
+
+          <div className="col-6 col-md-3">
+            <div
+              className="workspace-metric-card d-flex align-items-center justify-content-between"
+              style={{ cursor: 'pointer' }}
+              onClick={() => setActiveTab('all')}
+            >
+              <div>
+                <div className="text-muted extra-small fw-semibold text-uppercase">Sites &amp; Folders</div>
+                <div className="fs-4 fw-bold text-primary mt-0.5">{safeFolders.length}</div>
               </div>
               <div className="workspace-metric-icon workspace-metric-icon--indigo">
-                <i className="bi bi-person-check-fill"></i>
-              </div>
-            </div>
-          </div>
-
-          <div className="col-6 col-md-3">
-            <div
-              className="workspace-metric-card d-flex align-items-center justify-content-between"
-              style={{ cursor: 'pointer' }}
-              onClick={() => setActiveTab('team')}
-            >
-              <div>
-                <div className="text-muted extra-small fw-semibold text-uppercase">Team Shared</div>
-                <div className="fs-4 fw-bold text-dark mt-0.5">{teamProjectsAll.length}</div>
-              </div>
-              <div className="workspace-metric-icon workspace-metric-icon--amber">
-                <i className="bi bi-people-fill"></i>
+                <FolderOpen size={20} />
               </div>
             </div>
           </div>
@@ -1020,18 +2024,18 @@ export default function ProjectsPage() {
             >
               <div>
                 <div className="text-muted extra-small fw-semibold text-uppercase">Cloud Archives</div>
-                <div className="fs-4 fw-bold text-success mt-0.5">{safeExcelFiles.length + safePdfFiles.length}</div>
+                <div className="fs-4 fw-bold text-dark mt-0.5">{safeExcelFiles.length + safePdfFiles.length}</div>
               </div>
-              <div className="workspace-metric-icon workspace-metric-icon--emerald">
-                <i className="bi bi-cloud-arrow-down-fill"></i>
+              <div className="workspace-metric-icon workspace-metric-icon--amber">
+                <UploadCloud size={20} />
               </div>
             </div>
           </div>
         </div>
 
-        {/* VIEW FILTER & SEARCH BAR */}
+        {/* VIEW FILTER, SEARCH & CONTROLS TOOLBAR */}
         <div className="workspace-filter-bar border rounded-3 p-2 mb-4 shadow-sm d-flex flex-wrap align-items-center justify-content-between gap-2" style={{ minHeight: '52px' }}>
-          {/* Segmented Filter Pills — scrollable on small screens */}
+          {/* Segmented Filter Pills */}
           <div className="workspace-filter-tabs d-flex align-items-center gap-1 p-1 rounded-2" style={{ overflowX: 'auto', flexShrink: 1, minWidth: 0 }}>
             <button
               type="button"
@@ -1039,7 +2043,7 @@ export default function ProjectsPage() {
               onClick={() => setActiveTab('all')}
               style={{ whiteSpace: 'nowrap' }}
             >
-              <i className="bi bi-grid-fill"></i>
+              <Grid size={14} />
               <span>All Projects</span>
               <span className="badge rounded-pill workspace-tab-badge border px-1 py-0" style={{ fontSize: '10px' }}>
                 {safeProjects.length}
@@ -1052,7 +2056,7 @@ export default function ProjectsPage() {
               onClick={() => setActiveTab('my')}
               style={{ whiteSpace: 'nowrap' }}
             >
-              <i className="bi bi-person-fill"></i>
+              <User size={14} />
               <span>My Projects</span>
               <span className="badge rounded-pill workspace-tab-badge border px-1 py-0" style={{ fontSize: '10px' }}>
                 {myProjectsAll.length}
@@ -1065,7 +2069,7 @@ export default function ProjectsPage() {
               onClick={() => setActiveTab('team')}
               style={{ whiteSpace: 'nowrap' }}
             >
-              <i className="bi bi-people-fill"></i>
+              <Building2 size={14} />
               <span>Team Shared</span>
               <span className="badge rounded-pill workspace-tab-badge border px-1 py-0" style={{ fontSize: '10px' }}>
                 {teamProjectsAll.length}
@@ -1078,7 +2082,7 @@ export default function ProjectsPage() {
               onClick={() => setActiveTab('excel')}
               style={{ whiteSpace: 'nowrap' }}
             >
-              <i className="bi bi-file-earmark-excel-fill text-success"></i>
+              <FileSpreadsheet size={14} className="text-success" />
               <span>Excel Files</span>
               <span className="badge rounded-pill workspace-tab-badge border px-1 py-0" style={{ fontSize: '10px' }}>
                 {safeExcelFiles.length}
@@ -1091,34 +2095,89 @@ export default function ProjectsPage() {
               onClick={() => setActiveTab('pdf')}
               style={{ whiteSpace: 'nowrap' }}
             >
-              <i className="bi bi-file-earmark-pdf-fill text-danger"></i>
+              <FileText size={14} className="text-danger" />
               <span>PDF Documents</span>
               <span className="badge rounded-pill workspace-tab-badge border px-1 py-0" style={{ fontSize: '10px' }}>
                 {safePdfFiles.length}
               </span>
             </button>
+
+            <button
+              type="button"
+              className="workspace-tab-btn"
+              onClick={() => navigate('/mail')}
+              style={{ whiteSpace: 'nowrap' }}
+              title="Open Email & Bill Dispatch Studio"
+            >
+              <Mail size={14} className="text-primary" />
+              <span>Email Dispatch</span>
+              <span className="badge rounded-pill bg-primary bg-opacity-25 text-primary border border-primary border-opacity-50 px-1 py-0" style={{ fontSize: '10px' }}>
+                Studio
+              </span>
+            </button>
           </div>
 
-          {/* Right Side: Search and Secondary Actions */}
-          <div className="d-flex align-items-center gap-2 flex-shrink-0" style={{ minWidth: 0 }}>
+          {/* Right Side: Search, View Switcher, Sort and Secondary Actions */}
+          <div className="d-flex align-items-center gap-2 flex-wrap flex-shrink-0" style={{ minWidth: 0 }}>
             {/* Search Input */}
-            <div className="input-group input-group-sm workspace-search-group" style={{ width: 'clamp(160px, 22vw, 280px)' }}>
-              <span className="input-group-text border-end-0 text-muted">
-                <i className="bi bi-search"></i>
+            <div className="input-group input-group-sm workspace-search-group" style={{ width: 'clamp(150px, 18vw, 240px)' }}>
+              <span className="input-group-text border-end-0 text-muted bg-white">
+                <Search size={13} />
               </span>
               <input
                 type="text"
-                className="form-control border-start-0"
-                placeholder="Search by project, client, site..."
+                className="form-control border-start-0 ps-0"
+                placeholder="Search projects, client, site..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
               {search && (
                 <button className="btn btn-outline-secondary border-start-0" onClick={() => setSearch('')}>
-                  ✕
+                  <X size={12} />
                 </button>
               )}
             </div>
+
+            {/* View Mode Toggle (Grid Cards vs Dense Table) */}
+            {(activeTab === 'all' || activeTab === 'my' || activeTab === 'team') && (
+              <div className="workspace-view-toggle d-flex align-items-center">
+                <button
+                  type="button"
+                  className={`workspace-view-btn ${viewMode === 'grid' ? 'active' : ''}`}
+                  onClick={() => handleToggleViewMode('grid')}
+                  title="Grid Cards View"
+                >
+                  <Grid size={13.5} />
+                  <span className="d-none d-lg-inline">Cards</span>
+                </button>
+                <button
+                  type="button"
+                  className={`workspace-view-btn ${viewMode === 'table' ? 'active' : ''}`}
+                  onClick={() => handleToggleViewMode('table')}
+                  title="Dense Table View"
+                >
+                  <List size={14} />
+                  <span className="d-none d-lg-inline">Table</span>
+                </button>
+              </div>
+            )}
+
+            {/* Sort Dropdown */}
+            {(activeTab === 'all' || activeTab === 'my' || activeTab === 'team') && (
+              <div className="d-flex align-items-center gap-1">
+                <select
+                  className="workspace-sort-select form-select form-select-sm"
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  title="Sort measurement sheets"
+                >
+                  <option value="updated">Latest Modified</option>
+                  <option value="name">Name (A-Z)</option>
+                  <option value="amount">Billed Value (High-Low)</option>
+                  <option value="areas">Area Scope (Max-Min)</option>
+                </select>
+              </div>
+            )}
 
             {/* Quick upload excel button */}
             <button
@@ -1129,7 +2188,7 @@ export default function ProjectsPage() {
               style={{ borderRadius: '8px', fontSize: '12px', whiteSpace: 'nowrap', flexShrink: 0 }}
               title="Upload external .xlsx spreadsheet"
             >
-              <i className="bi bi-cloud-arrow-up-fill"></i>
+              <UploadCloud size={13} />
               <span className="d-none d-sm-inline">Import Excel</span>
             </button>
 
@@ -1141,7 +2200,7 @@ export default function ProjectsPage() {
               style={{ whiteSpace: 'nowrap', flexShrink: 0 }}
               title="View and Restore Deleted Projects"
             >
-              <i className={`bi ${deletedProjects.length > 0 ? 'bi-trash3-fill text-danger' : 'bi-trash3'}`}></i>
+              <Trash2 size={13} className={deletedProjects.length > 0 ? 'text-danger' : ''} />
               <span className="d-none d-sm-inline">Trash</span>
               {deletedProjects.length > 0 && (
                 <span className="badge bg-danger text-white rounded-pill" style={{ fontSize: '10px', padding: '2px 5px' }}>
@@ -1157,6 +2216,241 @@ export default function ProjectsPage() {
 
         {(activeTab === 'all' || activeTab === 'my' || activeTab === 'team' || activeTab === 'projects') && (
           <>
+            {/* ── FOLDER HERO BANNER (When inside a Folder like "Uttam") ── */}
+            {currentFolder && (
+              <div className="bg-white border rounded-3 p-3 p-md-4 mb-4 shadow-sm" style={{ borderLeft: `5px solid ${currentFolder.color || '#2563eb'}` }}>
+                <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                  <div>
+                    {/* Breadcrumb */}
+                    <nav aria-label="breadcrumb" className="mb-2">
+                      <ol className="breadcrumb mb-0 extra-small">
+                        <li className="breadcrumb-item">
+                          <button
+                            type="button"
+                            className="btn btn-link p-0 text-decoration-none extra-small fw-bold text-primary d-inline-flex align-items-center gap-1"
+                            onClick={() => setCurrentFolder(null)}
+                          >
+                            <ArrowLeft size={12} /> All Projects &amp; Sites
+                          </button>
+                        </li>
+                        <li className="breadcrumb-item active text-dark fw-bold" aria-current="page">
+                          {currentFolder.name}
+                        </li>
+                      </ol>
+                    </nav>
+
+                    <div className="d-flex align-items-center gap-2">
+                      <h4 className="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                        <FolderOpen size={22} style={{ color: currentFolder.color || '#2563eb' }} />
+                        <span>{currentFolder.name}</span>
+                      </h4>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-secondary p-1 rounded-circle"
+                        style={{ width: '26px', height: '26px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        title="Edit Folder Details"
+                        onClick={() => { setEditingFolder(currentFolder); setShowFolderModal(true); }}
+                      >
+                        <SlidersHorizontal size={11} />
+                      </button>
+                    </div>
+
+                    <div className="text-muted small mt-1 d-flex flex-wrap align-items-center gap-3">
+                      {currentFolder.clientName && (
+                        <span className="d-inline-flex align-items-center gap-1">
+                          <Building2 size={12} className="text-primary" />
+                          <span>Client: <strong>{currentFolder.clientName}</strong></span>
+                        </span>
+                      )}
+                      {currentFolder.location && (
+                        <span className="d-inline-flex align-items-center gap-1">
+                          <MapPin size={12} className="text-danger" />
+                          <span>Location: <strong>{currentFolder.location}</strong></span>
+                        </span>
+                      )}
+                      {currentFolder.description && (
+                        <span className="text-secondary">{currentFolder.description}</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Folder stats & Action buttons */}
+                  <div className="d-flex flex-wrap align-items-center gap-2 w-100 w-md-auto mt-2 mt-md-0">
+                    <div className="d-flex align-items-center gap-2 flex-grow-1 flex-md-grow-0 w-100 w-sm-auto">
+                      <div className="bg-light border rounded-3 px-3 py-1.5 text-center flex-fill">
+                        <div className="text-muted extra-small fw-bold">TOTAL SHEETS</div>
+                        <div className="fw-bold text-dark fs-6">{projectsToDisplay.length}</div>
+                      </div>
+
+                      <div className="bg-light border rounded-3 px-3 py-1.5 text-center flex-fill">
+                        <div className="text-muted extra-small fw-bold">TOTAL BILLED VALUE</div>
+                        <div className="fw-bold text-success fs-6">
+                          ₹{currentFolderTotalAmount.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="d-flex align-items-center gap-2 w-100 w-md-auto mt-1 mt-md-0">
+                      <button
+                        type="button"
+                        className="btn btn-success fw-bold px-3 py-2 shadow-xs d-flex align-items-center justify-content-center gap-2 flex-fill flex-md-grow-0"
+                        style={{ borderRadius: '8px', fontSize: '13px' }}
+                        title="Share full folder bill summary on WhatsApp"
+                        onClick={() => {
+                          setWhatsAppTarget({
+                            projectName: `${currentFolder.name} (Consolidated Portfolio)`,
+                            folderName: currentFolder.name,
+                            clientName: currentFolder.clientName,
+                            location: currentFolder.location,
+                            totalAmount: currentFolderTotalAmount,
+                            billNumber: `${projectsToDisplay.length} Sheets / Bills`,
+                          });
+                          setShowWhatsAppModal(true);
+                        }}
+                      >
+                        <Share2 size={14} />
+                        <span>WhatsApp Summary</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        className="btn btn-primary fw-bold px-3 py-2 shadow-xs d-flex align-items-center justify-content-center gap-2 flex-fill flex-md-grow-0 text-nowrap"
+                        style={{ borderRadius: '8px', fontSize: '13px' }}
+                        onClick={handleNewProjectInFolder}
+                      >
+                        <Plus size={15} />
+                        <span className="d-none d-sm-inline">+ New Sheet in {currentFolder.name}</span>
+                        <span className="d-inline d-sm-none">+ New Sheet</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── ROOT VIEW: FOLDERS GRID (When on main dashboard) ── */}
+            {!currentFolder && !search && (activeTab === 'all' || activeTab === 'my') && (
+              <div className="mb-4">
+                <div className="d-flex align-items-center justify-content-between mb-3">
+                  <div className="d-flex align-items-center gap-2">
+                    <h6 className="fw-bold text-dark mb-0 d-flex align-items-center gap-1.5" style={{ fontSize: '15px' }}>
+                      <FolderOpen size={16} className="text-primary" />
+                      <span>Project Sites &amp; Folders</span>
+                    </h6>
+                    <span className="badge bg-primary-subtle text-primary rounded-pill px-2 py-0.5" style={{ fontSize: '11px' }}>
+                      {folders.length}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-primary fw-bold d-flex align-items-center gap-1.5"
+                    style={{ borderRadius: '7px', fontSize: '12px' }}
+                    onClick={() => { setEditingFolder(null); setShowFolderModal(true); }}
+                  >
+                    <FolderPlus size={13} />
+                    <span>+ New Folder</span>
+                  </button>
+                </div>
+
+                {folders.length > 0 ? (
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))',
+                      gap: '1.25rem',
+                      marginBottom: '2rem'
+                    }}
+                  >
+                    {filteredFolders.map(f => (
+                      <FolderCard key={f._id || f.id} folder={f} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-3 mb-4 rounded-3 border bg-light d-flex flex-wrap align-items-center justify-content-between gap-3 shadow-2xs">
+                    <div className="d-flex align-items-center gap-3">
+                      <div className="d-flex align-items-center justify-content-center rounded-3 bg-white border text-primary" style={{ width: '40px', height: '40px' }}>
+                        <FolderOpen size={20} />
+                      </div>
+                      <div>
+                        <div className="fw-bold text-dark small">Organize Projects with Folders</div>
+                        <div className="text-muted extra-small">
+                          Group bills under a site or client (e.g. folder <strong>"Uttam"</strong> with sheets <strong>"Uttam A1"</strong>, <strong>"Uttam A2"</strong>).
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-primary fw-bold px-3 py-1.5 shadow-2xs d-inline-flex align-items-center gap-1"
+                      onClick={() => { setEditingFolder(null); setShowFolderModal(true); }}
+                    >
+                      <FolderPlus size={13} />
+                      <span>Create First Folder</span>
+                    </button>
+                  </div>
+                )}
+
+                {/* Subheading for All Sheets / Projects */}
+                <div className="d-flex align-items-center justify-content-between mb-3 pt-2 border-top">
+                  <div className="d-flex align-items-center gap-2">
+                    <h6 className="fw-bold text-dark mb-0 d-flex align-items-center gap-1.5" style={{ fontSize: '15px' }}>
+                      <FileSpreadsheet size={16} className="text-secondary" />
+                      <span>{showAllInRoot ? 'All Measurement Sheets' : 'Standalone Measurement Sheets'}</span>
+                    </h6>
+                    <span className="badge bg-secondary-subtle text-secondary rounded-pill px-2 py-0.5" style={{ fontSize: '11px' }}>
+                      {projectsToDisplay.length}
+                    </span>
+                  </div>
+
+                  <div className="d-flex align-items-center gap-2">
+                    {/* Multi-Select Select All Action */}
+                    {projectsToDisplay.length > 0 && (
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-link text-decoration-none text-muted p-0 extra-small fw-semibold"
+                        onClick={toggleSelectAll}
+                      >
+                        {selectedProjectIds.length === projectsToDisplay.length && projectsToDisplay.length > 0 ? 'Deselect All' : `Select All (${projectsToDisplay.length})`}
+                      </button>
+                    )}
+
+                    {folders.length > 0 && !search && (
+                      <button
+                        type="button"
+                        className="btn btn-xs btn-outline-secondary rounded-pill px-2 py-0.5 extra-small"
+                        onClick={() => setShowAllInRoot(!showAllInRoot)}
+                      >
+                        {showAllInRoot ? 'Show Standalone Only' : `Show All Sheets (${safeProjects.length})`}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Folder View: Subheading for Sheets inside this Folder */}
+            {currentFolder && (
+              <div className="d-flex align-items-center justify-content-between mb-3">
+                <div className="d-flex align-items-center gap-2">
+                  <h6 className="fw-bold text-dark mb-0 d-flex align-items-center gap-1.5" style={{ fontSize: '15px' }}>
+                    <FileSpreadsheet size={16} className="text-primary" />
+                    <span>Sheets inside {currentFolder.name}</span>
+                  </h6>
+                  <span className="badge bg-primary-subtle text-primary rounded-pill px-2 py-0.5" style={{ fontSize: '11px' }}>
+                    {projectsToDisplay.length}
+                  </span>
+                </div>
+                {projectsToDisplay.length > 0 && (
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-link text-decoration-none text-muted p-0 extra-small fw-semibold"
+                    onClick={toggleSelectAll}
+                  >
+                    {selectedProjectIds.length === projectsToDisplay.length && projectsToDisplay.length > 0 ? 'Deselect All' : `Select All (${projectsToDisplay.length})`}
+                  </button>
+                )}
+              </div>
+            )}
+
             {loading && (
               <div className="text-center py-5">
                 <AppLoader text="LOADING PROJECTS FROM CLOUD..." />
@@ -1170,138 +2464,57 @@ export default function ProjectsPage() {
               </div>
             )}
 
-            {!loading && !error && displayedProjects.length === 0 && (
+            {!loading && !error && projectsToDisplay.length === 0 && (
               <div className="text-center py-5 my-4 workspace-empty-card border rounded-3 shadow-sm p-4">
                 <div className="display-4 mb-3 text-muted opacity-75">
-                  <i className="bi bi-folder-plus text-primary"></i>
+                  <FolderPlus size={44} className="text-primary" />
                 </div>
                 <h6 className="fw-bold text-dark mb-1">
-                  {search ? 'No projects match your search' : 'No projects found in this view'}
+                  {currentFolder 
+                    ? `No sheets in folder "${currentFolder.name}" yet`
+                    : search 
+                    ? 'No projects match your search' 
+                    : 'No projects found in this view'}
                 </h6>
                 <p className="text-muted small mb-3">
-                  {search ? 'Try clearing the search query or checking another tab.' : 'Create a new project to start taking measurements.'}
+                  {currentFolder
+                    ? `Create your first sheet (e.g. ${currentFolder.name} A1) to start tracking measurements.`
+                    : search 
+                    ? 'Try clearing the search query or checking another tab.' 
+                    : 'Create a new project to start taking measurements.'}
                 </p>
                 {search ? (
                   <button className="btn btn-sm btn-outline-secondary" onClick={() => setSearch('')}>
                     Clear Search
                   </button>
                 ) : (
-                  <button className="btn btn-sm btn-primary fw-bold px-3 py-2 shadow-sm" onClick={handleNewProject}>
-                    <i className="bi bi-plus-lg me-1"></i> Create First Project
+                  <button 
+                    className="btn btn-sm btn-primary fw-bold px-3 py-2 shadow-sm d-inline-flex align-items-center gap-1" 
+                    onClick={currentFolder ? handleNewProjectInFolder : handleNewProject}
+                  >
+                    <Plus size={14} />
+                    <span>{currentFolder ? `Create Sheet in ${currentFolder.name}` : 'Create First Project'}</span>
                   </button>
                 )}
               </div>
             )}
 
-            {!loading && !error && displayedProjects.length > 0 && (
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
-                  gap: '1.25rem',
-                }}
-              >
-                {displayedProjects.map(proj => (
-                  <ProjectCard key={proj._id || proj.id} proj={proj} isOwn={proj.ownerUsername === session?.username} />
-                ))}
-
-                {/* Quick Add Project Tile — structured to match ProjectCard */}
-                {!search && (activeTab === 'all' || activeTab === 'my') && (
-                  <div
-                    className="workspace-project-card p-4 d-flex flex-column justify-content-between"
-                    style={{
-                      border: '1.5px dashed #93c5fd',
-                      backgroundColor: '#f8fbff',
-                      cursor: 'pointer',
-                    }}
-                    onClick={handleNewProject}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => e.key === 'Enter' && handleNewProject()}
-                    title="Create New Project"
-                  >
-                    <div>
-                      {/* Top Header Row */}
-                      <div className="d-flex align-items-center justify-content-between mb-3">
-                        <span className="workspace-badge-pill" style={{ background: '#eff6ff', color: '#1d4ed8', border: '1px solid #dbeafe' }}>
-                          <i className="bi bi-sparkles"></i>
-                          <span>Quick Action</span>
-                        </span>
-                        <span className="badge" style={{ backgroundColor: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', fontSize: '11px', padding: '3px 8px', borderRadius: '6px' }}>
-                          New Sheet
-                        </span>
-                      </div>
-
-                      {/* Icon + Title */}
-                      <div className="d-flex align-items-start gap-3 mb-3">
-                        <div
-                          className="d-flex align-items-center justify-content-center flex-shrink-0"
-                          style={{
-                            width: '42px',
-                            height: '42px',
-                            borderRadius: '10px',
-                            background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
-                            color: '#ffffff',
-                            fontSize: '18px',
-                            boxShadow: '0 2px 8px rgba(37,99,235,0.25)',
-                          }}
-                        >
-                          <i className="bi bi-plus-lg"></i>
-                        </div>
-                        <div className="flex-grow-1 min-w-0">
-                          <h6 className="fw-bold text-dark mb-1 text-truncate" style={{ fontSize: '16px', letterSpacing: '-0.25px' }}>
-                            Create New Project
-                          </h6>
-                          <div className="text-muted text-truncate" style={{ fontSize: '12px' }}>
-                            Measurement Sheet • BOQ
-                          </div>
-                        </div>
-                      </div>
-
-                      <div
-                        className="p-2.5 rounded-3 mb-3"
-                        style={{
-                          backgroundColor: '#ffffff',
-                          border: '1px solid #e0edff',
-                          fontSize: '12px',
-                        }}
-                      >
-                        <p className="text-muted mb-0" style={{ fontSize: '11.5px', lineHeight: '1.4' }}>
-                          Start taking measurements, room deductions &amp; calculate BOQ instantly.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div>
-                      {/* Metadata Row Divider */}
-                      <div className="d-flex align-items-center justify-content-between pt-2.5 pb-2 border-top" style={{ borderColor: '#e0edff' }}>
-                        <span className="text-muted extra-small d-flex align-items-center gap-1.5" style={{ fontSize: '11.5px' }}>
-                          <i className="bi bi-lightning-charge-fill text-primary" style={{ fontSize: '11px' }}></i>
-                          <span>Instant Setup</span>
-                        </span>
-                        <span className="text-muted extra-small" style={{ fontSize: '11.5px' }}>Ready to edit</span>
-                      </div>
-
-                      {/* Action Button */}
-                      <button
-                        type="button"
-                        className="btn btn-outline-primary w-100 fw-semibold d-flex align-items-center justify-content-center gap-2 mt-2"
-                        style={{
-                          borderRadius: '9px',
-                          fontSize: '13.5px',
-                          padding: '9px 16px',
-                          borderColor: '#93c5fd',
-                          background: '#ffffff',
-                          color: '#1d4ed8',
-                        }}
-                      >
-                        <i className="bi bi-plus-circle-fill"></i>
-                        <span>Create Project</span>
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
+            {!loading && !error && projectsToDisplay.length > 0 && (
+              viewMode === 'table' ? (
+                <ProjectTableView projectsList={sortedProjects} />
+              ) : (
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))',
+                    gap: '1.25rem',
+                  }}
+                >
+                  {sortedProjects.map(proj => (
+                    <ProjectCard key={proj._id || proj.id} proj={proj} isOwn={proj.ownerUsername === session?.username} />
+                  ))}
+                </div>
+              )
             )}
           </>
         )}
@@ -1358,11 +2571,11 @@ export default function ProjectsPage() {
                 <div
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))',
                     gap: '1.25rem',
                   }}
                 >
-                  {filteredExcelFiles.map(file => (
+                  {excelsToDisplay.map(file => (
                     <ExcelCard key={file._id} file={file} />
                   ))}
 
@@ -1449,11 +2662,11 @@ export default function ProjectsPage() {
                 <div
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))',
                     gap: '1.25rem',
                   }}
                 >
-                  {filteredPdfFiles.map(file => (
+                  {pdfsToDisplay.map(file => (
                     <PdfCard key={file._id} file={file} />
                   ))}
                 </div>
@@ -1977,6 +3190,141 @@ export default function ProjectsPage() {
             setPdfViewerInitialFile(null);
           }}
         />
+      )}
+
+      {/* ── FOLDER CREATE / EDIT MODAL ── */}
+      <FolderModal
+        show={showFolderModal}
+        folder={editingFolder}
+        onClose={() => {
+          setShowFolderModal(false);
+          setEditingFolder(null);
+        }}
+        onSave={handleSaveFolder}
+      />
+
+      {/* ── MOVE TO FOLDER MODAL ── */}
+      <MoveToFolderModal
+        show={showMoveModal}
+        itemTitle={moveTargetItem?.name || 'Item'}
+        currentFolderId={moveTargetItem?.currentFolderId || null}
+        folders={folders}
+        onClose={() => {
+          setShowMoveModal(false);
+          setMoveTargetItem(null);
+        }}
+        onMove={handleMoveItem}
+        onCreateNewFolder={() => {
+          setEditingFolder(null);
+          setShowFolderModal(true);
+        }}
+      />
+
+      {/* ── WHATSAPP SHARE MODAL ── */}
+      <WhatsAppShareModal
+        show={showWhatsAppModal}
+        onClose={() => {
+          setShowWhatsAppModal(false);
+          setWhatsAppTarget(null);
+        }}
+        projectName={whatsAppTarget?.projectName}
+        folderName={whatsAppTarget?.folderName}
+        clientName={whatsAppTarget?.clientName}
+        location={whatsAppTarget?.location}
+        billNumber={whatsAppTarget?.billNumber}
+        totalAmount={whatsAppTarget?.totalAmount}
+        projectId={whatsAppTarget?.projectId}
+        clientPhone={whatsAppTarget?.clientPhone}
+      />
+
+      {/* ── BATCH MOVE TO FOLDER MODAL ── */}
+      <MoveToFolderModal
+        show={showBatchMoveModal}
+        itemTitle={`${selectedProjectIds.length} Selected Measurement Sheets`}
+        currentFolderId={currentFolder?._id || currentFolder?.id || null}
+        folders={folders}
+        onClose={() => setShowBatchMoveModal(false)}
+        onMove={handleBatchMoveProjects}
+        onCreateNewFolder={() => {
+          setShowBatchMoveModal(false);
+          setEditingFolder(null);
+          setShowFolderModal(true);
+        }}
+      />
+
+      {/* ── FLOATING MULTI-SELECT ACTION BAR ── */}
+      {selectedProjectIds.length > 0 && (
+        <div 
+          className="position-fixed bottom-0 start-50 translate-middle-x mb-3 mb-sm-4 px-2.5 px-sm-3 py-1.5 py-sm-2 rounded-pill shadow-lg d-flex align-items-center gap-1.5 gap-sm-2.5 bg-dark text-white border"
+          style={{ 
+            zIndex: 1070, 
+            borderColor: 'rgba(255, 255, 255, 0.25)',
+            backdropFilter: 'blur(10px)',
+            boxShadow: '0 12px 36px rgba(0, 0, 0, 0.45)',
+            animation: 'fadeInUp 0.2s ease-out',
+            maxWidth: '94vw',
+            width: 'max-content'
+          }}
+        >
+          <div className="d-flex align-items-center gap-1.5 ps-1 ps-sm-2">
+            <span className="badge bg-primary rounded-pill px-2 py-0.5 fw-bold" style={{ fontSize: '11px' }}>
+              {selectedProjectIds.length}
+            </span>
+            <span className="fw-semibold small d-none d-sm-inline" style={{ fontSize: '12px' }}>Selected</span>
+          </div>
+
+          <div className="vr bg-secondary opacity-50 my-1" style={{ height: '18px' }}></div>
+
+          {/* Move to Folder Button */}
+          <button
+            type="button"
+            className="btn btn-sm btn-primary fw-bold d-flex align-items-center gap-1 px-2 px-sm-3 py-1 shadow-2xs rounded-pill text-nowrap"
+            style={{ fontSize: '12px' }}
+            onClick={() => setShowBatchMoveModal(true)}
+            title="Move all selected sheets into a folder"
+          >
+            <FolderPlus size={13} />
+            <span className="d-none d-sm-inline">Move to Folder</span>
+            <span className="d-inline d-sm-none">Move</span>
+          </button>
+
+          {/* Remove from Folder (if currently inside a folder) */}
+          {currentFolder && (
+            <button
+              type="button"
+              className="btn btn-sm btn-outline-warning fw-semibold d-flex align-items-center gap-1 px-2 px-sm-2.5 py-1 rounded-pill text-nowrap"
+              style={{ fontSize: '12px' }}
+              onClick={() => handleBatchMoveProjects(null, '')}
+              title="Move selected sheets out of this folder to Root"
+            >
+              <FolderMinus size={13} />
+              <span className="d-none d-sm-inline">Remove from Folder</span>
+              <span className="d-inline d-sm-none">Remove</span>
+            </button>
+          )}
+
+          {/* Batch Delete */}
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-danger fw-semibold d-flex align-items-center gap-1 px-2 px-sm-2.5 py-1 rounded-pill text-nowrap"
+            style={{ fontSize: '12px' }}
+            onClick={handleBatchDeleteSelected}
+            title="Move selected sheets to Trash"
+          >
+            <Trash2 size={13} />
+            <span className="d-none d-sm-inline">Delete</span>
+          </button>
+
+          {/* Clear selection */}
+          <button
+            type="button"
+            className="btn btn-sm btn-link text-white-50 p-1 ms-0.5 d-flex align-items-center justify-content-center rounded-circle hover-text-white"
+            onClick={() => setSelectedProjectIds([])}
+            title="Deselect All"
+          >
+            <X size={15} />
+          </button>
+        </div>
       )}
 
 

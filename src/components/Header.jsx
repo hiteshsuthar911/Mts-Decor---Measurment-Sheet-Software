@@ -36,6 +36,8 @@ export default function Header({
   pendingEngineerQueriesCount = 0,
   onOpenClientApproval,
   clientApproval,
+  onOpenMailModal,
+  onOpenWhatsAppModal,
 }) {
   const [showDetails, setShowDetails] = useState(true);
   const [showSettingsPanel, setShowSettingsPanel] = useState(false);
@@ -245,6 +247,22 @@ export default function Header({
             <i className="bi bi-file-earmark-excel-fill" style={{ color: '#107c41', fontSize: '13px' }} />
             <span className="text-success fw-bold">EXCEL</span>
           </button>
+
+          {/* WhatsApp Bill Dispatch */}
+          {onOpenWhatsAppModal && (
+            <button className="ms-btn ms-btn-ghost d-none d-md-inline-flex" onClick={onOpenWhatsAppModal} title="Share Bill & Measurement Sheet on WhatsApp">
+              <i className="bi bi-whatsapp" style={{ color: '#25d366', fontSize: '13px' }} />
+              <span className="text-success fw-bold">WHATSAPP</span>
+            </button>
+          )}
+
+          {/* Email Bill Dispatch */}
+          {onOpenMailModal && (
+            <button className="ms-btn ms-btn-ghost d-none d-lg-inline-flex" onClick={onOpenMailModal} title="Email this Bill & Measurement Sheet to Client">
+              <i className="bi bi-envelope-paper-fill text-primary" style={{ fontSize: '13px' }} />
+              <span className="text-primary fw-bold">EMAIL</span>
+            </button>
+          )}
 
           {/* PRIMARY SETTINGS / TOOLS BUTTON */}
           <button
@@ -565,6 +583,40 @@ export default function Header({
                   <div>
                     <div className="fw-bold text-dark extra-small">Rate Master</div>
                     <div className="text-muted" style={{ fontSize: '10px' }}>Standard Contractor Rates</div>
+                  </div>
+                </button>
+              </div>
+            )}
+
+            {/* WhatsApp Bill Dispatch */}
+            {onOpenWhatsAppModal && (
+              <div className="col-6 col-sm-6 col-md-4 col-lg-3">
+                <button
+                  type="button"
+                  className="btn btn-outline-success btn-sm w-100 h-100 p-2.5 rounded-3 text-start shadow-sm d-flex align-items-center gap-2"
+                  onClick={() => { onOpenWhatsAppModal(); setShowSettingsPanel(false); }}
+                >
+                  <i className="bi bi-whatsapp text-success fs-4"></i>
+                  <div>
+                    <div className="fw-bold text-dark extra-small">WhatsApp Bill</div>
+                    <div className="text-muted" style={{ fontSize: '10px' }}>Instant dispatch via WhatsApp</div>
+                  </div>
+                </button>
+              </div>
+            )}
+
+            {/* Email Bill & Document Dispatch */}
+            {onOpenMailModal && (
+              <div className="col-6 col-sm-6 col-md-4 col-lg-3">
+                <button
+                  type="button"
+                  className="btn btn-outline-primary btn-sm w-100 h-100 p-2.5 rounded-3 text-start shadow-sm d-flex align-items-center gap-2"
+                  onClick={() => { onOpenMailModal(); setShowSettingsPanel(false); }}
+                >
+                  <i className="bi bi-envelope-paper-fill text-primary fs-4"></i>
+                  <div>
+                    <div className="fw-bold text-dark extra-small">Email Bill</div>
+                    <div className="text-muted" style={{ fontSize: '10px' }}>Dispatch PDF to Client</div>
                   </div>
                 </button>
               </div>

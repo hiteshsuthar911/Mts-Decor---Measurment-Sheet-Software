@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { formatNumber, formatCurrency } from '../utils/calculations';
 import { numberToIndianWords } from '../utils/numberToWords';
+import { shareViaWhatsApp } from '../utils/whatsappShare';
 
 export default function GstInvoiceModal({
   show,
@@ -70,7 +71,23 @@ export default function GstInvoiceModal({
                 <small className="text-secondary">Compliant with Indian Goods &amp; Services Tax (GST) Act</small>
               </div>
             </div>
-            <div className="d-flex gap-2">
+            <div className="d-flex align-items-center gap-2">
+              <button
+                type="button"
+                className="btn btn-sm btn-success fw-bold px-3 shadow-sm d-flex align-items-center gap-1.5"
+                onClick={() => {
+                  shareViaWhatsApp({
+                    projectName: `${header.projectName || 'Project'} — Tax Invoice ${invoiceNo}`,
+                    clientName,
+                    location: siteAddress,
+                    billNumber: invoiceNo,
+                    totalAmount: totalInvoiceAmount,
+                    clientPhone: header.clientPhone || ''
+                  });
+                }}
+              >
+                <i className="bi bi-whatsapp"></i> Share on WhatsApp
+              </button>
               <button type="button" className="btn btn-sm btn-primary fw-bold px-3 shadow-sm" onClick={handlePrint}>
                 <i className="bi bi-printer me-1"></i> Print / Save Invoice PDF
               </button>

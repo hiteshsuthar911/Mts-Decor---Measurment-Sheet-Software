@@ -10,6 +10,7 @@ import UnderConstructionPage from './pages/UnderConstructionPage';
 import ClientSignPortal from './pages/ClientSignPortal';
 import SiteEngineerPortal from './pages/SiteEngineerPortal';
 import PublicPdfViewer from './pages/PublicPdfViewer';
+import MailDispatchPage from './pages/MailDispatchPage';
 import { getSession, isLoggedIn, logout } from './utils/auth';
 import { api } from './utils/api';
 
@@ -70,11 +71,6 @@ function DefaultRedirect() {
   if (!session || !session.token) {
     logout();
     return <Navigate to="/login" replace />;
-  }
-  const isCapacitor = window.location.protocol === 'capacitor:' || window.location.hostname === 'localhost';
-  const lastProject = localStorage.getItem('mts_last_project_id') || '6aa8f92c3bb049cf50fdc6c4';
-  if (isCapacitor && lastProject && window.innerWidth < 768) {
-    return <Navigate to={'/sheet/' + lastProject + '?field=1'} replace />;
   }
   return <Navigate to={session.role === 'ADMIN' ? '/admin' : '/projects'} replace />;
 }
@@ -149,6 +145,24 @@ export default function App() {
           element={
             <AuthRoute>
               <ProfilePage />
+            </AuthRoute>
+          }
+        />
+
+        {/* Email & Bill Dispatch Studio */}
+        <Route
+          path="/mail"
+          element={
+            <AuthRoute>
+              <MailDispatchPage />
+            </AuthRoute>
+          }
+        />
+        <Route
+          path="/dispatch"
+          element={
+            <AuthRoute>
+              <MailDispatchPage />
             </AuthRoute>
           }
         />

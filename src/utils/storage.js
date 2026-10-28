@@ -242,4 +242,42 @@ export async function resetCivilLabourRatesRemote(companySlug = 'mts-decor') {
   return api.post('/labour-rates/reset', { companySlug });
 }
 
+// ── PROJECT FOLDERS & SITES ──
+export async function getAllFolders() {
+  return api.get('/folders');
+}
+
+export async function getFolder(id) {
+  return api.get(`/folders/${id}`);
+}
+
+export async function createFolder(data) {
+  return api.post('/folders', data);
+}
+
+export async function updateFolder(id, data) {
+  return api.put(`/folders/${id}`, data);
+}
+
+export async function deleteFolder(id) {
+  return api.delete(`/folders/${id}`);
+}
+
+export async function moveProjectFolder(id, folderId, folderName = '') {
+  return api.patch(`/projects/${id}/folder`, { folderId, folderName });
+}
+
+export async function batchMoveProjectsFolder(projectIds, folderId, folderName = '') {
+  return api.post('/projects/batch/folder', { projectIds, folderId, folderName });
+}
+
+export async function moveExcelFolder(id, folderId, folderName = '') {
+  return api.patch(`/excel-files/${id}/folder`, { folderId, folderName });
+}
+
+export async function movePdfFolder(id, folderId, folderName = '') {
+  return api.patch(`/pdf-files/${id}/folder`, { folderId, folderName });
+}
+
+
 

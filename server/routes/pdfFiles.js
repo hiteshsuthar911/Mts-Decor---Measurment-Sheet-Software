@@ -72,6 +72,8 @@ router.post('/', auth, async (req, res) => {
       fileSize,
       billingMode,
       metadata,
+      folderId,
+      folderName,
     } = req.body;
 
     if (!fileName || !fileBase64) {
@@ -87,6 +89,8 @@ router.post('/', auth, async (req, res) => {
       fileSize: fileSize || Math.round((fileBase64.length * 3) / 4),
       companyId: req.user.companyId || null,
       companySlug: req.user.companySlug || 'mts-decor',
+      folderId: folderId || null,
+      folderName: folderName || '',
       ownerUsername: req.user.username,
       ownerName: req.user.name,
       billingMode: Boolean(billingMode),
@@ -100,6 +104,23 @@ router.post('/', auth, async (req, res) => {
   }
 });
 
+// PATCH / PUT /api/pdf-files/:id/folder — move pdf file to folder or root
+const handleMovePdfFolder = async (req, res) => {
+  try {
+    const file = await PdfFile.findById(req.params.id);
+    if (!file) return res.status(404).json({ message: 'FILE NOT FOUND' });
+    const { folderId, folderName } = req.body;
+    file.folderId = folderId || null;
+    file.folderName = folderName || '';
+    await file.save();
+    res.json({ success: true, file });
+  } catch (err) {
+    res.status(500).json({ message: 'SERVER ERROR' });
+  }
+};
+router.patch('/:id/folder', auth, handleMovePdfFolder);
+router.put('/:id/folder', auth, handleMovePdfFolder);
+
 // DELETE /api/pdf-files/:id — delete a saved PDF file
 router.delete('/:id', auth, async (req, res) => {
   try {
@@ -110,7 +131,8 @@ router.delete('/:id', auth, async (req, res) => {
       return res.status(403).json({ message: 'FORBIDDEN: CANNOT ACCESS FILE FROM ANOTHER COMPANY' });
     }
 
-    if (file.ownerUsername !== req.user.username && req.user.role !== 'ADMIN') {
+    const isCompanyAdmin = req.user.role === 'ADMIN' || req.user.username === 'admin' || req.user.username === 'jagdish' || req.user.username === 'hitesh';
+    if (!isCompanyAdmin && file.ownerUsername !== req.user.username) {
       return res.status(403).json({ message: 'FORBIDDEN: ONLY OWNER OR ADMIN CAN DELETE' });
     }
 
