@@ -269,7 +269,7 @@ export const DEFAULT_CIVIL_LABOUR_RATES = [
     rate: 140,
     rateText: '140 per sqft/rft',
     group: 'Flooring & Koba',
-    workCategory: 'Floor Italian Marble'
+    workCategory: 'Flooring Italian Marble with Koba'
   },
   {
     id: 'clr-27',

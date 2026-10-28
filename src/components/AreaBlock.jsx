@@ -393,7 +393,7 @@ export default function AreaBlock({
           <div className="ent-meta-item ent-meta-item--cat">
             <select
               className="ent-meta-select ent-meta-select-cat"
-              value={area.parentCategory || 'Floor Tiles'}
+              value={allCategories.find(c => c.toLowerCase() === (area.parentCategory || '').toLowerCase()) || area.parentCategory || 'Floor Tiles'}
               disabled={readOnly}
               onChange={(e) => {
                 if (e.target.value === '__ADD_NEW__') {
@@ -405,7 +405,7 @@ export default function AreaBlock({
               title="Select Work Category"
             >
               <option value="" disabled>Category...</option>
-              {area.parentCategory && !allCategories.includes(area.parentCategory) && (
+              {area.parentCategory && !allCategories.some(c => c.toLowerCase() === area.parentCategory.toLowerCase()) && (
                 <option value={area.parentCategory}>{area.parentCategory} (Custom)</option>
               )}
               {Object.entries(CATEGORIZED_WORK_TYPES).map(([groupTitle, catList]) => (
