@@ -1,16 +1,20 @@
 const router = require('express').Router();
 const nodemailer = require('nodemailer');
 const { Resend } = require('resend');
+const auth = require('../middleware/authMiddleware');
 const MailConfig = require('../models/MailConfig');
 const MailLog = require('../models/MailLog');
 const MailDraft = require('../models/MailDraft');
 const PdfFile = require('../models/PdfFile');
 
+// Enforce authentication on all mail routes
+router.use(auth);
+
 // Helper to get active mail configuration
-async function getActiveMailConfig(customConfig = null) {
+async function getActiveMailConfig(customConfig = null, companySlug = 'mts-decor') {
   let config = customConfig;
   if (!config) {
-    config = await MailConfig.findOne({ companySlug: 'mts-decor' });
+    config = await MailConfig.findOne({ companySlug });
   }
 
   const provider = config?.provider || (config?.resendApiKey || process.env.RESEND_API_KEY ? 'RESEND' : 'SMTP');
@@ -55,7 +59,8 @@ function getSmtpTransporter(config) {
 // ── 1. GET /api/mail/config ──
 router.get('/config', async (req, res) => {
   try {
-    let config = await MailConfig.findOne({ companySlug: 'mts-decor' });
+    const companySlug = req.user?.companySlug || 'mts-decor';
+    let config = await MailConfig.findOne({ companySlug });
     if (!config) {
       config = {
         provider: process.env.RESEND_API_KEY ? 'RESEND' : 'SMTP',
@@ -97,6 +102,11 @@ router.get('/config', async (req, res) => {
 // ── 2. POST /api/mail/config ──
 router.post('/config', async (req, res) => {
   try {
+    const isCompanyAdmin = req.user?.role === 'ADMIN' || req.user?.username === 'admin' || req.user?.username === 'jagdish' || req.user?.username === 'hitesh';
+    if (!isCompanyAdmin) {
+      return res.status(403).json({ message: 'FORBIDDEN: ONLY ADMINISTRATORS CAN MODIFY MAIL CONFIGURATION' });
+    }
+
     const { 
       provider, 
       resendApiKey, 
@@ -110,9 +120,10 @@ router.post('/config', async (req, res) => {
       replyTo 
     } = req.body;
 
-    let config = await MailConfig.findOne({ companySlug: 'mts-decor' });
+    const companySlug = req.user?.companySlug || 'mts-decor';
+    let config = await MailConfig.findOne({ companySlug });
     if (!config) {
-      config = new MailConfig({ companySlug: 'mts-decor' });
+      config = new MailConfig({ companySlug });
     }
 
     if (provider) config.provider = provider;
@@ -150,8 +161,9 @@ router.post('/test-connection', async (req, res) => {
   try {
     const testConfig = req.body.config || null;
     const testRecipient = req.body.testRecipient;
+    const companySlug = req.user?.companySlug || 'mts-decor';
 
-    const active = await getActiveMailConfig(testConfig);
+    const active = await getActiveMailConfig(testConfig, companySlug);
     const targetRecipient = testRecipient || active.senderEmail;
 
     if (!targetRecipient) {
@@ -225,15 +237,16 @@ router.post('/test-connection', async (req, res) => {
     }
 
     await MailConfig.updateOne(
-      { companySlug: 'mts-decor' },
+      { companySlug },
       { lastTestedAt: new Date(), lastTestStatus: `VERIFIED_SUCCESS: ${resultMsg}` }
     ).catch(() => {});
 
     res.json({ success: true, message: resultMsg });
   } catch (err) {
     console.error('MAIL TEST ERROR:', err);
+    const companySlug = req.user?.companySlug || 'mts-decor';
     await MailConfig.updateOne(
-      { companySlug: 'mts-decor' },
+      { companySlug },
       { lastTestedAt: new Date(), lastTestStatus: `FAILED: ${err.message}` }
     ).catch(() => {});
 
@@ -274,7 +287,8 @@ router.post('/send', async (req, res) => {
       return res.status(400).json({ message: 'Email subject is required.' });
     }
 
-    const active = await getActiveMailConfig();
+    const companySlug = req.user?.companySlug || 'mts-decor';
+    const active = await getActiveMailConfig(null, companySlug);
 
     // Prepare attachments
     const mailAttachments = [];
@@ -407,8 +421,8 @@ router.post('/send', async (req, res) => {
       clientName: clientName || '',
       attachments: logAttachments,
       status: 'SENT',
-      sentBy: `${sentBy} (${active.provider})`,
-      companySlug: 'mts-decor',
+      sentBy: `${req.user?.name || req.user?.username || sentBy} (${active.provider})`,
+      companySlug,
     });
     await mailLog.save();
 
@@ -424,13 +438,14 @@ router.post('/send', async (req, res) => {
     console.error('MAIL SEND ERROR:', err);
 
     try {
+      const companySlug = req.user?.companySlug || 'mts-decor';
       await MailLog.create({
         to: Array.isArray(req.body.to) ? req.body.to : [req.body.to || ''],
         subject: req.body.subject || '(No Subject)',
         status: 'FAILED',
         error: err.message || 'Send error',
-        sentBy: req.body.sentBy || 'MTS Decor Admin',
-        companySlug: 'mts-decor',
+        sentBy: req.user?.name || req.user?.username || req.body.sentBy || 'MTS Decor Admin',
+        companySlug,
       });
     } catch {}
 
@@ -445,8 +460,13 @@ router.post('/send', async (req, res) => {
 // ── 5. GET /api/mail/logs ──
 router.get('/logs', async (req, res) => {
   try {
+    const userSlug = req.user?.companySlug || 'mts-decor';
+    const filter = req.user?.role === 'ADMIN' && req.query.companySlug 
+      ? { companySlug: req.query.companySlug }
+      : { companySlug: userSlug };
+
     const limit = Math.min(Number(req.query.limit) || 50, 100);
-    const logs = await MailLog.find({ companySlug: 'mts-decor' })
+    const logs = await MailLog.find(filter)
       .select('-bodyHtml')
       .sort({ createdAt: -1 })
       .limit(limit);
@@ -462,6 +482,10 @@ router.get('/logs/:id', async (req, res) => {
   try {
     const log = await MailLog.findById(req.params.id);
     if (!log) return res.status(404).json({ message: 'Mail log not found' });
+    const userSlug = req.user?.companySlug || 'mts-decor';
+    if (req.user?.role !== 'ADMIN' && log.companySlug && log.companySlug !== userSlug) {
+      return res.status(403).json({ message: 'FORBIDDEN' });
+    }
     res.json(log);
   } catch (err) {
     res.status(500).json({ message: 'Failed to fetch mail log', error: err.message });
@@ -471,7 +495,12 @@ router.get('/logs/:id', async (req, res) => {
 // ── 7. Drafts CRUD ──
 router.get('/drafts', async (req, res) => {
   try {
-    const drafts = await MailDraft.find({ companySlug: 'mts-decor' })
+    const userSlug = req.user?.companySlug || 'mts-decor';
+    const filter = req.user?.role === 'ADMIN' && req.query.companySlug 
+      ? { companySlug: req.query.companySlug }
+      : { companySlug: userSlug };
+
+    const drafts = await MailDraft.find(filter)
       .populate('attachedPdfIds', 'fileName fileSize projectName')
       .sort({ updatedAt: -1 });
     res.json(drafts);
@@ -498,9 +527,15 @@ router.post('/drafts', async (req, res) => {
       customAttachments,
     } = req.body;
 
+    const companySlug = req.user?.companySlug || 'mts-decor';
     let draft;
-    if (id) draft = await MailDraft.findById(id);
-    if (!draft) draft = new MailDraft({ companySlug: 'mts-decor' });
+    if (id) {
+      draft = await MailDraft.findById(id);
+      if (draft && req.user?.role !== 'ADMIN' && draft.companySlug && draft.companySlug !== companySlug) {
+        return res.status(403).json({ message: 'FORBIDDEN: CANNOT MODIFY DRAFT FROM ANOTHER COMPANY' });
+      }
+    }
+    if (!draft) draft = new MailDraft({ companySlug });
 
     if (title !== undefined) draft.title = title || 'Untitled Draft';
     if (to !== undefined) draft.to = Array.isArray(to) ? to : [to];
@@ -529,7 +564,13 @@ router.post('/drafts', async (req, res) => {
 
 router.delete('/drafts/:id', async (req, res) => {
   try {
-    await MailDraft.findByIdAndDelete(req.params.id);
+    const draft = await MailDraft.findById(req.params.id);
+    if (!draft) return res.status(404).json({ message: 'Draft not found' });
+    const userSlug = req.user?.companySlug || 'mts-decor';
+    if (req.user?.role !== 'ADMIN' && draft.companySlug && draft.companySlug !== userSlug) {
+      return res.status(403).json({ message: 'FORBIDDEN: CANNOT DELETE DRAFT FROM ANOTHER COMPANY' });
+    }
+    await draft.deleteOne();
     res.json({ success: true, message: 'Draft deleted' });
   } catch (err) {
     res.status(500).json({ message: 'Failed to delete draft', error: err.message });

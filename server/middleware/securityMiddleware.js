@@ -86,7 +86,26 @@ const apiRateLimiter = rateLimit({
   }
 });
 
-// 5. Centralized Error Handler (Logs & Sanitizes responses)
+// 5. Dedicated Rate Limiter for PIN-Protected Portals (Anti-Brute Force)
+const portalPinRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: process.env.NODE_ENV === 'production' ? 25 : 1000, // max 25 attempts per 15 minutes
+  standardHeaders: true,
+  legacyHeaders: false,
+  validate: { trustProxy: false },
+  skip: (req) => {
+    if (process.env.NODE_ENV !== 'production') return true;
+    const ip = req.ip || req.connection?.remoteAddress || '';
+    return ip === '127.0.0.1' || ip === '::1' || ip.includes('127.0.0.1') || ip === '::ffff:127.0.0.1';
+  },
+  message: { requiresPin: true, message: 'TOO MANY PIN ATTEMPTS. PLEASE TRY AGAIN IN 15 MINUTES.' },
+  handler: (req, res, next, options) => {
+    logger.logSuspiciousTraffic('PORTAL_PIN_BRUTE_FORCE_EXCEEDED', `Exceeded PIN verification attempts`, req);
+    res.status(options.statusCode).json(options.message);
+  }
+});
+
+// 6. Centralized Error Handler (Logs & Sanitizes responses)
 const errorHandler = (err, req, res, next) => {
   logger.logApiError(err, req);
   const status = err.status || 500;
@@ -109,5 +128,6 @@ module.exports = {
   detectSuspiciousProbes,
   authRateLimiter,
   apiRateLimiter,
+  portalPinRateLimiter,
   errorHandler
 };

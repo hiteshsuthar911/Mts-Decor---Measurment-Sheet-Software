@@ -2,6 +2,16 @@ const router = require('express').Router();
 const auth = require('../middleware/authMiddleware');
 const ExcelFile = require('../models/ExcelFile');
 
+// Helper to check company access rights
+function canUserAccessFile(user, file) {
+  if (user.role === 'ADMIN') return true;
+  const userSlug = user.companySlug || 'mts-decor';
+  const fileSlug = file.companySlug || 'mts-decor';
+  if (fileSlug === userSlug) return true;
+  if (user.companyId && file.companyId && String(user.companyId) === String(file.companyId)) return true;
+  return false;
+}
+
 // GET /api/excel-files — list all saved excel files (partitioned by company)
 router.get('/', auth, async (req, res) => {
   try {
@@ -38,6 +48,9 @@ router.get('/:id', auth, async (req, res) => {
   try {
     const file = await ExcelFile.findById(req.params.id);
     if (!file) return res.status(404).json({ message: 'EXCEL FILE NOT FOUND' });
+    if (!canUserAccessFile(req.user, file)) {
+      return res.status(403).json({ message: 'FORBIDDEN: CANNOT ACCESS FILE FROM ANOTHER COMPANY' });
+    }
     res.json(file);
   } catch (err) {
     console.error('GET SINGLE EXCEL FILE ERROR:', err);
@@ -94,6 +107,9 @@ const handleMoveExcelFolder = async (req, res) => {
   try {
     const file = await ExcelFile.findById(req.params.id);
     if (!file) return res.status(404).json({ message: 'FILE NOT FOUND' });
+    if (!canUserAccessFile(req.user, file)) {
+      return res.status(403).json({ message: 'FORBIDDEN: CANNOT MODIFY FILE FROM ANOTHER COMPANY' });
+    }
     const { folderId, folderName } = req.body;
     file.folderId = folderId || null;
     file.folderName = folderName || '';
@@ -111,6 +127,9 @@ router.delete('/:id', auth, async (req, res) => {
   try {
     const file = await ExcelFile.findById(req.params.id);
     if (!file) return res.status(404).json({ message: 'EXCEL FILE NOT FOUND' });
+    if (!canUserAccessFile(req.user, file)) {
+      return res.status(403).json({ message: 'FORBIDDEN: CANNOT ACCESS FILE FROM ANOTHER COMPANY' });
+    }
 
     const isCompanyAdmin = req.user.role === 'ADMIN' || req.user.username === 'admin' || req.user.username === 'jagdish' || req.user.username === 'hitesh';
     if (!isCompanyAdmin && file.ownerUsername !== req.user.username) {
@@ -130,6 +149,9 @@ router.get('/:id/download', auth, async (req, res) => {
   try {
     const file = await ExcelFile.findById(req.params.id);
     if (!file) return res.status(404).json({ message: 'EXCEL FILE NOT FOUND' });
+    if (!canUserAccessFile(req.user, file)) {
+      return res.status(403).json({ message: 'FORBIDDEN: CANNOT ACCESS FILE FROM ANOTHER COMPANY' });
+    }
 
     const buffer = Buffer.from(file.fileBase64, 'base64');
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');

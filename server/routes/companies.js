@@ -77,6 +77,9 @@ router.get('/:id', auth, async (req, res) => {
   try {
     const company = await Company.findById(req.params.id);
     if (!company) return res.status(404).json({ message: 'COMPANY NOT FOUND' });
+    if (req.user.role !== 'ADMIN' && String(req.user.companyId) !== String(company._id) && req.user.companySlug !== company.slug) {
+      return res.status(403).json({ message: 'FORBIDDEN: UNAUTHORIZED ACCESS TO COMPANY' });
+    }
     res.json(company);
   } catch (err) {
     res.status(500).json({ message: 'SERVER ERROR' });

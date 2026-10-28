@@ -287,7 +287,7 @@ export default function ClientApprovalModal({
                       <a
                         href={`https://wa.me/?text=${whatsappText}`}
                         target="_blank"
-                        rel="noreferrer"
+                        rel="noopener noreferrer"
                         className="btn btn-sm btn-success fw-bold d-inline-flex align-items-center gap-1 shadow-sm"
                       >
                         <i className="bi bi-whatsapp"></i> Share on WhatsApp
@@ -301,7 +301,7 @@ export default function ClientApprovalModal({
                       <a
                         href={portalUrl}
                         target="_blank"
-                        rel="noreferrer"
+                        rel="noopener noreferrer"
                         className="btn btn-sm btn-outline-primary fw-bold d-inline-flex align-items-center gap-1"
                       >
                         <i className="bi bi-box-arrow-up-right"></i> Open Portal Preview

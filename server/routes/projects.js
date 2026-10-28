@@ -342,8 +342,9 @@ router.post('/batch/folder', auth, async (req, res) => {
     const cleanFolderId = folderId || null;
     const cleanFolderName = folderName || '';
 
+    const companyFilter = buildCompanyFilter(req.user);
     await Project.updateMany(
-      { _id: { $in: projectIds } },
+      { _id: { $in: projectIds }, ...companyFilter },
       {
         $set: {
           folderId: cleanFolderId,

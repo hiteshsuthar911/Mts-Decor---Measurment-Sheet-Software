@@ -478,7 +478,7 @@ export default function AdminPanel() {
               <i className="bi bi-person-circle"></i>
               <span className="d-none d-sm-inline">MY PROFILE</span>
             </Link>
-            <Link to="/login" target="_blank" className="btn btn-outline-light btn-sm extra-small fw-bold text-uppercase d-none d-lg-inline-flex align-items-center gap-1">
+            <Link to="/login" target="_blank" rel="noopener noreferrer" className="btn btn-outline-light btn-sm extra-small fw-bold text-uppercase d-none d-lg-inline-flex align-items-center gap-1">
               <i className="bi bi-box-arrow-up-right"></i> PREVIEW LOGIN
             </Link>
             <button
@@ -990,6 +990,7 @@ export default function AdminPanel() {
                 <Link
                   to="/login"
                   target="_blank"
+                  rel="noopener noreferrer"
                   className="btn btn-sm btn-outline-primary fw-bold text-uppercase extra-small d-flex align-items-center gap-1"
                 >
                   <i className="bi bi-box-arrow-up-right"></i> PREVIEW LOGIN PAGE

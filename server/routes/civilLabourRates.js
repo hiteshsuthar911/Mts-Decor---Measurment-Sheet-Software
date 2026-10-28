@@ -31,7 +31,13 @@ router.get('/', async (req, res) => {
 // POST /api/labour-rates — Save updated civil labour rates (Admin & Authenticated users)
 router.post('/', auth, async (req, res) => {
   try {
-    const companySlug = req.body.companySlug || req.user.companySlug || 'mts-decor';
+    const userSlug = req.user.companySlug || 'mts-decor';
+    const companySlug = req.body.companySlug || userSlug;
+
+    if (req.user.role !== 'ADMIN' && companySlug !== userSlug) {
+      return res.status(403).json({ message: 'FORBIDDEN: CANNOT MODIFY ANOTHER COMPANY RATES' });
+    }
+
     const { rates, title, date, referenceImages } = req.body;
 
     if (!Array.isArray(rates)) {
@@ -75,7 +81,13 @@ router.post('/', auth, async (req, res) => {
 // POST /api/labour-rates/reset — Reset to default rates
 router.post('/reset', auth, async (req, res) => {
   try {
-    const companySlug = req.body.companySlug || req.user.companySlug || 'mts-decor';
+    const userSlug = req.user.companySlug || 'mts-decor';
+    const companySlug = req.body.companySlug || userSlug;
+
+    if (req.user.role !== 'ADMIN' && companySlug !== userSlug) {
+      return res.status(403).json({ message: 'FORBIDDEN: CANNOT RESET ANOTHER COMPANY RATES' });
+    }
+
     await CivilLabourRate.deleteOne({ companySlug });
     res.json({ success: true, message: 'RESET TO DEFAULT CIVIL LABOUR RATES' });
   } catch (err) {

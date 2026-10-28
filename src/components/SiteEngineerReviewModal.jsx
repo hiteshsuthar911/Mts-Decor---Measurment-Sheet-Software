@@ -501,7 +501,7 @@ export default function SiteEngineerReviewModal({
                       <a
                         href={`${portalUrl}?pin=${encodeURIComponent(engineerPin)}`}
                         target="_blank"
-                        rel="noreferrer"
+                        rel="noopener noreferrer"
                         className="btn btn-outline-secondary btn-sm fw-semibold d-flex align-items-center gap-1"
                       >
                         <i className="bi bi-box-arrow-up-right"></i> Open Portal Preview

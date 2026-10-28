@@ -14,6 +14,7 @@ const {
   detectSuspiciousProbes, 
   authRateLimiter, 
   apiRateLimiter, 
+  portalPinRateLimiter,
   errorHandler 
 } = require('./middleware/securityMiddleware');
 const logger = require('./utils/logger');
@@ -63,6 +64,8 @@ app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 // ── Rate Limiting (Brute-force & Burst Protection) ─────────
 app.use('/api', apiRateLimiter);
 app.use('/api/auth', authRateLimiter);
+app.use('/api/projects/sign-portal', portalPinRateLimiter);
+app.use('/api/projects/engineer-portal', portalPinRateLimiter);
 
 // ── API Routes ────────────────────────────────────────────
 app.use('/api/auth',           require('./routes/auth'));

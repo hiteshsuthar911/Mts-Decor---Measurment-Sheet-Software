@@ -746,7 +746,7 @@ export default function CivilLabourRatesManager({ companySlug = 'mts-decor' }) {
                   <a
                     href={activeImagePage === 1 ? '/civil-rates/civil_labour_rates_page_1.png' : '/civil-rates/civil_labour_rates_page_2.png'}
                     target="_blank"
-                    rel="noreferrer"
+                    rel="noopener noreferrer"
                     className="btn btn-outline-dark btn-sm extra-small py-0.5 px-2"
                   >
                     <i className="bi bi-box-arrow-up-right me-1"></i> Open Full Resolution

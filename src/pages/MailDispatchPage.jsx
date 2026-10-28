@@ -163,7 +163,7 @@ function generateLetterheadHtml({ projectName, clientName, billAmount, portalLin
 
       ${portalLink ? `
       <div style="text-align: center; margin: 28px 0 16px 0;">
-        <a href="${portalLink}" target="_blank" class="btn-action">
+        <a href="${portalLink}" target="_blank" rel="noopener noreferrer" class="btn-action">
           Review & Digitally Sign Bill &rarr;
         </a>
         <div style="font-size: 11px; color: #94a3b8;">Click to open secure digital approval portal on mobile or desktop</div>
@@ -1423,7 +1423,7 @@ export default function MailDispatchPage() {
                       <a 
                         href={currentPortalLink} 
                         target="_blank" 
-                        rel="noreferrer" 
+                        rel="noopener noreferrer" 
                         className="btn btn-sm btn-primary px-3 py-1.5 fw-bold shadow-xs text-decoration-none d-inline-flex align-items-center gap-1.5"
                         style={{ fontSize: '11.5px', background: '#2563eb' }}
                       >
@@ -1935,7 +1935,7 @@ export default function MailDispatchPage() {
                           <a 
                             href="https://resend.com/api-keys" 
                             target="_blank" 
-                            rel="noreferrer" 
+                            rel="noopener noreferrer" 
                             className="badge bg-primary text-white text-decoration-none px-2 py-1 shadow-xs"
                           >
                             Resend Console &rarr;
@@ -2125,7 +2125,7 @@ export default function MailDispatchPage() {
                         <div className="p-3 rounded-2 mb-3 border small" style={{ backgroundColor: '#f0f9ff', borderColor: '#bae6fd' }}>
                           <strong className="text-blue-700 d-block mb-1">Google App Password Instructions:</strong>
                           <ol className="m-0 ps-3 text-slate-600" style={{ lineHeight: 1.6, fontSize: '12px' }}>
-                            <li>Go to <a href="https://myaccount.google.com/security" target="_blank" rel="noreferrer" className="text-blue-600 fw-semibold">Google Account Security</a>.</li>
+                            <li>Go to <a href="https://myaccount.google.com/security" target="_blank" rel="noopener noreferrer" className="text-blue-600 fw-semibold">Google Account Security</a>.</li>
                             <li>Ensure <strong>2-Step Verification</strong> is enabled.</li>
                             <li>Search for <strong>"App passwords"</strong> in the top search bar.</li>
                             <li>Create a new password named <strong>"MTS Decor Mail"</strong>.</li>

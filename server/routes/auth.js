@@ -298,10 +298,13 @@ router.post('/login', async (req, res, next) => {
 router.post('/verify-password', require('../middleware/authMiddleware'), async (req, res, next) => {
   try {
     const { password } = req.body;
+    if (!password || typeof password !== 'string') {
+      return res.status(400).json({ message: 'PASSWORD REQUIRED', valid: false });
+    }
     const user = await User.findById(req.user.id);
     if (!user) {
       logger.logAuthFailure(req.user.username, 'EDIT_GUARD_USER_NOT_FOUND', req);
-      return res.status(404).json({ message: 'USER NOT FOUND' });
+      return res.status(404).json({ message: 'USER NOT FOUND', valid: false });
     }
     const valid = await user.comparePassword(password.trim());
     res.json({ valid });

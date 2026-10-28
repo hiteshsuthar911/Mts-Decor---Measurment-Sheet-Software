@@ -82,7 +82,9 @@ export default function App() {
       api.get('/auth/verify-token').catch(() => {
         logout();
         if (typeof window !== 'undefined') {
-          const path = window.location.pathname || '';
+          const rawHash = window.location.hash || '';
+          const hashPath = rawHash.startsWith('#') ? rawHash.slice(1) : rawHash;
+          const path = hashPath || window.location.pathname || '';
           const isPublic = path.startsWith('/sign') || path.startsWith('/engineer') || path.startsWith('/review') || path.startsWith('/site-review') || path.startsWith('/pdf') || path.startsWith('/view') || path.startsWith('/verify') || path.startsWith('/login') || path.startsWith('/download') || path.startsWith('/apps');
           if (!isPublic) {
             window.location.replace('/login');
@@ -130,6 +132,8 @@ export default function App() {
         />
 
         {/* Measurement sheet (by project ID) — Accessible to all logged-in users & admins */}
+        <Route path="/sheet" element={<Navigate to="/projects" replace />} />
+        <Route path="/sheets" element={<Navigate to="/projects" replace />} />
         <Route
           path="/sheet/:projectId"
           element={
