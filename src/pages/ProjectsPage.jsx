@@ -27,6 +27,7 @@ import {
   List,
   Smartphone,
   ShieldCheck,
+  Calculator,
   X,
   Mail,
   User,
@@ -2114,6 +2115,17 @@ export default function ProjectsPage() {
               <span className="badge rounded-pill bg-primary bg-opacity-25 text-primary border border-primary border-opacity-50 px-1 py-0" style={{ fontSize: '10px' }}>
                 Studio
               </span>
+            </button>
+
+            <button
+              type="button"
+              className="workspace-tab-btn d-none d-lg-inline-flex"
+              onClick={() => navigate('/enterprise-blueprint')}
+              style={{ whiteSpace: 'nowrap' }}
+              title="Open B2B SaaS Architecture, Pricing & Profit Calculator"
+            >
+              <Calculator size={14} className="text-emerald-600" />
+              <span>B2B Blueprint</span>
             </button>
           </div>
 

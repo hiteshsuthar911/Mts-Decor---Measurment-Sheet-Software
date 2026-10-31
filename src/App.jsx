@@ -11,6 +11,7 @@ import ClientSignPortal from './pages/ClientSignPortal';
 import SiteEngineerPortal from './pages/SiteEngineerPortal';
 import PublicPdfViewer from './pages/PublicPdfViewer';
 import MailDispatchPage from './pages/MailDispatchPage';
+import EnterpriseBlueprintPage from './pages/EnterpriseBlueprintPage';
 import { getSession, isLoggedIn, logout } from './utils/auth';
 import { api } from './utils/api';
 
@@ -85,7 +86,7 @@ export default function App() {
           const rawHash = window.location.hash || '';
           const hashPath = rawHash.startsWith('#') ? rawHash.slice(1) : rawHash;
           const path = hashPath || window.location.pathname || '';
-          const isPublic = path.startsWith('/sign') || path.startsWith('/engineer') || path.startsWith('/review') || path.startsWith('/site-review') || path.startsWith('/pdf') || path.startsWith('/view') || path.startsWith('/verify') || path.startsWith('/login') || path.startsWith('/download') || path.startsWith('/apps');
+          const isPublic = path.startsWith('/sign') || path.startsWith('/engineer') || path.startsWith('/review') || path.startsWith('/site-review') || path.startsWith('/pdf') || path.startsWith('/view') || path.startsWith('/verify') || path.startsWith('/login') || path.startsWith('/download') || path.startsWith('/apps') || path.startsWith('/enterprise-blueprint') || path.startsWith('/b2b-plan') || path.startsWith('/pricing-calculator');
           if (!isPublic) {
             window.location.replace('/login');
           }
@@ -110,6 +111,9 @@ export default function App() {
         <Route path="/construction" element={<UnderConstructionPage />} />
         <Route path="/download" element={<DownloadPage />} />
         <Route path="/apps" element={<DownloadPage />} />
+        <Route path="/enterprise-blueprint" element={<EnterpriseBlueprintPage />} />
+        <Route path="/b2b-plan" element={<EnterpriseBlueprintPage />} />
+        <Route path="/pricing-calculator" element={<EnterpriseBlueprintPage />} />
 
         {/* ── 2. SOFTWARE OPERATIONAL ADMIN PORTAL ── */}
         <Route

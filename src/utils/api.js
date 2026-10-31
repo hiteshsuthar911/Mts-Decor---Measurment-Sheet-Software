@@ -51,7 +51,10 @@ async function request(method, path, body) {
                            currentPath.startsWith('/c/') || 
                            currentPath.startsWith('/construction') || 
                            currentPath.startsWith('/download') || 
-                           currentPath.startsWith('/apps');
+                           currentPath.startsWith('/apps') ||
+                           currentPath.startsWith('/enterprise-blueprint') ||
+                           currentPath.startsWith('/b2b-plan') ||
+                           currentPath.startsWith('/pricing-calculator');
       const authErrorMessage = String(data.message || '').toUpperCase();
       if (!isPublicPath && (authErrorMessage.includes('UNAUTHORIZED') || authErrorMessage.includes('TOKEN'))) {
         localStorage.removeItem('MS_PRO_AUTH_V1');

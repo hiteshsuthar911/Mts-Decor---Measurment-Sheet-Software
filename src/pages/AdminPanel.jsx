@@ -474,6 +474,10 @@ export default function AdminPanel() {
               <span className="d-none d-sm-inline">PROJECTS</span>
             </Link>
 
+            <Link to="/enterprise-blueprint" className="btn btn-outline-info btn-sm extra-small fw-bold text-uppercase d-flex align-items-center gap-1" title="B2B SaaS Architecture, Pricing & Calculator">
+              <i className="bi bi-calculator"></i>
+              <span className="d-none d-md-inline">B2B BLUEPRINT &amp; PRICING</span>
+            </Link>
             <Link to="/profile" className="btn btn-outline-warning btn-sm extra-small fw-bold text-uppercase d-flex align-items-center gap-1" title="My Profile">
               <i className="bi bi-person-circle"></i>
               <span className="d-none d-sm-inline">MY PROFILE</span>
