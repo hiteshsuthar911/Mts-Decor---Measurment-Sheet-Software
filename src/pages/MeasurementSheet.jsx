@@ -66,6 +66,7 @@ export default function MeasurementSheet() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [sheetDropdownOpen, setSheetDropdownOpen] = useState(false);
   const [sheetSearchQuery, setSheetSearchQuery] = useState('');
+  const [clipboardItems, setClipboardItems] = useState([]);
   const fullscreenRef = useRef(null);
   const sheetDropdownRef = useRef(null);
 
@@ -631,6 +632,17 @@ export default function MeasurementSheet() {
     const newAreas = [...projectData.areas];
     [newAreas[idx], newAreas[targetIdx]] = [newAreas[targetIdx], newAreas[idx]];
     setAndSave(prev => ({ ...prev, areas: newAreas }));
+  };
+
+  const handleCopyItems = (items, sourceLabel = '') => {
+    if (!items || !items.length) return;
+    setClipboardItems(items);
+    showToast(`📋 COPIED ${items.length} ITEM${items.length > 1 ? 'S' : ''}${sourceLabel ? ` (${sourceLabel.toUpperCase()})` : ''}! HOVER BETWEEN ROWS TO PASTE.`);
+  };
+
+  const handleClearClipboard = () => {
+    setClipboardItems([]);
+    showToast('CLIPBOARD CLEARED');
   };
 
   const handleDeleteWholePage = (pageNumber) => {
@@ -1655,6 +1667,9 @@ export default function MeasurementSheet() {
                                 onDuplicateArea={readOnly ? () => {} : handleDuplicateArea}
                                 onMoveArea={readOnly ? () => {} : handleMoveArea}
                                 readOnly={readOnly}
+                                clipboardItems={clipboardItems}
+                                onCopyItems={handleCopyItems}
+                                onClearClipboard={handleClearClipboard}
                               />
                             );
                           })}
@@ -1766,6 +1781,9 @@ export default function MeasurementSheet() {
                                       onDuplicateArea={readOnly ? () => {} : handleDuplicateArea}
                                       onMoveArea={readOnly ? () => {} : handleMoveArea}
                                       readOnly={readOnly}
+                                      clipboardItems={clipboardItems}
+                                      onCopyItems={handleCopyItems}
+                                      onClearClipboard={handleClearClipboard}
                                     />
                                   );
                                 })}
@@ -2052,6 +2070,33 @@ export default function MeasurementSheet() {
               <span>SAVE</span>
             </button>
           )}
+        </div>
+      )}
+
+      {/* Floating Clipboard Notification Pill */}
+      {clipboardItems.length > 0 && !readOnly && (
+        <div className="ms-clipboard-floating-pill">
+          <div className="d-flex align-items-center gap-2">
+            <span className="badge bg-primary rounded-pill px-2.5 py-1 fw-bold">
+              <i className="bi bi-clipboard-check me-1" />
+              {clipboardItems.length} Copied
+            </span>
+            <span className="extra-small fw-bold text-dark text-truncate d-none d-sm-inline" style={{ maxWidth: '280px' }}>
+              {clipboardItems.map(i => i.remark || 'Row').slice(0, 3).join(', ')}
+              {clipboardItems.length > 3 ? ` +${clipboardItems.length - 3} more` : ''}
+            </span>
+            <span className="text-muted extra-small d-none d-md-inline">
+              • Hover between any rows to paste
+            </span>
+          </div>
+          <button
+            type="button"
+            className="btn btn-xs btn-outline-danger py-0.5 px-2 rounded-pill fw-bold extra-small"
+            onClick={handleClearClipboard}
+            title="Clear clipboard"
+          >
+            <i className="bi bi-x-lg me-1" /> Clear
+          </button>
         </div>
       )}
 

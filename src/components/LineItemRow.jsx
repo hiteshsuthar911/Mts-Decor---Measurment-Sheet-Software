@@ -9,9 +9,11 @@ export default function LineItemRow({
   billingMode,
   currencySymbol = '₹',
   isSelected = false,
+  isJustPasted = false,
   onToggleSelect,
   onChangeItem,
   onDuplicateItem,
+  onCopyItem,
   onDeleteItem,
   onMoveItemUp,
   onMoveItemDown,
@@ -55,7 +57,7 @@ export default function LineItemRow({
 
   return (
     <tr
-      className={`xls-row ${isSelected ? 'xls-row--selected' : ''} ${item.isLess ? 'xls-row--deduction' : ''}`}
+      className={`xls-row ${isSelected ? 'xls-row--selected' : ''} ${item.isLess ? 'xls-row--deduction' : ''} ${isJustPasted ? 'xls-row--just-pasted' : ''}`}
       title={item.isLess ? 'Deduction Row' : ''}
     >
       {/* SR + Checkbox */}
@@ -252,6 +254,16 @@ export default function LineItemRow({
               title="Move Down"
             >
               <i className="bi bi-chevron-down" />
+            </button>
+          )}
+          {onCopyItem && (
+            <button
+              type="button"
+              className="xls-action-btn"
+              onClick={() => onCopyItem(item)}
+              title="Copy row (paste anywhere in-between)"
+            >
+              <i className="bi bi-clipboard-plus" />
             </button>
           )}
           <button

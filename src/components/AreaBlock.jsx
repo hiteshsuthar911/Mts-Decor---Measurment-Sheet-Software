@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { WORK_CATEGORIES, CATEGORIZED_WORK_TYPES, COMMON_ROOM_AREAS, UNIT_OPTIONS, REMARK_OPTIONS, CATEGORIZED_REMARKS } from '../data/categories';
 import LineItemRow from './LineItemRow';
 import MobileLineItemCard from './MobileLineItemCard';
+import InBetweenPasteRow from './InBetweenPasteRow';
 import { calculateAreaTotals, formatNumber, formatCurrency } from '../utils/calculations';
 import { createEmptyItem } from '../data/sampleData';
 import MultiFloorReplicateModal, { parseFloorNumber, formatFloorName } from './MultiFloorReplicateModal';
@@ -17,11 +18,15 @@ export default function AreaBlock({
   onDeleteArea,
   onDuplicateArea,
   onMoveArea,
-  readOnly
+  readOnly,
+  clipboardItems = [],
+  onCopyItems,
+  onClearClipboard,
 }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showReplicateModal, setShowReplicateModal] = useState(false);
   const [selectedItemIds, setSelectedItemIds] = useState([]);
+  const [highlightedItemIds, setHighlightedItemIds] = useState([]);
   const [mobileLayout, setMobileLayout] = useState(() => {
     try {
       return localStorage.getItem('mts_mobile_layout_mode') || 'cards';
@@ -270,6 +275,68 @@ export default function AreaBlock({
     onChangeArea(area.id, { ...area, items: updatedItems });
   };
 
+  const handleCopySingleItem = (item) => {
+    if (onCopyItems) {
+      onCopyItems([item], area.room || `Area #${index + 1}`);
+    }
+  };
+
+  const handleBulkCopy = () => {
+    if (!selectedItemIds.length) return;
+    const itemsToCopy = (area.items || []).filter(i => selectedItemIds.includes(i.id));
+    if (onCopyItems) {
+      onCopyItems(itemsToCopy, area.room || `Area #${index + 1}`);
+      setSelectedItemIds([]);
+    }
+  };
+
+  const handlePasteAt = (insertIndex) => {
+    if (!clipboardItems || !clipboardItems.length) return;
+    const clonedItems = clipboardItems.map(orig => ({
+      ...orig,
+      id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`
+    }));
+    const newItems = [...(area.items || [])];
+    newItems.splice(insertIndex, 0, ...clonedItems);
+    onChangeArea(area.id, { ...area, items: newItems });
+    const newIds = clonedItems.map(c => c.id);
+    setHighlightedItemIds(newIds);
+    setTimeout(() => {
+      setHighlightedItemIds([]);
+    }, 2000);
+  };
+
+  const handleInsertBlankRowAt = (insertIndex) => {
+    const defaultUnit = area.items?.length > 0 ? area.items[0].unit : 'SFT';
+    const newItem = createEmptyItem(defaultUnit);
+    const newItems = [...(area.items || [])];
+    newItems.splice(insertIndex, 0, newItem);
+    onChangeArea(area.id, { ...area, items: newItems });
+    setHighlightedItemIds([newItem.id]);
+    setTimeout(() => {
+      setHighlightedItemIds([]);
+    }, 2000);
+  };
+
+  // Keyboard shortcut: Ctrl+C / Cmd+C copies selected items to clipboard
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c') {
+        const activeTag = document.activeElement?.tagName;
+        if (activeTag === 'INPUT' || activeTag === 'TEXTAREA') {
+          const selection = window.getSelection()?.toString();
+          if (selection) return;
+        }
+        if (selectedItemIds.length > 0) {
+          e.preventDefault();
+          handleBulkCopy();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedItemIds, area.items, area.room]);
+
   // Area title for display
   const areaTitle = [area.floor, area.flat, area.room]
     .filter(Boolean)
@@ -277,6 +344,8 @@ export default function AreaBlock({
   const categoryLabel = area.parentCategory === 'Other'
     ? (area.customParentCategory || 'Other')
     : (area.parentCategory || 'General Work');
+
+  const colSpan = billingMode ? 11 : 9;
 
   return (
     <div className="ent-area-block">
@@ -558,6 +627,16 @@ export default function AreaBlock({
                   </button>
                 )}
 
+                {/* Bulk Copy */}
+                <button
+                  type="button"
+                  className="ent-add-btn ent-add-btn--primary"
+                  onClick={handleBulkCopy}
+                  title="Copy selected rows to clipboard to paste anywhere in-between"
+                >
+                  <i className="bi bi-clipboard-plus" /> Copy ({selectedItemIds.length})
+                </button>
+
                 {/* Bulk Delete */}
                 <button
                   type="button"
@@ -621,19 +700,32 @@ export default function AreaBlock({
           {mobileLayout === 'cards' && (
             <div className="d-md-none p-2 bg-light">
               {(area.items || []).map((item, itemIdx) => (
-                <MobileLineItemCard
-                  key={item.id}
-                  item={item}
-                  index={itemIdx}
-                  totalItems={area.items?.length || 0}
-                  billingMode={billingMode}
-                  currencySymbol={currencySymbol}
-                  onChangeItem={handleChangeItem}
-                  onDuplicateItem={handleDuplicateItem}
-                  onDeleteItem={handleDeleteItem}
-                  onMoveItemUp={() => handleMoveItem(item.id, 'up')}
-                  onMoveItemDown={() => handleMoveItem(item.id, 'down')}
-                />
+                <React.Fragment key={item.id}>
+                  <MobileLineItemCard
+                    item={item}
+                    index={itemIdx}
+                    totalItems={area.items?.length || 0}
+                    billingMode={billingMode}
+                    currencySymbol={currencySymbol}
+                    onChangeItem={handleChangeItem}
+                    onDuplicateItem={handleDuplicateItem}
+                    onCopyItem={handleCopySingleItem}
+                    onDeleteItem={handleDeleteItem}
+                    onMoveItemUp={() => handleMoveItem(item.id, 'up')}
+                    onMoveItemDown={() => handleMoveItem(item.id, 'down')}
+                  />
+                  {clipboardItems?.length > 0 && (
+                    <div className="text-center my-1.5">
+                      <button
+                        type="button"
+                        className="btn btn-xs btn-outline-primary rounded-pill px-2.5 py-0.5 fw-bold extra-small shadow-2xs"
+                        onClick={() => handlePasteAt(itemIdx + 1)}
+                      >
+                        <i className="bi bi-clipboard-check me-1" /> Paste {clipboardItems.length} here
+                      </button>
+                    </div>
+                  )}
+                </React.Fragment>
               ))}
 
               {(!area.items || area.items.length === 0) && (
@@ -712,41 +804,78 @@ export default function AreaBlock({
                       <th className="th-right" style={{ width: '130px', borderLeft: '2px solid #fde68a' }}>AMOUNT</th>
                     </>
                   )}
-                  <th className="th-center" style={{ width: '104px', borderLeft: '2px solid #c8d3de' }}>ACTIONS</th>
+                  <th className="th-center" style={{ width: '124px', borderLeft: '2px solid #c8d3de' }}>ACTIONS</th>
                 </tr>
               </thead>
               <tbody>
-                {(area.items || []).map((item, itemIdx) => (
-                  <LineItemRow
-                    key={item.id}
-                    item={item}
-                    index={itemIdx}
-                    totalItems={area.items?.length || 0}
-                    billingMode={billingMode}
-                    currencySymbol={currencySymbol}
-                    isSelected={selectedItemIds.includes(item.id)}
-                    onToggleSelect={handleToggleSelectItem}
-                    onChangeItem={handleChangeItem}
-                    onDuplicateItem={handleDuplicateItem}
-                    onDeleteItem={handleDeleteItem}
-                    onMoveItemUp={() => handleMoveItem(item.id, 'up')}
-                    onMoveItemDown={() => handleMoveItem(item.id, 'down')}
+                {/* Top in-between dropzone (index 0) */}
+                {area.items?.length > 0 && (
+                  <InBetweenPasteRow
+                    insertIndex={0}
+                    colSpan={colSpan}
+                    clipboardCount={clipboardItems?.length || 0}
+                    onPaste={handlePasteAt}
+                    onInsertBlank={handleInsertBlankRowAt}
+                    disabled={readOnly}
                   />
+                )}
+
+                {(area.items || []).map((item, itemIdx) => (
+                  <React.Fragment key={item.id}>
+                    <LineItemRow
+                      item={item}
+                      index={itemIdx}
+                      totalItems={area.items?.length || 0}
+                      billingMode={billingMode}
+                      currencySymbol={currencySymbol}
+                      isSelected={selectedItemIds.includes(item.id)}
+                      isJustPasted={highlightedItemIds.includes(item.id)}
+                      onToggleSelect={handleToggleSelectItem}
+                      onChangeItem={handleChangeItem}
+                      onDuplicateItem={handleDuplicateItem}
+                      onCopyItem={handleCopySingleItem}
+                      onDeleteItem={handleDeleteItem}
+                      onMoveItemUp={() => handleMoveItem(item.id, 'up')}
+                      onMoveItemDown={() => handleMoveItem(item.id, 'down')}
+                    />
+
+                    {/* In-Between Dropzone Row (insert at itemIdx + 1) */}
+                    <InBetweenPasteRow
+                      insertIndex={itemIdx + 1}
+                      colSpan={colSpan}
+                      clipboardCount={clipboardItems?.length || 0}
+                      onPaste={handlePasteAt}
+                      onInsertBlank={handleInsertBlankRowAt}
+                      disabled={readOnly}
+                    />
+                  </React.Fragment>
                 ))}
 
                 {(!area.items || area.items.length === 0) && (
                   <tr className="ent-empty-row">
-                    <td colSpan={billingMode ? 11 : 9}>
+                    <td colSpan={colSpan}>
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
                         <i className="bi bi-table" style={{ fontSize: '20px', color: '#d1d5db' }} />
                         <span>No measurement rows yet.</span>
-                        <button
-                          type="button"
-                          className="ent-add-btn ent-add-btn--primary"
-                          onClick={() => handleAddItem(false)}
-                        >
-                          <i className="bi bi-plus-lg" /> Add First Row
-                        </button>
+                        <div className="d-flex align-items-center gap-2">
+                          <button
+                            type="button"
+                            className="ent-add-btn ent-add-btn--primary"
+                            onClick={() => handleAddItem(false)}
+                          >
+                            <i className="bi bi-plus-lg" /> Add First Row
+                          </button>
+                          {clipboardItems?.length > 0 && (
+                            <button
+                              type="button"
+                              className="ent-add-btn ent-add-btn--primary fw-bold"
+                              onClick={() => handlePasteAt(0)}
+                              title="Paste clipboard items here"
+                            >
+                              <i className="bi bi-clipboard-check me-1" /> Paste {clipboardItems.length} Here
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </td>
                   </tr>
@@ -777,6 +906,18 @@ export default function AreaBlock({
                 <i className="bi bi-dash-lg" />
                 <span>Add Deduction</span>
               </button>
+
+              {clipboardItems?.length > 0 && (
+                <button
+                  type="button"
+                  className="ent-add-btn ent-add-btn--primary fw-bold"
+                  onClick={() => handlePasteAt(area.items?.length || 0)}
+                  title={`Paste ${clipboardItems.length} copied item(s) at bottom of this area`}
+                >
+                  <i className="bi bi-clipboard-check" />
+                  <span>Paste {clipboardItems.length} at Bottom</span>
+                </button>
+              )}
 
               <span className="ent-vdivider" />
 

@@ -3096,6 +3096,163 @@ input::placeholder {
   background: #fecaca !important;
 }
 
+/* ── In-Between Hover Insert & Paste Dropzone (Excel / Notion style) ── */
+.xls-inbetween-row {
+  height: 0 !important;
+  line-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+}
+
+.xls-inbetween-row td {
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  height: 0 !important;
+  line-height: 0 !important;
+  position: relative !important;
+  overflow: visible !important;
+}
+
+.xls-inbetween-wrap {
+  position: relative;
+  width: 100%;
+  height: 0;
+  overflow: visible;
+}
+
+.xls-inbetween-hitbox {
+  position: absolute;
+  top: -10px;
+  left: 0;
+  right: 0;
+  height: 20px;
+  z-index: 25;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  cursor: pointer;
+  transition: opacity 0.15s ease-in-out;
+  pointer-events: auto;
+}
+
+/* Subtle left indicator dot when clipboard has items */
+.xls-inbetween-row.has-clipboard .xls-inbetween-hitbox::before {
+  content: '';
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #2563eb;
+  opacity: 0.45;
+  transition: opacity 0.12s, transform 0.12s;
+}
+
+.xls-inbetween-hitbox:hover {
+  opacity: 1 !important;
+}
+
+.xls-inbetween-hitbox:hover::before {
+  opacity: 0;
+}
+
+.xls-inbetween-line {
+  flex: 1;
+  height: 2px;
+  background: #2563eb;
+  box-shadow: 0 0 6px rgba(37, 99, 235, 0.45);
+}
+
+.xls-inbetween-pill {
+  border: none;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  padding: 3px 14px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.95);
+  transition: transform 0.12s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.12s ease;
+  user-select: none;
+  margin: 0 6px;
+  line-height: 1.4;
+}
+
+.xls-inbetween-pill:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.5), 0 0 0 1.5px #ffffff;
+}
+
+.xls-inbetween-pill:active {
+  transform: scale(0.97);
+}
+
+.xls-inbetween-pill--paste {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: #ffffff;
+}
+
+.xls-inbetween-pill--add {
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  color: #ffffff;
+}
+
+/* Flash animation when items are pasted */
+@keyframes rowPastedFlash {
+  0% { background-color: #bfdbfe !important; }
+  40% { background-color: #dbeafe !important; }
+  100% { background-color: transparent; }
+}
+
+.xls-row--just-pasted {
+  animation: rowPastedFlash 2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Floating Clipboard Notification Pill */
+.ms-clipboard-floating-pill {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1040;
+  background: #ffffff;
+  border: 1.5px solid #93c5fd;
+  border-radius: 9999px;
+  padding: 6px 14px;
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.2), 0 2px 6px rgba(0, 0, 0, 0.08);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  animation: slideUpFloating 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideUpFloating {
+  from {
+    transform: translate(-50%, 20px);
+    opacity: 0;
+  }
+  to {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
+}
+
+[data-theme="dark"] .ms-clipboard-floating-pill,
+[data-bs-theme="dark"] .ms-clipboard-floating-pill {
+  background: #1e293b;
+  border-color: #3b82f6;
+  color: #f1f5f9;
+}
+
 /* ── Table Cell (xls-cell) ─────────────────────────────────────── */
 .xls-cell {
   border: 1px solid #dde2e9;

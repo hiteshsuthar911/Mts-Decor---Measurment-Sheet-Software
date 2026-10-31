@@ -10,6 +10,7 @@ export default function MobileLineItemCard({
   currencySymbol = '₹',
   onChangeItem,
   onDuplicateItem,
+  onCopyItem,
   onDeleteItem,
   onMoveItemUp,
   onMoveItemDown,
@@ -93,6 +94,16 @@ export default function MobileLineItemCard({
               title="Move Down"
             >
               <i className="bi bi-chevron-down" style={{ fontSize: '13px' }} />
+            </button>
+          )}
+          {onCopyItem && (
+            <button
+              type="button"
+              className="btn btn-xs btn-outline-info p-1 border-0"
+              onClick={() => onCopyItem(item)}
+              title="Copy to Clipboard"
+            >
+              <i className="bi bi-clipboard-plus" style={{ fontSize: '12px' }} />
             </button>
           )}
           <button
