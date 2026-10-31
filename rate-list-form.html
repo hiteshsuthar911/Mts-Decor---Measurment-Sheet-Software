@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Civil & Interior Labour Rate List Form - MTS Decor</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-light: #eff6ff;
+      --surface: #ffffff;
+      --bg: #f8fafc;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --success: #16a34a;
+      --danger: #dc2626;
+      --radius: 10px;
+      --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.07);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      padding: 24px 16px 80px;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    header {
+      background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+      color: white;
+      padding: 32px 28px;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.3);
+      margin-bottom: 24px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+    }
+
+    header h1 {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    header p {
+      color: #bfdbfe;
+      font-size: 14px;
+      margin-top: 6px;
+    }
+
+    .header-badges {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      background: rgba(255, 255, 255, 0.18);
+      backdrop-filter: blur(8px);
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+    }
+
+    /* Client Info Form Box */
+    .meta-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      box-shadow: var(--shadow);
+      margin-bottom: 24px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+    }
+
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .field-group label {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+    }
+
+    .field-group input, .field-group select {
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      background: white;
+      transition: all 0.2s;
+    }
+
+    .field-group input:focus, .field-group select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+
+    /* Sticky Action Bar */
+    .controls-bar {
+      position: sticky;
+      top: 12px;
+      z-index: 50;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border);
+      padding: 14px 20px;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+      margin-bottom: 24px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .search-wrapper {
+      flex: 1;
+      min-width: 250px;
+      position: relative;
+    }
+
+    .search-wrapper input {
+      width: 100%;
+      padding: 10px 14px 10px 36px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .search-wrapper input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 9px 15px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-hover);
+    }
+
+    .btn-secondary {
+      background: white;
+      border-color: var(--border);
+      color: var(--text);
+    }
+
+    .btn-secondary:hover {
+      background: #f1f5f9;
+    }
+
+    .btn-success {
+      background: #16a34a;
+      color: white;
+    }
+
+    .btn-success:hover {
+      background: #15803d;
+    }
+
+    /* Category Accordion / Cards */
+    .category-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      margin-bottom: 20px;
+      overflow: hidden;
+      transition: box-shadow 0.2s;
+    }
+
+    .category-header {
+      background: #f1f5f9;
+      padding: 14px 20px;
+      font-size: 16px;
+      font-weight: 700;
+      color: #1e293b;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .category-count {
+      background: #e2e8f0;
+      color: #475569;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    /* Table format for rows */
+    .rates-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .rates-table th {
+      background: #fafafa;
+      padding: 10px 16px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+    }
+
+    .rates-table td {
+      padding: 10px 16px;
+      border-bottom: 1px solid #f1f5f9;
+      vertical-align: middle;
+      font-size: 14px;
+    }
+
+    .rates-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .rates-table tr:hover {
+      background: #f8fafc;
+    }
+
+    .cat-name {
+      font-weight: 600;
+      color: #1e293b;
+    }
+
+    /* Input styling */
+    .rate-input-box {
+      position: relative;
+      width: 140px;
+    }
+
+    .rate-currency-symbol {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #64748b;
+      font-weight: 700;
+      font-size: 14px;
+      pointer-events: none;
+    }
+
+    .rate-input {
+      width: 100%;
+      padding: 8px 10px 8px 24px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #0f172a;
+      text-align: right;
+      transition: all 0.2s;
+    }
+
+    .rate-input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+      background: #fff;
+    }
+
+    .rate-input.has-value {
+      border-color: #16a34a;
+      background: #f0fdf4;
+      color: #15803d;
+    }
+
+    .unit-select {
+      padding: 8px 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 13px;
+      background: white;
+      font-weight: 600;
+      color: #334155;
+    }
+
+    .notes-input {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      font-size: 13px;
+      color: #334155;
+    }
+
+    .notes-input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    /* Summary / Stats Card */
+    .summary-card {
+      background: white;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      padding: 20px 24px;
+      margin-top: 24px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .summary-stats {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stat-val {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--primary);
+    }
+
+    .stat-lbl {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    /* Print styling */
+    @media print {
+      body {
+        padding: 0;
+        background: white;
+      }
+      .controls-bar, .btn-group, .search-wrapper {
+        display: none !important;
+      }
+      .category-section {
+        page-break-inside: avoid;
+        box-shadow: none;
+        border: 1px solid #ccc;
+        margin-bottom: 12px;
+      }
+      .rate-input, .notes-input, .unit-select {
+        border: none;
+        background: transparent !important;
+      }
+      header {
+        background: #1e3a8a !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Header -->
+  <header>
+    <div>
+      <h1>💼 Civil & Interior Labour Rate List Form</h1>
+      <p>Configure contractor labour rates per work category for measurement sheets & estimates</p>
+    </div>
+    <div class="header-badges">
+      <div class="badge" id="badgeTotalItems">Total Categories: 73</div>
+      <div class="badge" id="badgeConfigured">Rates Filled: 0</div>
+    </div>
+  </header>
+
+  <!-- Contractor / Client Information -->
+  <div class="meta-box">
+    <div class="field-group">
+      <label>Contractor / Company Name</label>
+      <input type="text" id="contractorName" placeholder="e.g. MTS Decor / Shreeji Interiors" value="MTS Decor" />
+    </div>
+    <div class="field-group">
+      <label>Rate List Version / Title</label>
+      <input type="text" id="rateVersion" placeholder="e.g. Standard Master Rates 2026-27" value="Standard Master Rates 2026-27" />
+    </div>
+    <div class="field-group">
+      <label>Effective Date</label>
+      <input type="date" id="effectiveDate" />
+    </div>
+    <div class="field-group">
+      <label>Applicable Region / City</label>
+      <input type="text" id="regionName" placeholder="e.g. Mumbai / Thane / Navi Mumbai" value="Mumbai Metropolitan" />
+    </div>
+  </div>
+
+  <!-- Sticky Controls Bar -->
+  <div class="controls-bar">
+    <div class="search-wrapper">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="searchInput" placeholder="Search work category (e.g. 'Marble', 'Koba', 'Tile', 'Sill')..." />
+    </div>
+    <div class="btn-group">
+      <button type="button" class="btn-secondary" onclick="resetForm()">🔄 Clear All</button>
+      <button type="button" class="btn-secondary" onclick="exportCSV()">📥 Download CSV</button>
+      <button type="button" class="btn-secondary" onclick="exportJSON()">💾 Export JSON</button>
+      <button type="button" class="btn-primary" onclick="window.print()">🖨️ Print / PDF</button>
+      <button type="button" class="btn-success" onclick="saveToLocalStorage(true)">💾 Save Rates</button>
+    </div>
+  </div>
+
+  <!-- Form Area with all Categories -->
+  <form id="rateListForm">
+    <div id="categoriesContainer"></div>
+  </form>
+
+  <!-- Summary Card -->
+  <div class="summary-card">
+    <div class="summary-stats">
+      <div class="stat-item">
+        <span class="stat-val" id="statConfiguredCount">0 / 73</span>
+        <span class="stat-lbl">Categories Priced</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-val" id="statAvgRate">₹0</span>
+        <span class="stat-lbl">Average Labour Rate</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-val" id="statMinMax">₹0 - ₹0</span>
+        <span class="stat-lbl">Min - Max Rate</span>
+      </div>
+    </div>
+    <div>
+      <button type="button" class="btn-success" style="font-size: 15px; padding: 12px 24px;" onclick="saveToLocalStorage(true)">
+        💾 Save Rate List Form
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // Complete Master Categorized Work Types
+  const CATEGORIZED_WORK_TYPES = {
+    'Wall Tiles & Slabs': [
+      { name: 'Design Wall Tiles', unit: 'SFT', defRate: 45 },
+      { name: 'Subway Wall Tiles', unit: 'SFT', defRate: 50 },
+      { name: '600 X 1200 Wall Tiles', unit: 'SFT', defRate: 48 },
+      { name: '800 X 1600 Wall Tiles', unit: 'SFT', defRate: 65 },
+      { name: '1200 X 1800 Wall Tiles', unit: 'SFT', defRate: 85 },
+      { name: '1200 X 9400 Wall Tiles', unit: 'SFT', defRate: 110 },
+      { name: 'Plain Sada Tiles', unit: 'SFT', defRate: 35 },
+      { name: 'Wall Tiles', unit: 'SFT', defRate: 40 },
+      { name: 'Dado Italian Marble', unit: 'SFT', defRate: 110 }
+    ],
+    'Flooring, Koba & Italian Marble': [
+      { name: 'Floor Tiles', unit: 'SFT', defRate: 38 },
+      { name: 'Floor Tile with Koba 600x1200', unit: 'SFT', defRate: 65 },
+      { name: 'Floor Tile with Koba 800x1600', unit: 'SFT', defRate: 80 },
+      { name: 'Floor Tile with Koba 1200x1800', unit: 'SFT', defRate: 95 },
+      { name: 'Floor Tile with Koba 1200x9400', unit: 'SFT', defRate: 125 },
+      { name: 'Design Floor Tiles', unit: 'SFT', defRate: 50 },
+      { name: 'Design Floor Tiles with Koba', unit: 'SFT', defRate: 75 },
+      { name: 'Floor Italian Marble', unit: 'SFT', defRate: 120 },
+      { name: 'Flooring Italian Marble with Koba', unit: 'SFT', defRate: 150 },
+      { name: 'Kota Stone Filling', unit: 'SFT', defRate: 55 },
+      { name: 'Koba', unit: 'SFT', defRate: 25 },
+      { name: 'Patta Tiles', unit: 'RFT', defRate: 45 },
+      { name: 'Patta Tile with Koba (4mm space)', unit: 'RFT', defRate: 65 },
+      { name: 'Patta Tile with (4mm space)', unit: 'RFT', defRate: 55 }
+    ],
+    'Sills & Skirting': [
+      { name: 'Spotted Marble Sill', unit: 'RFT', defRate: 55 },
+      { name: 'Stone Sill', unit: 'RFT', defRate: 75 },
+      { name: 'Single Shempered Edge Stone Sill', unit: 'RFT', defRate: 115 },
+      { name: 'Double Shempered Edge Stone Sill', unit: 'RFT', defRate: 160 },
+      { name: 'Skirting', unit: 'RFT', defRate: 22 },
+      { name: 'Tiles Skirting', unit: 'RFT', defRate: 25 },
+      { name: 'Shempered Edge Skirting', unit: 'RFT', defRate: 45 },
+      { name: 'Italian Marble / Stone Shempered Edge Skirting', unit: 'RFT', defRate: 65 }
+    ],
+    'Door Frames & Fittings': [
+      { name: 'Main Door Frame Install', unit: 'NOS', defRate: 850 },
+      { name: 'Bedroom Door Frame Install', unit: 'NOS', defRate: 650 },
+      { name: 'Door Frame Removing', unit: 'NOS', defRate: 250 },
+      { name: 'Kadappa Fitting', unit: 'RFT', defRate: 85 },
+      { name: 'MS Angle Removing', unit: 'RFT', defRate: 35 }
+    ],
+    'Edges & Chamfers': [
+      { name: 'Kani Edge Tiles', unit: 'RFT', defRate: 25 },
+      { name: 'Kani Edge Stone', unit: 'RFT', defRate: 35 },
+      { name: 'Sharp Edge Tiles', unit: 'RFT', defRate: 20 },
+      { name: 'Sharp Edge Stone', unit: 'RFT', defRate: 30 },
+      { name: 'Shempered Edge', unit: 'RFT', defRate: 40 }
+    ],
+    'Kitchen Platforms & Counters': [
+      { name: 'Platform', unit: 'RFT', defRate: 1350 },
+      { name: 'Kadappa Fitting', unit: 'RFT', defRate: 85 },
+      { name: 'Kitchen Platform Remove', unit: 'L.S.', defRate: 1500 },
+      { name: 'Basin Counter', unit: 'NOS', defRate: 1200 },
+      { name: 'Basin Counter Remove', unit: 'NOS', defRate: 400 }
+    ],
+    'Staircase (Treads & Risers)': [
+      { name: 'Tread', unit: 'RFT', defRate: 95 },
+      { name: 'Riser', unit: 'RFT', defRate: 65 },
+      { name: 'Landing Tiles', unit: 'SFT', defRate: 50 }
+    ],
+    'Cutting, Openings & Holes': [
+      { name: 'Nahani Trap', unit: 'NOS', defRate: 150 },
+      { name: 'Electric Board Cutting', unit: 'NOS', defRate: 120 },
+      { name: 'Wash Basin Gala Cut', unit: 'NOS', defRate: 450 },
+      { name: 'Core Cut', unit: 'NOS', defRate: 350 },
+      { name: 'Plumbing Point Hole', unit: 'NOS', defRate: 80 },
+      { name: 'Niche Create', unit: 'NOS', defRate: 600 }
+    ],
+    'Civil, Plaster & Masonry': [
+      { name: 'Plaster', unit: 'SFT', defRate: 22 },
+      { name: 'Plaster Remove', unit: 'SFT', defRate: 12 },
+      { name: 'Plaster Removing', unit: 'SFT', defRate: 12 },
+      { name: 'Tiles Remove', unit: 'SFT', defRate: 15 },
+      { name: 'Tiles Removing', unit: 'SFT', defRate: 15 },
+      { name: 'Block Work', unit: 'SFT', defRate: 45 },
+      { name: 'Block Work Remove', unit: 'SFT', defRate: 20 },
+      { name: 'Brick Bat', unit: 'SFT', defRate: 32 },
+      { name: 'Brick Bat Remove', unit: 'SFT', defRate: 18 },
+      { name: 'Brick Bat Removing', unit: 'SFT', defRate: 18 },
+      { name: 'Brick Work Remove', unit: 'SFT', defRate: 22 },
+      { name: 'Wall Removing', unit: 'SFT', defRate: 28 },
+      { name: 'Koba Removing', unit: 'SFT', defRate: 15 }
+    ],
+    'Finishing & Joint Treatments': [
+      { name: 'Epoxy Filling', unit: 'SFT', defRate: 18 },
+      { name: 'Acid Wash', unit: 'SFT', defRate: 8 }
+    ],
+    'Custom / Other': [
+      { name: 'Other', unit: 'L.S.', defRate: 0 }
+    ]
+  };
+
+  const UNITS = ['SFT', 'RFT', 'NOS', 'L.S.', 'SQMT', 'RMT', 'CFT'];
+
+  // Initialize today's date
+  document.getElementById('effectiveDate').value = new Date().toISOString().split('T')[0];
+
+  const container = document.getElementById('categoriesContainer');
+
+  // Render All Categories Form
+  function renderForm() {
+    container.innerHTML = '';
+    let totalItems = 0;
+
+    Object.entries(CATEGORIZED_WORK_TYPES).forEach(([groupName, items], gIdx) => {
+      totalItems += items.length;
+
+      const sec = document.createElement('div');
+      sec.className = 'category-section';
+      sec.dataset.group = groupName;
+
+      let tableRows = items.map((item, iIdx) => {
+        const inputId = `rate_${gIdx}_${iIdx}`;
+        const unitId = `unit_${gIdx}_${iIdx}`;
+        const notesId = `notes_${gIdx}_${iIdx}`;
+        const catKey = encodeURIComponent(item.name);
+
+        return `
+          <tr class="rate-row" data-cat="${item.name.toLowerCase()}">
+            <td style="width: 38%;">
+              <div class="cat-name">${item.name}</div>
+            </td>
+            <td style="width: 22%;">
+              <div class="rate-input-box">
+                <span class="rate-currency-symbol">₹</span>
+                <input 
+                  type="number" 
+                  step="0.01" 
+                  min="0"
+                  class="rate-input" 
+                  id="${inputId}" 
+                  data-cat="${item.name}" 
+                  data-group="${groupName}"
+                  placeholder="0.00"
+                  value="${item.defRate || ''}"
+                  oninput="handleRateChange(this)"
+                />
+              </div>
+            </td>
+            <td style="width: 15%;">
+              <select class="unit-select" id="${unitId}" data-cat="${item.name}">
+                ${UNITS.map(u => `<option value="${u}" ${u === item.unit ? 'selected' : ''}>${u}</option>`).join('')}
+              </select>
+            </td>
+            <td style="width: 25%;">
+              <input 
+                type="text" 
+                class="notes-input" 
+                id="${notesId}" 
+                data-cat="${item.name}"
+                placeholder="Optional notes / specifications" 
+              />
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      sec.innerHTML = `
+        <div class="category-header">
+          <span>${groupName}</span>
+          <span class="category-count">${items.length} items</span>
+        </div>
+        <table class="rates-table">
+          <thead>
+            <tr>
+              <th>Work Category Name</th>
+              <th>Labour Rate</th>
+              <th>Unit</th>
+              <th>Specification / Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${tableRows}
+          </tbody>
+        </table>
+      `;
+
+      container.appendChild(sec);
+    });
+
+    document.getElementById('badgeTotalItems').textContent = `Total Categories: ${totalItems}`;
+    loadFromLocalStorage();
+    updateStats();
+  }
+
+  function handleRateChange(input) {
+    if (parseFloat(input.value) > 0) {
+      input.classList.add('has-value');
+    } else {
+      input.classList.remove('has-value');
+    }
+    updateStats();
+    saveToLocalStorage(false);
+  }
+
+  function updateStats() {
+    const inputs = Array.from(document.querySelectorAll('.rate-input'));
+    const filled = inputs.filter(inp => parseFloat(inp.value) > 0);
+    const count = filled.length;
+    const total = inputs.length;
+
+    document.getElementById('badgeConfigured').textContent = `Rates Filled: ${count}`;
+    document.getElementById('statConfiguredCount').textContent = `${count} / ${total}`;
+
+    if (count > 0) {
+      const vals = filled.map(inp => parseFloat(inp.value));
+      const sum = vals.reduce((a, b) => a + b, 0);
+      const avg = Math.round(sum / count);
+      const min = Math.min(...vals);
+      const max = Math.max(...vals);
+
+      document.getElementById('statAvgRate').textContent = `₹${avg.toLocaleString('en-IN')}`;
+      document.getElementById('statMinMax').textContent = `₹${min} - ₹${max}`;
+    } else {
+      document.getElementById('statAvgRate').textContent = '₹0';
+      document.getElementById('statMinMax').textContent = '₹0 - ₹0';
+    }
+  }
+
+  // Search Filter
+  document.getElementById('searchInput').addEventListener('input', (e) => {
+    const query = e.target.value.toLowerCase().trim();
+    const rows = document.querySelectorAll('.rate-row');
+    const sections = document.querySelectorAll('.category-section');
+
+    rows.forEach(row => {
+      const cat = row.dataset.cat;
+      if (!query || cat.includes(query)) {
+        row.style.display = '';
+      } else {
+        row.style.display = 'none';
+      }
+    });
+
+    // Hide entire section if all rows in it are hidden
+    sections.forEach(sec => {
+      const visibleRows = sec.querySelectorAll('.rate-row:not([style*="display: none"])');
+      sec.style.display = visibleRows.length > 0 ? '' : 'none';
+    });
+  });
+
+  // LocalStorage Persistence
+  const STORAGE_KEY = 'MTS_LABOUR_RATES_FORM_DATA';
+
+  function saveToLocalStorage(showFeedback = true) {
+    const payload = {
+      contractor: document.getElementById('contractorName').value,
+      version: document.getElementById('rateVersion').value,
+      date: document.getElementById('effectiveDate').value,
+      region: document.getElementById('regionName').value,
+      rates: {}
+    };
+
+    document.querySelectorAll('.rate-row').forEach(row => {
+      const rateInput = row.querySelector('.rate-input');
+      const unitSelect = row.querySelector('.unit-select');
+      const notesInput = row.querySelector('.notes-input');
+      const cat = rateInput.dataset.cat;
+
+      payload.rates[cat] = {
+        group: rateInput.dataset.group,
+        rate: rateInput.value,
+        unit: unitSelect.value,
+        notes: notesInput.value
+      };
+    });
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    if (showFeedback) {
+      alert('✅ Rates saved successfully to local browser storage!');
+    }
+  }
+
+  function loadFromLocalStorage() {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (!saved) return;
+      const data = JSON.parse(saved);
+
+      if (data.contractor) document.getElementById('contractorName').value = data.contractor;
+      if (data.version) document.getElementById('rateVersion').value = data.version;
+      if (data.date) document.getElementById('effectiveDate').value = data.date;
+      if (data.region) document.getElementById('regionName').value = data.region;
+
+      if (data.rates) {
+        document.querySelectorAll('.rate-row').forEach(row => {
+          const rateInput = row.querySelector('.rate-input');
+          const unitSelect = row.querySelector('.unit-select');
+          const notesInput = row.querySelector('.notes-input');
+          const cat = rateInput.dataset.cat;
+
+          if (data.rates[cat]) {
+            if (data.rates[cat].rate !== undefined) {
+              rateInput.value = data.rates[cat].rate;
+              if (parseFloat(rateInput.value) > 0) rateInput.classList.add('has-value');
+            }
+            if (data.rates[cat].unit) unitSelect.value = data.rates[cat].unit;
+            if (data.rates[cat].notes) notesInput.value = data.rates[cat].notes;
+          }
+        });
+      }
+    } catch (e) {
+      console.warn('Could not load saved rates:', e);
+    }
+  }
+
+  function resetForm() {
+    if (confirm('Are you sure you want to clear all rate inputs?')) {
+      document.querySelectorAll('.rate-input').forEach(inp => {
+        inp.value = '';
+        inp.classList.remove('has-value');
+      });
+      document.querySelectorAll('.notes-input').forEach(inp => inp.value = '');
+      updateStats();
+      saveToLocalStorage(false);
+    }
+  }
+
+  // Export CSV
+  function exportCSV() {
+    const contractor = document.getElementById('contractorName').value || 'Contractor';
+    const rows = [
+      ['Group', 'Work Category', 'Labour Rate (INR)', 'Unit', 'Specification / Notes']
+    ];
+
+    document.querySelectorAll('.rate-row').forEach(row => {
+      const rateInput = row.querySelector('.rate-input');
+      const unitSelect = row.querySelector('.unit-select');
+      const notesInput = row.querySelector('.notes-input');
+
+      rows.push([
+        `"${rateInput.dataset.group || ''}"`,
+        `"${rateInput.dataset.cat || ''}"`,
+        rateInput.value || '0',
+        `"${unitSelect.value || ''}"`,
+        `"${(notesInput.value || '').replace(/"/g, '""')}"`
+      ]);
+    });
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + rows.map(e => e.join(',')).join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `${contractor.replace(/\s+/g, '_')}_Labour_Rate_List.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  // Export JSON
+  function exportJSON() {
+    const contractor = document.getElementById('contractorName').value || 'Contractor';
+    const payload = {
+      contractor,
+      version: document.getElementById('rateVersion').value,
+      date: document.getElementById('effectiveDate').value,
+      region: document.getElementById('regionName').value,
+      rates: []
+    };
+
+    document.querySelectorAll('.rate-row').forEach(row => {
+      const rateInput = row.querySelector('.rate-input');
+      const unitSelect = row.querySelector('.unit-select');
+      const notesInput = row.querySelector('.notes-input');
+
+      payload.rates.push({
+        group: rateInput.dataset.group,
+        category: rateInput.dataset.cat,
+        rate: parseFloat(rateInput.value) || 0,
+        unit: unitSelect.value,
+        notes: notesInput.value || ''
+      });
+    });
+
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${contractor.replace(/\s+/g, '_')}_Labour_Rates.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  // Run render on page load
+  renderForm();
+</script>
+
+</body>
+</html>
+

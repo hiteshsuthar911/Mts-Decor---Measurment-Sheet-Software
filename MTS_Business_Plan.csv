@@ -1,0 +1,100 @@
+SECTION 1 — ONE-TIME INVESTMENT REQUIRED (What You Need From Dad),,,,,
+Item,Description,Cost (INR),Notes,,
+Domain Name (1 year),"Buy domain like mtspro.in or mymeasure.in from Hostinger",799,One-time yearly cost,,
+Hostinger Web Hosting (1 year),"Host the frontend website / app on Hostinger Premium Plan",2,388,Annual plan at ₹199/mo,,
+Render Backend (6 months),"Always-on Express backend server hosting (paid plan)",3,480,₹580/month × 6 months,,
+MongoDB Atlas (Free tier),"Database — free up to 5 clients (512MB)",0,No cost for first phase,,
+SSL Certificate,"Comes free with Hostinger",0,Included,,
+Business WhatsApp Setup,"WhatsApp Business number for client support",0,Free,,
+Marketing / Visiting Cards,"Print professional cards to give to contractors",500,Estimate,,
+TOTAL ONE-TIME INVESTMENT,,7,167,,
+,,,,,,
+,,,,,,
+SECTION 2 — MONTHLY RUNNING COSTS (After Launch),,,,,
+Item,Monthly Cost (INR),Notes,,,
+Hostinger Hosting,199,Paid annually = ₹199/mo effective,,,
+Render Backend (always-on),"580 (~$7)",Required so app never sleeps,,,
+MongoDB Atlas,0,Free for first 5 clients,,,
+Domain (amortized monthly),66.58,₹799/12,,,
+Resend Email Service,0,Free 3000 emails/month,,,
+Internet / Electricity (your work),500,Estimate for support work,,,
+TOTAL MONTHLY COST,1,345.58,,,
+,,,,,,
+,,,,,,
+SECTION 3 — PRICING PLANS,,,,,
+Plan Name,Monthly Price,Setup Fee (One-time),Features,Annual Price (2 months free),Annual Savings for Client
+Basic,4999,1000,"3 Users, 20 Projects, PDF/Excel Export, Email Support",49990,9998
+Professional,7999,2500,"10 Users, Unlimited Projects, GST Invoice, Client Portal, Engineer Portal, WhatsApp Support",79990,15998
+Enterprise,14999,5000,"Unlimited Users, White-label, Google Drive Backup, Dedicated Support, Monthly Review Call",149990,29998
+,,,,,,
+,,,,,,
+SECTION 4 — PROFIT CALCULATOR BY CLIENT COUNT,,,,,
+No. of Clients,Plan,Gross Revenue/Month,Your Costs/Month,Net Profit/Month,Profit Margin %
+1,Basic @ ₹4999,4999,1346,3653,73.1%
+2,Basic @ ₹4999,9998,1446,8552,85.5%
+3,Basic @ ₹4999,14997,1546,13451,89.7%
+5,Basic @ ₹4999,24995,1746,23249,93.0%
+10,Basic @ ₹4999,49990,2596,47394,94.8%
+,,,,,,
+1,Professional @ ₹7999,7999,1346,6653,83.2%
+3,Professional @ ₹7999,23997,1546,22451,93.6%
+5,Professional @ ₹7999,39995,1746,38249,95.6%
+10,Professional @ ₹7999,79990,2596,77394,96.8%
+,,,,,,
+,,,,,,
+SECTION 5 — MONTH-BY-MONTH REVENUE PROJECTION (Realistic Growth),,,,,
+Month,Clients,Plan Mix,Gross Revenue,Expenses,Net Profit
+Month 1,1,1 Basic,4999,1346 + 7167 (investment),−3514 (investment month)
+Month 2,2,2 Basic,9998,1446,8552
+Month 3,3,3 Basic,14997,1546,13451
+Month 4,3,3 Basic + 1 Pro,22996,1646,21350
+Month 5,5,3 Basic + 2 Pro,30995,1746,29249
+Month 6,6,4 Basic + 2 Pro,35994,1846,34148
+Month 7,7,4 Basic + 3 Pro,43992,1946,42046
+Month 8,8,5 Basic + 3 Pro,48990,2046,46944
+Month 9,9,5 Basic + 4 Pro,56988,2146,54842
+Month 10,10,5 Basic + 5 Pro,59990,2246,57744
+Month 11,11,6 Basic + 5 Pro,64988,2346,62642
+Month 12,12,6 Basic + 5 Pro + 1 Enterprise,79986,2446,77540
+,,,,,,
+YEAR 1 TOTAL REVENUE,,,,₹5,50,905,
+YEAR 1 TOTAL EXPENSES,,,,"₹35,000 (approx incl. investment)",
+YEAR 1 NET PROFIT,,,,₹5,15,905,
+,,,,,,
+,,,,,,
+SECTION 6 — BREAK-EVEN ANALYSIS,,,,,
+Question,Answer,,,,,
+Monthly Fixed Cost,₹1346,,,,
+Break-even clients needed (Basic plan @ ₹4999),"1 client covers all costs completely",,,,
+Break-even achieved in,Month 2 (with just 2 clients),,,,
+Investment payback period,End of Month 2 (₹8552 profit > ₹7167 investment),,,,
+,,,,,,
+,,,,,,
+SECTION 7 — 3 YEAR FINANCIAL SUMMARY,,,,,
+Year,Projected Clients,Annual Revenue,Annual Expenses,Annual Net Profit,Growth %
+Year 1,12 clients by end,5,50,905,"35,000","5,15,905",—
+Year 2,25 clients by end,"17,99,700","1,20,000","16,79,700",225%
+Year 3,50 clients by end,"35,99,400","3,00,000","32,99,400",96%
+,,,,,,
+,,,,,,
+SECTION 8 — WHY THIS BUSINESS MAKES SENSE,,,,,
+Reason,Explanation,,,,,
+Low competition,"No dedicated app exists for Indian civil/interior contractors — mostly using paper or Excel",,,,
+High pain point,"Wrong measurements = ₹10,000–50,000 material waste. Software at ₹5,000/month is nothing",,,,
+Sticky product,"Once a contractor trains staff on this, they will not switch — high retention",,,,
+Near-zero marginal cost,"Adding 1 more client costs ₹200–300 (server load) but earns ₹4,999–14,999",,,,
+Already built,"Software is 100% complete and working — no development cost needed",,,,
+Recurring revenue,"Subscription model = predictable monthly income, not one-time",,,,
+Scalable,"Can serve 100+ clients with same infrastructure (just upgrade MongoDB plan)",,,,
+,,,,,,
+,,,,,,
+SECTION 9 — INITIAL ASK FROM INVESTOR (DAD),,,,,
+Item,Amount (INR),,,,,
+Domain + Hosting (1 year),3187,,,,,
+Render Backend (6 months paid),3480,,,,,
+Visiting Cards + Marketing,500,,,,,
+Buffer / Emergency Fund,2000,,,,,
+TOTAL ASK,9167,,,,,
+Expected Payback Period,Month 2 — fully recovered from first 2 clients,,,,,
+ROI by Month 6,"₹34,148 net profit/month",,,,,
+ROI by Month 12,"₹77,540 net profit/month",,,,,
