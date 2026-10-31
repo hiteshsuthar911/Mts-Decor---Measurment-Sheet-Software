@@ -1,16 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { getRateMaster, saveRateMaster, DEFAULT_RATES } from '../utils/rateMaster';
+import React, { useState, useEffect, useRef } from 'react';
+import { getRateMaster, saveRateMaster, DEFAULT_RATES, importRatesFromJSON } from '../utils/rateMaster';
 
 const TRADE_TABS = [
   { id: 'ALL', label: 'All Items', icon: 'bi-grid-fill' },
-  { id: 'Tiling', label: 'Tiling & Stone', icon: 'bi-border-all' },
-  { id: 'Ceilings & POP', label: 'Ceilings & POP', icon: 'bi-layers-fill' },
-  { id: 'Painting', label: 'Painting', icon: 'bi-paint-bucket' },
-  { id: 'Civil & Masonry', label: 'Civil & Masonry', icon: 'bi-bricks' },
-  { id: 'Electrical', label: 'Electrical', icon: 'bi-lightning-charge' },
-  { id: 'Plumbing', label: 'Plumbing', icon: 'bi-droplet-fill' },
-  { id: 'Carpentry', label: 'Carpentry & Doors', icon: 'bi-door-open-fill' },
-  { id: 'Custom', label: 'Custom Added', icon: 'bi-stars' },
+  { id: 'Wall Tiles & Slabs', label: 'Wall Tiles', icon: 'bi-border-all' },
+  { id: 'Flooring, Koba & Italian Marble', label: 'Flooring & Koba', icon: 'bi-aspect-ratio-fill' },
+  { id: 'Sills & Skirting', label: 'Sills & Skirting', icon: 'bi-border-bottom' },
+  { id: 'Door Frames & Fittings', label: 'Door Frames', icon: 'bi-door-open-fill' },
+  { id: 'Edges & Chamfers', label: 'Edges & Chamfers', icon: 'bi-slash-lg' },
+  { id: 'Kitchen Platforms & Counters', label: 'Kitchen & Counters', icon: 'bi-water' },
+  { id: 'Staircase (Treads & Risers)', label: 'Staircase', icon: 'bi-stairs' },
+  { id: 'Cutting, Openings & Holes', label: 'Cutting & Holes', icon: 'bi-bullseye' },
+  { id: 'Civil, Plaster & Masonry', label: 'Civil & Masonry', icon: 'bi-bricks' },
+  { id: 'Finishing & Joint Treatments', label: 'Finishing & Joints', icon: 'bi-magic' },
+  { id: 'Custom', label: 'Custom / Other', icon: 'bi-stars' },
 ];
 
 export default function RateMasterModal({
@@ -29,6 +32,7 @@ export default function RateMasterModal({
   const [newDescription, setNewDescription] = useState('');
   const [overwriteExisting, setOverwriteExisting] = useState(false);
   const [saveStatus, setSaveStatus] = useState('');
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (show) {
@@ -38,6 +42,53 @@ export default function RateMasterModal({
   }, [show]);
 
   if (!show) return null;
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const parsed = JSON.parse(event.target.result);
+        const imported = importRatesFromJSON(parsed);
+        if (imported && Object.keys(imported).length > 0) {
+          const merged = { ...rates, ...imported };
+          setRates(merged);
+          saveRateMaster(merged);
+          setSaveStatus(`✅ Successfully imported ${Object.keys(imported).length} rates from ${file.name}!`);
+          setTimeout(() => setSaveStatus(''), 4000);
+        } else {
+          alert('Could not find valid rates in the JSON file.');
+        }
+      } catch (err) {
+        alert('Invalid JSON file format.');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
+  const handleExportJSON = () => {
+    const exportData = {
+      contractor: 'MTS Decor',
+      version: 'Standard Master Rates',
+      date: new Date().toISOString().split('T')[0],
+      rates: Object.entries(rates).map(([cat, val]) => ({
+        group: val.trade || 'Custom',
+        category: cat,
+        rate: val.rate,
+        unit: val.unit,
+        notes: val.description || ''
+      }))
+    };
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `MTS_Decor_Labour_Rates.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const handleRateChange = (category, val) => {
     const num = parseFloat(val) || 0;
@@ -110,10 +161,7 @@ export default function RateMasterModal({
 
     if (activeTab === 'ALL') return true;
     if (activeTab === 'Custom') {
-      return item.trade === 'Custom' || !DEFAULT_RATES[cat];
-    }
-    if (activeTab === 'Tiling') {
-      return item.trade === 'Tiling' || item.trade === 'Stone & Granite';
+      return item.trade === 'Custom' || item.trade === 'Custom / Other';
     }
     return item.trade === activeTab;
   });
@@ -174,10 +222,40 @@ export default function RateMasterModal({
                 />
               </div>
 
-              <div className="d-flex align-items-center gap-2">
+              <div className="d-flex flex-wrap align-items-center gap-2">
                 <span className="badge bg-secondary-subtle text-secondary fw-semibold">
                   Showing {filteredCategories.length} items
                 </span>
+
+                {/* Hidden File Input for Importing JSON */}
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  accept=".json"
+                  style={{ display: 'none' }}
+                  onChange={handleFileUpload}
+                />
+
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-success d-flex align-items-center gap-1 extra-small"
+                  onClick={() => fileInputRef.current?.click()}
+                  title="Import rate list JSON file exported from form"
+                >
+                  <i className="bi bi-file-earmark-arrow-down-fill"></i>
+                  <span>Import JSON</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-primary d-flex align-items-center gap-1 extra-small"
+                  onClick={handleExportJSON}
+                  title="Export rate list as JSON backup"
+                >
+                  <i className="bi bi-download"></i>
+                  <span>Export JSON</span>
+                </button>
+
                 <button
                   type="button"
                   className="btn btn-sm btn-outline-danger d-flex align-items-center gap-1 extra-small"

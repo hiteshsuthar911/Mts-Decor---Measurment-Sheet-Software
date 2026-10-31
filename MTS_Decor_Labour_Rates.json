@@ -1,0 +1,505 @@
+{
+  "contractor": "MTS Decor",
+  "version": "Standard Master Rates 2026-27",
+  "date": "2026-10-31",
+  "region": "Mumbai Metropolitan",
+  "rates": [
+    {
+      "group": "Wall Tiles & Slabs",
+      "category": "Design Wall Tiles",
+      "rate": 100,
+      "unit": "SFT",
+      "notes": ""
+    },
+    {
+      "group": "Wall Tiles & Slabs",
+      "category": "Subway Wall Tiles",
+      "rate": 100,
+      "unit": "SFT",
+      "notes": ""
+    },
+    {
+      "group": "Wall Tiles & Slabs",
+      "category": "600 X 1200 Wall Tiles",
+      "rate": 60,
+      "unit": "SFT",
+      "notes": ""
+    },
+    {
+      "group": "Wall Tiles & Slabs",
+      "category": "800 X 1600 Wall Tiles",
+      "rate": 60,
+      "unit": "SFT",
+      "notes": ""
+    },
+    {
+      "group": "Wall Tiles & Slabs",
+      "category": "1200 X 1800 Wall Tiles",
+      "rate": 130,
+      "unit": "SFT",
+      "notes": ""
+    },
+    {
+      "group": "Wall Tiles & Slabs",
+      "category": "1200 X 9400 Wall Tiles",
+      "rate": 150,
+      "unit": "SFT",
+      "notes": ""
+    },
+    {
+      "group": "Wall Tiles & Slabs",
+      "category": "Plain Sada Tiles",
+      "rate": 40,
+      "unit": "SFT",
+      "notes": ""
+    },
+    {
+      "group": "Wall Tiles & Slabs",
+      "category": "Wall Tiles",
+      "rate": 55,
+      "unit": "RFT",
+      "notes": ""
+    },
+    {
+      "group": "Wall Tiles & Slabs",
+      "category": "Dado Italian Marble",
+      "rate": 160,
+      "unit": "SFT",
+      "notes": ""
+    },
+    {
+      "group": "Flooring, Koba & Italian Marble",
+      "category": "Floor Tiles",
+      "rate": 0,
+      "unit": "SFT",
+      "notes": ""
+    },
+    {
+      "group": "Flooring, Koba & Italian Marble",
+      "category": "Floor Tile with Koba 600x1200",
+      "rate": 86,
+      "unit": "SFT",
+      "notes": ""
+    },
+    {
+      "group": "Flooring, Koba & Italian Marble",
+      "category": "Floor Tile with Koba 800x1600",
+      "rate": 97,
+      "unit": "SFT",
+      "notes": ""
+    },
+    {
+      "group": "Flooring, Koba & Italian Marble",
+      "category": "Floor Tile with Koba 1200x1800",
+      "rate": 97,
+      "unit": "SFT",
+      "notes": ""
+    },
+    {
+      "group": "Flooring, Koba & Italian Marble",
+      "category": "Floor Tile with Koba 1200x9400",
+      "rate": 120,
+      "unit": "SFT",
+      "notes": ""
+    },
+    {
+      "group": "Flooring, Koba & Italian Marble",
+      "category": "Design Floor Tiles",
+      "rate": 120,
+      "unit": "SFT",
+      "notes": ""
+    },
+    {
+      "group": "Flooring, Koba & Italian Marble",
+      "category": "Design Floor Tiles with Koba",
+      "rate": 150,
+      "unit": "SFT",
+      "notes": ""
+    },
+    {
+      "group": "Flooring, Koba & Italian Marble",
+      "category": "Floor Italian Marble",
+      "rate": 110,
+      "unit": "SFT",
+      "notes": ""
+    },
+    {
+      "group": "Flooring, Koba & Italian Marble",
+      "category": "Flooring Italian Marble with Koba",
+      "rate": 140,
+      "unit": "SFT",
+      "notes": ""
+    },
+    {
+      "group": "Flooring, Koba & Italian Marble",
+      "category": "Kota Stone Filling",
+      "rate": 80,
+      "unit": "SFT",
+      "notes": ""
+    },
+    {
+      "group": "Flooring, Koba & Italian Marble",
+      "category": "Koba",
+      "rate": 30,
+      "unit": "SFT",
+      "notes": ""
+    },
+    {
+      "group": "Flooring, Koba & Italian Marble",
+      "category": "Patta Tiles",
+      "rate": 70,
+      "unit": "SFT",
+      "notes": ""
+    },
+    {
+      "group": "Flooring, Koba & Italian Marble",
+      "category": "Patta Tile with Koba (4mm space)",
+      "rate": 100,
+      "unit": "SFT",
+      "notes": ""
+    },
+    {
+      "group": "Flooring, Koba & Italian Marble",
+      "category": "Patta Tile with (4mm space)",
+      "rate": 70,
+      "unit": "SFT",
+      "notes": ""
+    },
+    {
+      "group": "Sills & Skirting",
+      "category": "Spotted Marble Sill",
+      "rate": 55,
+      "unit": "RFT",
+      "notes": ""
+    },
+    {
+      "group": "Sills & Skirting",
+      "category": "Stone Sill",
+      "rate": 82,
+      "unit": "RFT",
+      "notes": ""
+    },
+    {
+      "group": "Sills & Skirting",
+      "category": "Single Shempered Edge Stone Sill",
+      "rate": 115,
+      "unit": "RFT",
+      "notes": ""
+    },
+    {
+      "group": "Sills & Skirting",
+      "category": "Double Shempered Edge Stone Sill",
+      "rate": 160,
+      "unit": "RFT",
+      "notes": ""
+    },
+    {
+      "group": "Sills & Skirting",
+      "category": "Skirting",
+      "rate": 110,
+      "unit": "RFT",
+      "notes": ""
+    },
+    {
+      "group": "Sills & Skirting",
+      "category": "Tiles Skirting",
+      "rate": 45,
+      "unit": "RFT",
+      "notes": ""
+    },
+    {
+      "group": "Sills & Skirting",
+      "category": "Shempered Edge Skirting",
+      "rate": 115,
+      "unit": "RFT",
+      "notes": ""
+    },
+    {
+      "group": "Sills & Skirting",
+      "category": "Italian Marble / Stone Shempered Edge Skirting",
+      "rate": 115,
+      "unit": "RFT",
+      "notes": ""
+    },
+    {
+      "group": "Door Frames & Fittings",
+      "category": "Main Door Frame Install",
+      "rate": 3000,
+      "unit": "NOS",
+      "notes": ""
+    },
+    {
+      "group": "Door Frames & Fittings",
+      "category": "Bedroom Door Frame Install",
+      "rate": 2500,
+      "unit": "NOS",
+      "notes": ""
+    },
+    {
+      "group": "Door Frames & Fittings",
+      "category": "Door Frame Removing",
+      "rate": 1200,
+      "unit": "NOS",
+      "notes": ""
+    },
+    {
+      "group": "Door Frames & Fittings",
+      "category": "Kadappa Fitting",
+      "rate": 120,
+      "unit": "SFT",
+      "notes": ""
+    },
+    {
+      "group": "Door Frames & Fittings",
+      "category": "MS Angle Removing",
+      "rate": 200,
+      "unit": "NOS",
+      "notes": ""
+    },
+    {
+      "group": "Edges & Chamfers",
+      "category": "Kani Edge Tiles",
+      "rate": 50,
+      "unit": "RFT",
+      "notes": ""
+    },
+    {
+      "group": "Edges & Chamfers",
+      "category": "Kani Edge Stone",
+      "rate": 50,
+      "unit": "RFT",
+      "notes": ""
+    },
+    {
+      "group": "Edges & Chamfers",
+      "category": "Sharp Edge Tiles",
+      "rate": 50,
+      "unit": "RFT",
+      "notes": ""
+    },
+    {
+      "group": "Edges & Chamfers",
+      "category": "Sharp Edge Stone",
+      "rate": 55,
+      "unit": "RFT",
+      "notes": ""
+    },
+    {
+      "group": "Edges & Chamfers",
+      "category": "Shempered Edge",
+      "rate": 50,
+      "unit": "RFT",
+      "notes": ""
+    },
+    {
+      "group": "Kitchen Platforms & Counters",
+      "category": "Platform",
+      "rate": 1350,
+      "unit": "RFT",
+      "notes": ""
+    },
+    {
+      "group": "Kitchen Platforms & Counters",
+      "category": "Kadappa Fitting",
+      "rate": 120,
+      "unit": "SFT",
+      "notes": ""
+    },
+    {
+      "group": "Kitchen Platforms & Counters",
+      "category": "Kitchen Platform Remove",
+      "rate": 250,
+      "unit": "RFT",
+      "notes": ""
+    },
+    {
+      "group": "Kitchen Platforms & Counters",
+      "category": "Basin Counter",
+      "rate": 1050,
+      "unit": "RFT",
+      "notes": ""
+    },
+    {
+      "group": "Kitchen Platforms & Counters",
+      "category": "Basin Counter Remove",
+      "rate": 180,
+      "unit": "RFT",
+      "notes": ""
+    },
+    {
+      "group": "Staircase (Treads & Risers)",
+      "category": "Tread",
+      "rate": 75,
+      "unit": "RFT",
+      "notes": ""
+    },
+    {
+      "group": "Staircase (Treads & Risers)",
+      "category": "Riser",
+      "rate": 70,
+      "unit": "RFT",
+      "notes": ""
+    },
+    {
+      "group": "Staircase (Treads & Risers)",
+      "category": "Landing Tiles",
+      "rate": 97,
+      "unit": "SFT",
+      "notes": ""
+    },
+    {
+      "group": "Cutting, Openings & Holes",
+      "category": "Nahani Trap",
+      "rate": 160,
+      "unit": "NOS",
+      "notes": ""
+    },
+    {
+      "group": "Cutting, Openings & Holes",
+      "category": "Electric Board Cutting",
+      "rate": 50,
+      "unit": "NOS",
+      "notes": ""
+    },
+    {
+      "group": "Cutting, Openings & Holes",
+      "category": "Wash Basin Gala Cut",
+      "rate": 600,
+      "unit": "NOS",
+      "notes": ""
+    },
+    {
+      "group": "Cutting, Openings & Holes",
+      "category": "Core Cut",
+      "rate": 250,
+      "unit": "NOS",
+      "notes": ""
+    },
+    {
+      "group": "Cutting, Openings & Holes",
+      "category": "Plumbing Point Hole",
+      "rate": 50,
+      "unit": "NOS",
+      "notes": ""
+    },
+    {
+      "group": "Cutting, Openings & Holes",
+      "category": "Niche Create",
+      "rate": 6000,
+      "unit": "NOS",
+      "notes": ""
+    },
+    {
+      "group": "Civil, Plaster & Masonry",
+      "category": "Plaster",
+      "rate": 65,
+      "unit": "SFT",
+      "notes": ""
+    },
+    {
+      "group": "Civil, Plaster & Masonry",
+      "category": "Plaster Remove",
+      "rate": 30,
+      "unit": "SFT",
+      "notes": ""
+    },
+    {
+      "group": "Civil, Plaster & Masonry",
+      "category": "Plaster Removing",
+      "rate": 30,
+      "unit": "SFT",
+      "notes": ""
+    },
+    {
+      "group": "Civil, Plaster & Masonry",
+      "category": "Tiles Remove",
+      "rate": 30,
+      "unit": "SFT",
+      "notes": ""
+    },
+    {
+      "group": "Civil, Plaster & Masonry",
+      "category": "Tiles Removing",
+      "rate": 30,
+      "unit": "SFT",
+      "notes": ""
+    },
+    {
+      "group": "Civil, Plaster & Masonry",
+      "category": "Block Work",
+      "rate": 70,
+      "unit": "SFT",
+      "notes": ""
+    },
+    {
+      "group": "Civil, Plaster & Masonry",
+      "category": "Block Work Remove",
+      "rate": 40,
+      "unit": "SFT",
+      "notes": ""
+    },
+    {
+      "group": "Civil, Plaster & Masonry",
+      "category": "Brick Bat",
+      "rate": 250,
+      "unit": "SFT",
+      "notes": ""
+    },
+    {
+      "group": "Civil, Plaster & Masonry",
+      "category": "Brick Bat Remove",
+      "rate": 170,
+      "unit": "SFT",
+      "notes": ""
+    },
+    {
+      "group": "Civil, Plaster & Masonry",
+      "category": "Brick Bat Removing",
+      "rate": 170,
+      "unit": "SFT",
+      "notes": ""
+    },
+    {
+      "group": "Civil, Plaster & Masonry",
+      "category": "Brick Work Remove",
+      "rate": 170,
+      "unit": "SFT",
+      "notes": ""
+    },
+    {
+      "group": "Civil, Plaster & Masonry",
+      "category": "Wall Removing",
+      "rate": 55,
+      "unit": "SFT",
+      "notes": ""
+    },
+    {
+      "group": "Civil, Plaster & Masonry",
+      "category": "Koba Removing",
+      "rate": 20,
+      "unit": "SFT",
+      "notes": ""
+    },
+    {
+      "group": "Finishing & Joint Treatments",
+      "category": "Epoxy Filling",
+      "rate": 15,
+      "unit": "SFT",
+      "notes": ""
+    },
+    {
+      "group": "Finishing & Joint Treatments",
+      "category": "Acid Wash",
+      "rate": 10,
+      "unit": "SFT",
+      "notes": ""
+    },
+    {
+      "group": "Custom / Other",
+      "category": "Other",
+      "rate": 0,
+      "unit": "L.S.",
+      "notes": ""
+    }
+  ]
+}
